@@ -13,11 +13,10 @@ async def chat(req: ChatRequest) -> ChatResponse:
 
     # ── V1: TF-IDF + vector hybrid, always maps to a known intent ──────────
     if req.version == 1:
-        intents, confidence = v1_classifier.classify(req.message)
-        lines = "\n".join(f"• **{i.replace('_', ' ')}**" for i in intents)
-        reply = f"Intent identified:\n{lines}"
-        await audit.log_turn(req.session_id, req.message, reply, ", ".join(intents), True)
-        return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
+        intent, confidence = v1_classifier.classify(req.message)
+        reply = f"Intent identified:\n• **{intent.replace('_', ' ')}**"
+        await audit.log_turn(req.session_id, req.message, reply, intent, True)
+        return ChatResponse(reply=reply, intents=[intent], session_id=req.session_id)
 
     # ── V3: Direct LLM, no classification, no guardrail ────────────────────
     if req.version == 3:

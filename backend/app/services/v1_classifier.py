@@ -116,17 +116,10 @@ def _vector_scores(query: str) -> dict[str, float]:
     return scores
 
 
-def classify(
-    query: str,
-    tfidf_weight: float = 0.4,
-    vector_weight: float = 0.6,
-    secondary_threshold: float = 0.6,  # fraction of top score to include as extra intent
-    min_score: float = 0.05,           # absolute minimum score to be considered
-) -> tuple[list[str], float]:
+def classify(query: str, tfidf_weight: float = 0.4, vector_weight: float = 0.6) -> tuple[str, float]:
     """
-    Hybrid TF-IDF + vector multi-intent classification.
-    Always returns at least one predefined intent.
-    Additional intents are included when their score is >= secondary_threshold * top_score.
+    Hybrid TF-IDF + vector classification.
+    Always returns exactly one predefined intent.
     """
     tfidf = _tfidf_scores(query)
     vector = _vector_scores(query)
@@ -135,16 +128,5 @@ def classify(
     for intent in INTENTS:
         combined[intent] = tfidf_weight * tfidf[intent] + vector_weight * vector[intent]
 
-    sorted_intents = sorted(combined.items(), key=lambda x: x[1], reverse=True)
-    top_score = sorted_intents[0][1]
-
-    results = []
-    for intent, score in sorted_intents:
-        if score >= max(min_score, secondary_threshold * top_score):
-            results.append(intent)
-
-    # Always return at least the top intent
-    if not results:
-        results = [sorted_intents[0][0]]
-
-    return results, top_score
+    best_intent = max(combined, key=lambda k: combined[k])
+    return best_intent, combined[best_intent]
