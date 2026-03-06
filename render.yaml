@@ -17,10 +17,7 @@ services:
       - key: AUDIT_DB_PATH
         value: ./data/audit.db
       - key: ALLOWED_ORIGINS
-        fromService:
-          name: velocity-chatbot-frontend
-          type: web
-          property: url
+        sync: false   # set to your Render frontend URL after first deploy
 
   - type: web
     name: velocity-chatbot-frontend
@@ -30,10 +27,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          name: velocity-chatbot-backend
-          type: web
-          property: url
+        sync: false   # set to your Render backend URL after first deploy
     routes:
       - type: rewrite
         source: /*

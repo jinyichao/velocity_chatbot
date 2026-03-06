@@ -5,6 +5,7 @@ import InputBar from "./components/InputBar";
 
 const SESSION_A = uuidv4();
 const SESSION_B = uuidv4();
+const SESSION_C = uuidv4();
 
 const styles = {
   page: {
@@ -58,7 +59,7 @@ export default function App() {
         title="Velocity Assistant v1"
         label="V1"
         color="#c8102e"
-        offset={404}
+        offset={784}
         pendingMessage={pendingMessage}
       />
 
@@ -67,13 +68,22 @@ export default function App() {
         title="Velocity Assistant v2"
         label="V2"
         color="#0057a8"
+        offset={404}
+        pendingMessage={pendingMessage}
+      />
+
+      <ChatWidget
+        sessionId={SESSION_C}
+        title="Velocity Assistant v3"
+        label="V3"
+        color="#00703c"
         offset={24}
         pendingMessage={pendingMessage}
       />
 
-      {/* Shared input between the two windows */}
+      {/* Shared input — sends to all three */}
       <div style={styles.sharedInput}>
-        <div style={styles.inputLabel}>Shared input — sends to both</div>
+        <div style={styles.inputLabel}>Shared input — sends to all</div>
         <InputBar onSend={handleSharedSend} />
       </div>
     </div>
