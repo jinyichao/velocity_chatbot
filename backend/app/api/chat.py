@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from app.models.schemas import ChatRequest, ChatResponse
-from app.services import intent_classifier, rag, guardrail, audit
+from app.services import intent_classifier, rag, guardrail, audit, v3_direct
+from app.services import v1_classifier
 from app.config import settings
 
 router = APIRouter()
@@ -10,29 +11,37 @@ router = APIRouter()
 async def chat(req: ChatRequest) -> ChatResponse:
     history = [m.model_dump() for m in req.history]
 
-    # 1. Classify — may return multiple intents
+    # ── V1: TF-IDF + vector hybrid, always maps to a known intent ──────────
+    if req.version == 1:
+        intent, confidence = v1_classifier.classify(req.message)
+        intent_label = intent.replace("_", " ")
+        reply = f"Intent identified:\n• **{intent_label}**"
+        await audit.log_turn(req.session_id, req.message, reply, intent, True)
+        return ChatResponse(reply=reply, intents=[intent], session_id=req.session_id)
+
+    # ── V3: Direct LLM, no classification, no guardrail ────────────────────
+    if req.version == 3:
+        reply = await v3_direct.respond(req.message, history)
+        await audit.log_turn(req.session_id, req.message, reply, "direct", True)
+        return ChatResponse(reply=reply, intents=[], session_id=req.session_id)
+
+    # ── V2: LLM classification + guardrail + out-of-scope control ──────────
     intents, confidence = await intent_classifier.classify_intent(req.message, history)
 
-    # 2. Pure out-of-scope
     if intents == ["out_of_scope"]:
         reply = settings.OUT_OF_SCOPE_MESSAGE
         await audit.log_turn(req.session_id, req.message, reply, "out_of_scope", True)
         return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
 
-    # 3. Pure greeting
     if intents == ["greeting"]:
         reply = await rag.generate_greeting(req.message, history)
         await audit.log_turn(req.session_id, req.message, reply, "greeting", True)
         return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
 
-    # 4. Chain through all in-scope intents (exclude meta-intents)
     SKIP = {"greeting", "out_of_scope"}
     scoped = [i for i in intents if i not in SKIP]
-
     lines = "\n".join(f"• **{i.replace('_', ' ')}**" for i in scoped)
     reply = f"Intent identified:\n{lines}"
 
-    # 5. Audit log (join intents for storage)
     await audit.log_turn(req.session_id, req.message, reply, ", ".join(intents), True)
-
     return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)

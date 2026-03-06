@@ -56,29 +56,32 @@ export default function App() {
 
       <ChatWidget
         sessionId={SESSION_A}
-        title="Velocity Assistant v1"
+        title="V1 · TF-IDF + Vector"
         label="V1"
         color="#c8102e"
         offset={784}
         pendingMessage={pendingMessage}
+        version={1}
       />
 
       <ChatWidget
         sessionId={SESSION_B}
-        title="Velocity Assistant v2"
+        title="V2 · LLM + Guardrail"
         label="V2"
         color="#0057a8"
         offset={404}
         pendingMessage={pendingMessage}
+        version={2}
       />
 
       <ChatWidget
         sessionId={SESSION_C}
-        title="Velocity Assistant v3"
+        title="V3 · Direct LLM"
         label="V3"
         color="#00703c"
         offset={24}
         pendingMessage={pendingMessage}
+        version={3}
       />
 
       {/* Shared input — sends to all three */}

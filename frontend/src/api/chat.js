@@ -3,7 +3,7 @@ const API_BASE = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
   : "/api";
 
-export async function sendMessage({ message, sessionId, history }) {
+export async function sendMessage({ message, sessionId, history, version = 2 }) {
   const response = await fetch(`${API_BASE}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -11,6 +11,7 @@ export async function sendMessage({ message, sessionId, history }) {
       message,
       session_id: sessionId,
       history: history.map((m) => ({ role: m.role, content: m.content })),
+      version,
     }),
   });
 

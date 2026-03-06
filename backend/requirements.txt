@@ -7,3 +7,4 @@ python-dotenv==1.0.1
 aiofiles==24.1.0
 python-multipart==0.0.20
 aiosqlite==0.20.0
+scikit-learn==1.6.1

@@ -82,6 +82,7 @@ export default function ChatWidget({
   color = "#c8102e",
   offset = 24,
   pendingMessage = null,
+  version = 2,
 }) {
   const s = buildStyles(color, offset);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -106,7 +107,7 @@ export default function ChatWidget({
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setLoading(true);
     try {
-      const data = await sendMessage({ message: text, sessionId, history: messages });
+      const data = await sendMessage({ message: text, sessionId, history: messages, version });
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
     } catch {
       setMessages((prev) => [
