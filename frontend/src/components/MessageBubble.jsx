@@ -21,11 +21,11 @@ const styles = {
     color: "#fff",
     fontWeight: 600,
   },
-  bubble: (role) => ({
+  bubble: (role, color) => ({
     maxWidth: "72%",
     padding: "10px 14px",
     borderRadius: role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-    background: role === "user" ? "#c8102e" : "#fff",
+    background: role === "user" ? color : "#fff",
     color: role === "user" ? "#fff" : "#1a1a1a",
     fontSize: 14,
     lineHeight: 1.5,
@@ -44,14 +44,14 @@ function renderContent(text) {
   );
 }
 
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, accentColor = "#c8102e" }) {
   const { role, content } = message;
   return (
     <div style={styles.row(role)}>
       {role === "assistant" && (
-        <div style={styles.avatar}>V</div>
+        <div style={{ ...styles.avatar, background: accentColor }}>V</div>
       )}
-      <div style={styles.bubble(role)}>{renderContent(content)}</div>
+      <div style={styles.bubble(role, accentColor)}>{renderContent(content)}</div>
     </div>
   );
 }

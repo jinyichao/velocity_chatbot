@@ -1,4 +1,7 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
+// VITE_API_URL is the backend base URL (no trailing slash, no /api suffix)
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : "/api";
 
 export async function sendMessage({ message, sessionId, history }) {
   const response = await fetch(`${API_BASE}/chat`, {
