@@ -3,11 +3,9 @@ V1: TF-IDF + vector (ChromaDB) hybrid intent classifier.
 Always returns one of the predefined intents — no out_of_scope.
 """
 
-import asyncio
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from app.services.rag import get_collection
 
 # Example queries per intent used to build the TF-IDF corpus
 INTENT_EXAMPLES: dict[str, list[str]] = {
@@ -94,39 +92,10 @@ def _tfidf_scores(query: str) -> dict[str, float]:
     return scores
 
 
-def _vector_scores(query: str) -> dict[str, float]:
-    """Return per-intent scores via ChromaDB embedding similarity."""
-    scores: dict[str, float] = {intent: 0.0 for intent in INTENTS}
-    try:
-        collection = get_collection()
-        if collection.count() == 0:
-            return scores
-        results = collection.query(query_texts=[query], n_results=10)
-        distances = results.get("distances", [[]])[0]
-        metadatas = results.get("metadatas", [[]])[0]
-        for dist, meta in zip(distances, metadatas):
-            intent = meta.get("intent", "")
-            if intent in scores:
-                # Convert L2 distance to similarity score
-                sim = 1.0 / (1.0 + dist)
-                if sim > scores[intent]:
-                    scores[intent] = sim
-    except Exception:
-        pass
-    return scores
-
-
-def classify(query: str, tfidf_weight: float = 0.4, vector_weight: float = 0.6) -> tuple[str, float]:
+def classify(query: str) -> tuple[str, float]:
     """
-    Hybrid TF-IDF + vector classification.
-    Always returns exactly one predefined intent.
+    TF-IDF classification. Always returns exactly one predefined intent.
     """
-    tfidf = _tfidf_scores(query)
-    vector = _vector_scores(query)
-
-    combined: dict[str, float] = {}
-    for intent in INTENTS:
-        combined[intent] = tfidf_weight * tfidf[intent] + vector_weight * vector[intent]
-
-    best_intent = max(combined, key=lambda k: combined[k])
-    return best_intent, combined[best_intent]
+    scores = _tfidf_scores(query)
+    best_intent = max(scores, key=lambda k: scores[k])
+    return best_intent, scores[best_intent]

@@ -20,7 +20,7 @@ const styles = {
   sub: { fontSize: 15, color: "#666" },
   sharedInput: {
     position: "fixed",
-    bottom: 24,
+    top: 24,
     left: "50%",
     transform: "translateX(-50%)",
     width: 480,
