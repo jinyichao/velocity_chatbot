@@ -15,10 +15,5 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
-    intent: str | None
+    intents: list[str]
     session_id: str
-
-
-class IntentResult(BaseModel):
-    intent: str  # e.g. "account_balance" or "out_of_scope"
-    confidence: float

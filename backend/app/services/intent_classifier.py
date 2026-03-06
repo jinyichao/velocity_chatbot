@@ -27,12 +27,17 @@ INTENT_LIST = "\n".join(f"- {k}: {v}" for k, v in INTENTS.items())
 
 SYSTEM_PROMPT = f"""You are an intent classifier for the OCBC Velocity business banking chatbot.
 
-Classify the user message into exactly one of these intents:
+A user message may contain one or more intents. Identify ALL intents present from this list:
 {INTENT_LIST}
 - out_of_scope: The query is unrelated to any of the above categories.
 
+Rules:
+- Return every intent found in the message, in the order they appear.
+- If any part is unrelated to the above categories, include out_of_scope.
+- If the entire message is unrelated, return only ["out_of_scope"].
+
 Respond with JSON only in this format:
-{{"intent": "<intent_name>", "confidence": <0.0-1.0>}}
+{{"intents": ["<intent_1>", "<intent_2>"], "confidence": <0.0-1.0>}}
 
 Do not include any explanation."""
 
@@ -50,8 +55,11 @@ def get_client() -> AsyncOpenAI:
     return _client
 
 
-async def classify_intent(message: str, history: list[dict]) -> tuple[str, float]:
-    """Returns (intent_name, confidence)."""
+VALID_INTENTS = set(INTENTS.keys()) | {"out_of_scope"}
+
+
+async def classify_intent(message: str, history: list[dict]) -> tuple[list[str], float]:
+    """Returns (list of intent names, confidence)."""
     recent_context = ""
     if history:
         last = history[-1]
@@ -70,10 +78,15 @@ async def classify_intent(message: str, history: list[dict]) -> tuple[str, float
 
     raw = response.choices[0].message.content
     parsed = json.loads(raw)
-    intent = parsed.get("intent", "out_of_scope")
+    intents = parsed.get("intents", ["out_of_scope"])
     confidence = float(parsed.get("confidence", 0.0))
 
-    if intent not in INTENTS and intent != "out_of_scope":
-        intent = "out_of_scope"
+    # Sanitise: keep only known intents, preserve order, deduplicate
+    seen = set()
+    clean = []
+    for intent in intents:
+        if intent in VALID_INTENTS and intent not in seen:
+            clean.append(intent)
+            seen.add(intent)
 
-    return intent, confidence
+    return clean or ["out_of_scope"], confidence

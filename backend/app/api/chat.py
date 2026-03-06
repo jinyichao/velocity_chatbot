@@ -10,25 +10,29 @@ router = APIRouter()
 async def chat(req: ChatRequest) -> ChatResponse:
     history = [m.model_dump() for m in req.history]
 
-    # 1. Classify intent
-    intent, confidence = await intent_classifier.classify_intent(req.message, history)
+    # 1. Classify — may return multiple intents
+    intents, confidence = await intent_classifier.classify_intent(req.message, history)
 
-    # 2. Short-circuit intents that don't need RAG
-    if intent == "out_of_scope":
+    # 2. Pure out-of-scope
+    if intents == ["out_of_scope"]:
         reply = settings.OUT_OF_SCOPE_MESSAGE
-        await audit.log_turn(req.session_id, req.message, reply, intent, True)
-        return ChatResponse(reply=reply, intent=intent, session_id=req.session_id)
+        await audit.log_turn(req.session_id, req.message, reply, "out_of_scope", True)
+        return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
 
-    if intent == "greeting":
+    # 3. Pure greeting
+    if intents == ["greeting"]:
         reply = await rag.generate_greeting(req.message, history)
-        await audit.log_turn(req.session_id, req.message, reply, intent, True)
-        return ChatResponse(reply=reply, intent=intent, session_id=req.session_id)
+        await audit.log_turn(req.session_id, req.message, reply, "greeting", True)
+        return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
 
-    # 3. Return intent confirmation
-    intent_label = intent.replace("_", " ")
-    reply = f"Intent identified: **{intent_label}**"
+    # 4. Chain through all in-scope intents (exclude meta-intents)
+    SKIP = {"greeting", "out_of_scope"}
+    scoped = [i for i in intents if i not in SKIP]
 
-    # 4. Audit log
-    await audit.log_turn(req.session_id, req.message, reply, intent, True)
+    lines = "\n".join(f"• **{i.replace('_', ' ')}**" for i in scoped)
+    reply = f"Intent identified:\n{lines}"
 
-    return ChatResponse(reply=reply, intent=intent, session_id=req.session_id)
+    # 5. Audit log (join intents for storage)
+    await audit.log_turn(req.session_id, req.message, reply, ", ".join(intents), True)
+
+    return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
