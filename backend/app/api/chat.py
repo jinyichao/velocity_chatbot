@@ -17,7 +17,7 @@ async def chat(req: ChatRequest):
         # ── V1: TF-IDF only, always maps to a known intent ─────────────────
         if req.version == 1:
             intent, confidence = v1_classifier.classify(req.message)
-            reply = f"- [x] **{intent.replace('_', ' ').title()}**"
+            reply = f"Intent identified:\n• **{intent.replace('_', ' ')}**"
             await audit.log_turn(req.session_id, req.message, reply, intent, True)
             return ChatResponse(reply=reply, intents=[intent], session_id=req.session_id)
 
@@ -42,8 +42,8 @@ async def chat(req: ChatRequest):
 
         SKIP = {"greeting", "out_of_scope"}
         scoped = [i for i in intents if i not in SKIP]
-        lines = "\n".join(f"- [x] **{i.replace('_', ' ').title()}**" for i in scoped)
-        reply = lines
+        lines = "\n".join(f"• **{i.replace('_', ' ')}**" for i in scoped)
+        reply = f"Intent identified:\n{lines}"
 
         await audit.log_turn(req.session_id, req.message, reply, ", ".join(intents), True)
         return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
