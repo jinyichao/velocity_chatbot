@@ -35,13 +35,64 @@ const styles = {
   }),
 };
 
-function renderContent(text) {
+function renderInline(text, keyPrefix) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) =>
     part.startsWith("**") && part.endsWith("**")
-      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      ? <strong key={`${keyPrefix}-${i}`}>{part.slice(2, -2)}</strong>
       : part
   );
+}
+
+function renderContent(text) {
+  const lines = text.split("\n");
+  const result = [];
+  let listItems = [];
+
+  const flushList = () => {
+    if (listItems.length === 0) return;
+    result.push(
+      <ul key={`list-${result.length}`} style={{ listStyle: "none", padding: 0, margin: "4px 0" }}>
+        {listItems}
+      </ul>
+    );
+    listItems = [];
+  };
+
+  lines.forEach((line, i) => {
+    const checkedMatch = line.match(/^- \[x\] (.+)/i);
+    const uncheckedMatch = line.match(/^- \[ \] (.+)/);
+    const labelMatch = line.match(/^> (.+)/);
+
+    if (checkedMatch) {
+      listItems.push(
+        <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 4 }}>
+          <span style={{ color: "#00703c", fontSize: 16, lineHeight: "1.4", flexShrink: 0 }}>✅</span>
+          <span style={{ lineHeight: "1.4" }}>{renderInline(checkedMatch[1], i)}</span>
+        </li>
+      );
+    } else if (uncheckedMatch) {
+      listItems.push(
+        <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 4 }}>
+          <span style={{ color: "#aaa", fontSize: 16, lineHeight: "1.4", flexShrink: 0 }}>⬜</span>
+          <span style={{ lineHeight: "1.4" }}>{renderInline(uncheckedMatch[1], i)}</span>
+        </li>
+      );
+    } else {
+      flushList();
+      if (labelMatch) {
+        result.push(
+          <div key={i} style={{ fontSize: 11, fontWeight: 600, color: "#888", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6 }}>
+            {labelMatch[1]}
+          </div>
+        );
+      } else {
+        result.push(<span key={i}>{renderInline(line, i)}{"\n"}</span>);
+      }
+    }
+  });
+  flushList();
+  return result;
 }
 
 export default function MessageBubble({ message, accentColor = "#c8102e" }) {
