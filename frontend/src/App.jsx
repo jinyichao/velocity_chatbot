@@ -56,7 +56,7 @@ export default function App() {
 
       <ChatWidget
         sessionId={SESSION_A}
-        title="V1 · TF-IDF + Vector"
+        title="V1 · Traditional NLP"
         label="V1"
         color="#c8102e"
         offset={784}
@@ -66,7 +66,7 @@ export default function App() {
 
       <ChatWidget
         sessionId={SESSION_B}
-        title="V2 · LLM + Guardrail"
+        title="V2 · GenAI Controlled Out"
         label="V2"
         color="#0057a8"
         offset={404}
@@ -76,7 +76,7 @@ export default function App() {
 
       <ChatWidget
         sessionId={SESSION_C}
-        title="V3 · Direct LLM"
+        title="V3 · Free Text Out"
         label="V3"
         color="#00703c"
         offset={24}
