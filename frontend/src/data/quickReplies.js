@@ -1,17 +1,13 @@
 // Suggested queries shown in interactive mode, grouped by category
 export const QUICK_REPLIES = [
-  { label: "Check Balance", query: "What is my current account balance?" },
-  { label: "Fund Transfer", query: "I need to transfer $50,000 to our supplier via telegraphic transfer" },
-  { label: "Pay Bills", query: "Please help me pay our IRAS corporate tax bill" },
+  { label: "Balance", query: "What is my current account balance?" },
+  { label: "Transfer", query: "I need to transfer $50,000 to our supplier via telegraphic transfer" },
+  { label: "Bill Payment", query: "Please help me pay our IRAS corporate tax bill" },
   { label: "Transactions", query: "Show me all transactions from last month" },
-  { label: "Statement", query: "I need to download our December bank statement" },
   { label: "FX Rates", query: "What is today's USD to SGD exchange rate?" },
   { label: "Payroll", query: "How do I process payroll for 200 employees this Friday?" },
   { label: "Trade Finance", query: "We need to apply for a Letter of Credit for an import shipment" },
-  { label: "Manage Users", query: "Add a new maker user and assign them the fund transfer role" },
-  { label: "Set Alerts", query: "Set up an SMS alert when my balance drops below $10,000" },
   { label: "Reports", query: "Generate a cash flow report for Q4 2024" },
-  { label: "Cheque", query: "I need to stop a cheque I issued yesterday" },
 ];
 
 export const MULTI_INTENT_REPLIES = [
@@ -19,6 +15,13 @@ export const MULTI_INTENT_REPLIES = [
   { label: "Payroll + Report", query: "Please process payroll and also generate the payroll report afterwards" },
   { label: "FX + Statement", query: "What's the USD/SGD rate and can I also download last month's FX statement?" },
   { label: "User + Alerts", query: "Add a new user and configure their transaction alerts" },
+];
+
+export const MULTI_INTENT_3_REPLIES = [
+  { label: "Balance + Transfer + Statement", query: "Check my balance, transfer $20,000 to our vendor, and download this month's statement" },
+  { label: "Payroll + Report + Alerts", query: "Process payroll, generate the payroll report, and set up a low balance alert for next month" },
+  { label: "User + Alerts + Report", query: "Add a new maker user, set up transaction alerts for them, and generate an access report" },
+  { label: "Transfer + FX + Trade Finance", query: "I need to check FX rates, make an overseas transfer, and apply for a letter of credit for our shipment" },
 ];
 
 export const OUT_OF_SCOPE_REPLIES = [
