@@ -18,7 +18,14 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
   },
-  placeholder: { textAlign: "center" },
+  placeholder: {
+    position: "fixed",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, 30px)",
+    textAlign: "center",
+    pointerEvents: "none",
+  },
   logo: { fontWeight: 700, fontSize: 28, color: "#c8102e", marginBottom: 8 },
   sub: { fontSize: 15, color: "#666" },
   sharedInput: {
