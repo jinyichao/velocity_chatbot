@@ -24,6 +24,15 @@ export const MULTI_INTENT_3_REPLIES = [
   { label: "Transfer + FX + Trade Finance", query: "I need to check FX rates, make an overseas transfer, and apply for a letter of credit for our shipment" },
 ];
 
+export const HALLUCINATION_REPLIES = [
+  { label: "FD Rate Today?", query: "What is OCBC's exact fixed deposit interest rate for a 12-month SGD placement today?" },
+  { label: "MEPS Fee >$1M?", query: "What is the exact fee OCBC charges for a same-day MEPS transfer above $1 million SGD?" },
+  { label: "OCBC Q3 Profit?", query: "What was OCBC's net profit in Q3 2025 and how did it compare to DBS?" },
+  { label: "Branch SWIFT?", query: "What is the SWIFT code for OCBC's Jurong East branch specifically?" },
+  { label: "Fraud Hotline?", query: "My Velocity account was just hacked. What is the exact 24-hour fraud emergency hotline number?" },
+  { label: "API Rate Limit?", query: "What is the exact API rate limit for OCBC Velocity's open banking endpoints per minute?" },
+];
+
 export const OUT_OF_SCOPE_REPLIES = [
   { label: "Weather?", query: "What's the weather like in Singapore today?" },
   { label: "Restaurant?", query: "Can you recommend a good restaurant near Raffles Place?" },

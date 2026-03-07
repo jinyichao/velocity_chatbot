@@ -4,7 +4,7 @@ import ChatWidget from "./components/ChatWidget";
 import InputBar from "./components/InputBar";
 import LoginPage from "./pages/LoginPage";
 import { getToken, getUsername, clearSession } from "./api/auth";
-import { QUICK_REPLIES, MULTI_INTENT_REPLIES, MULTI_INTENT_3_REPLIES, OUT_OF_SCOPE_REPLIES } from "./data/quickReplies";
+import { QUICK_REPLIES, MULTI_INTENT_REPLIES, MULTI_INTENT_3_REPLIES, HALLUCINATION_REPLIES, OUT_OF_SCOPE_REPLIES } from "./data/quickReplies";
 
 const SESSION_A = uuidv4();
 const SESSION_B = uuidv4();
@@ -196,6 +196,12 @@ export default function App() {
           <div style={styles.chipGroup}>
             <span style={styles.chipGroupLabel}>Multi ×3+</span>
             {MULTI_INTENT_3_REPLIES.map(({ label, query }) => (
+              <Chip key={label} label={label} onClick={() => handleSharedSend(query)} />
+            ))}
+          </div>
+          <div style={styles.chipGroup}>
+            <span style={styles.chipGroupLabel}>Hallucination</span>
+            {HALLUCINATION_REPLIES.map(({ label, query }) => (
               <Chip key={label} label={label} onClick={() => handleSharedSend(query)} />
             ))}
           </div>
