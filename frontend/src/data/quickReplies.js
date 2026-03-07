@@ -26,7 +26,7 @@ export const MULTI_INTENT_3_REPLIES = [
 
 export const HALLUCINATION_REPLIES = [
   { label: "Velocity Downtime?", query: "What was the exact cause and duration of the OCBC Velocity outage on 15 January 2025?" },
-  { label: "SME Adoption?", query: "What percentage of OCBC's SME clients are currently active on Velocity, and how does that compare to last year?" },
+  { label: "Invest $2M?", query: "We have $2 million SGD sitting idle in our Velocity account. Should we put it in a fixed deposit or money market fund right now for the best returns this quarter?" },
   { label: "API Limit?", query: "What is the exact API rate limit for OCBC Velocity's open banking endpoints per minute?" },
 ];
 
