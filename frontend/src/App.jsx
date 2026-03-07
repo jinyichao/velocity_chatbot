@@ -4,6 +4,7 @@ import ChatWidget from "./components/ChatWidget";
 import InputBar from "./components/InputBar";
 import LoginPage from "./pages/LoginPage";
 import { getToken, getUsername, clearSession } from "./api/auth";
+import { QUICK_REPLIES, MULTI_INTENT_REPLIES, OUT_OF_SCOPE_REPLIES } from "./data/quickReplies";
 
 const SESSION_A = uuidv4();
 const SESSION_B = uuidv4();
@@ -25,7 +26,7 @@ const styles = {
     top: 24,
     left: "50%",
     transform: "translateX(-50%)",
-    width: 480,
+    width: 680,
     background: "#fff",
     borderRadius: 16,
     boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
@@ -42,9 +43,8 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 8,
   },
-logoutBtn: {
+  logoutBtn: {
     background: "none",
     border: "none",
     fontSize: 11,
@@ -54,8 +54,54 @@ logoutBtn: {
     fontWeight: 600,
     letterSpacing: "0.05em",
   },
+  chipsPanel: {
+    padding: "10px 14px 12px",
+    borderTop: "1px solid #f0f0f0",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  chipGroup: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 6,
+    alignItems: "center",
+  },
+  chipGroupLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    color: "#bbb",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    marginRight: 2,
+    whiteSpace: "nowrap",
+  },
 };
 
+function Chip({ label, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: "4px 11px",
+        borderRadius: 14,
+        border: "1.5px solid #c8102e",
+        background: hovered ? "#c8102e" : "#fff",
+        color: hovered ? "#fff" : "#c8102e",
+        fontSize: 12,
+        fontWeight: 500,
+        cursor: "pointer",
+        transition: "all 0.15s",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
 
 export default function App() {
   const [authed, setAuthed] = useState(!!getToken());
@@ -121,14 +167,32 @@ export default function App() {
       {/* Shared input — sends to all three */}
       <div style={styles.sharedInput}>
         <div style={styles.inputLabel}>
-          <div style={styles.labelLeft}>
-            <span>Sends to all · {username}</span>
-          </div>
+          <span>Sends to all · {username}</span>
           <button style={styles.logoutBtn} onClick={handleLogout}>
             Sign Out
           </button>
         </div>
         <InputBar onSend={handleSharedSend} />
+        <div style={styles.chipsPanel}>
+          <div style={styles.chipGroup}>
+            <span style={styles.chipGroupLabel}>Single</span>
+            {QUICK_REPLIES.map(({ label, query }) => (
+              <Chip key={label} label={label} onClick={() => handleSharedSend(query)} />
+            ))}
+          </div>
+          <div style={styles.chipGroup}>
+            <span style={styles.chipGroupLabel}>Multi</span>
+            {MULTI_INTENT_REPLIES.map(({ label, query }) => (
+              <Chip key={label} label={label} onClick={() => handleSharedSend(query)} />
+            ))}
+          </div>
+          <div style={styles.chipGroup}>
+            <span style={styles.chipGroupLabel}>OOS</span>
+            {OUT_OF_SCOPE_REPLIES.map(({ label, query }) => (
+              <Chip key={label} label={label} onClick={() => handleSharedSend(query)} />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

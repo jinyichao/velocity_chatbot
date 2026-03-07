@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import { sendMessage } from "../api/chat";
-import { QUICK_REPLIES, MULTI_INTENT_REPLIES, OUT_OF_SCOPE_REPLIES } from "../data/quickReplies";
 
 const buildStyles = (color, offset) => ({
   window: {
@@ -80,66 +79,6 @@ function TypingIndicator({ color }) {
 }
 
 
-function ChipGroup({ title, chips, onSend, loading, color }) {
-  return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{
-        fontSize: 10, fontWeight: 700, color: "#aaa",
-        letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6,
-      }}>{title}</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {chips.map(({ label, query }) => (
-          <button
-            key={label}
-            onClick={() => onSend(query)}
-            disabled={loading}
-            style={{
-              padding: "5px 12px",
-              borderRadius: 16,
-              border: `1.5px solid ${color}`,
-              background: "#fff",
-              color: color,
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.5 : 1,
-              transition: "all 0.15s",
-              whiteSpace: "nowrap",
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.background = color;
-                e.target.style.color = "#fff";
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = "#fff";
-              e.target.style.color = color;
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function InteractivePanel({ onSend, loading, color }) {
-  return (
-    <div style={{
-      borderTop: "1px solid #e8e8e8",
-      background: "#fff",
-      padding: "12px 14px",
-      overflowY: "auto",
-      maxHeight: 180,
-    }}>
-      <ChipGroup title="Single intent" chips={QUICK_REPLIES} onSend={onSend} loading={loading} color={color} />
-      <ChipGroup title="Multi-intent" chips={MULTI_INTENT_REPLIES} onSend={onSend} loading={loading} color={color} />
-      <ChipGroup title="Out of scope" chips={OUT_OF_SCOPE_REPLIES} onSend={onSend} loading={loading} color={color} />
-    </div>
-  );
-}
 
 export default function ChatWidget({
   sessionId,
@@ -212,7 +151,6 @@ export default function ChatWidget({
           <div ref={bottomRef} />
         </div>
 
-        <InteractivePanel onSend={handleSend} loading={loading} color={color} />
       </div>
     </>
   );
