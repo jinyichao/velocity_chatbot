@@ -18,6 +18,21 @@ class Settings(BaseSettings):
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
 
+    # Auth — comma-separated "user:pass" pairs, e.g. "admin:secret,demo:demo123"
+    USERS: str = "admin:admin123"
+    JWT_SECRET: str = "change-me-in-production"
+    JWT_EXPIRE_MINUTES: int = 480
+
+    @property
+    def users_dict(self) -> dict[str, str]:
+        result = {}
+        for pair in self.USERS.split(","):
+            pair = pair.strip()
+            if ":" in pair:
+                u, p = pair.split(":", 1)
+                result[u.strip()] = p.strip()
+        return result
+
     # Out-of-scope fallback message
     OUT_OF_SCOPE_MESSAGE: str = (
         "That is out of my scope, I will assist you on figuring out "

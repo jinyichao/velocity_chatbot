@@ -6,3 +6,4 @@ pydantic-settings==2.7.0
 python-dotenv==1.0.1
 python-multipart==0.0.20
 scikit-learn==1.6.1
+PyJWT==2.10.1

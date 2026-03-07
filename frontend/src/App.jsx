@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import ChatWidget from "./components/ChatWidget";
 import InputBar from "./components/InputBar";
+import LoginPage from "./pages/LoginPage";
+import { getToken, getUsername, clearSession } from "./api/auth";
 
 const SESSION_A = uuidv4();
 const SESSION_B = uuidv4();
@@ -37,15 +39,45 @@ const styles = {
     borderBottom: "1px solid #f0f0f0",
     letterSpacing: "0.05em",
     textTransform: "uppercase",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  logoutBtn: {
+    background: "none",
+    border: "none",
+    fontSize: 11,
+    color: "#c8102e",
+    cursor: "pointer",
+    padding: 0,
+    fontWeight: 600,
+    letterSpacing: "0.05em",
   },
 };
 
 export default function App() {
+  const [authed, setAuthed] = useState(!!getToken());
+  const [username, setUsername] = useState(getUsername() || "");
   const [pendingMessage, setPendingMessage] = useState(null);
+
+  const handleLogin = (user) => {
+    setUsername(user);
+    setAuthed(true);
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    setAuthed(false);
+    setUsername("");
+  };
 
   const handleSharedSend = (text) => {
     setPendingMessage({ text, key: Date.now() });
   };
+
+  if (!authed) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   return (
     <div style={styles.page}>
@@ -86,7 +118,12 @@ export default function App() {
 
       {/* Shared input — sends to all three */}
       <div style={styles.sharedInput}>
-        <div style={styles.inputLabel}>Shared input — sends to all</div>
+        <div style={styles.inputLabel}>
+          <span>Shared input — sends to all · {username}</span>
+          <button style={styles.logoutBtn} onClick={handleLogout}>
+            Sign Out
+          </button>
+        </div>
         <InputBar onSend={handleSharedSend} />
       </div>
     </div>
