@@ -149,7 +149,6 @@ export default function ChatWidget({
   offset = 24,
   pendingMessage = null,
   version = 2,
-  mode = "chat",
 }) {
   const s = buildStyles(color, offset);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -213,9 +212,7 @@ export default function ChatWidget({
           <div ref={bottomRef} />
         </div>
 
-        {mode === "interactive" && (
-          <InteractivePanel onSend={handleSend} loading={loading} color={color} />
-        )}
+        <InteractivePanel onSend={handleSend} loading={loading} color={color} />
       </div>
     </>
   );
