@@ -200,14 +200,14 @@ export default function App() {
             ))}
           </div>
           <div style={styles.chipGroup}>
-            <span style={styles.chipGroupLabel}>Hallucination</span>
-            {HALLUCINATION_REPLIES.map(({ label, query }) => (
+            <span style={styles.chipGroupLabel}>OOS</span>
+            {OUT_OF_SCOPE_REPLIES.map(({ label, query }) => (
               <Chip key={label} label={label} onClick={() => handleSharedSend(query)} />
             ))}
           </div>
           <div style={styles.chipGroup}>
-            <span style={styles.chipGroupLabel}>OOS</span>
-            {OUT_OF_SCOPE_REPLIES.map(({ label, query }) => (
+            <span style={styles.chipGroupLabel}>Hallucination</span>
+            {HALLUCINATION_REPLIES.map(({ label, query }) => (
               <Chip key={label} label={label} onClick={() => handleSharedSend(query)} />
             ))}
           </div>
