@@ -139,6 +139,7 @@ export default function App() {
       <div style={styles.placeholder}>
         <div style={styles.logo}>OCBC Velocity</div>
         <div style={styles.sub}>Business Banking Platform</div>
+        <div style={{ fontSize: 13, color: "#aaa", marginTop: 4 }}>Service AI Chatbot Demo</div>
       </div>
 
       <ChatWidget
