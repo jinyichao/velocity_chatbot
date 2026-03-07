@@ -61,8 +61,16 @@ const styles = {
     fontWeight: 600,
     letterSpacing: "0.05em",
   },
+  chipsLabel: {
+    padding: "6px 14px 0",
+    fontSize: 10,
+    fontWeight: 700,
+    color: "#ccc",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
   chipsPanel: {
-    padding: "10px 14px 12px",
+    padding: "6px 14px 12px",
     borderTop: "1px solid #f0f0f0",
     display: "flex",
     flexDirection: "column",
@@ -181,6 +189,7 @@ export default function App() {
           </button>
         </div>
         <InputBar onSend={handleSharedSend} />
+        <div style={styles.chipsLabel}>Frequently asked</div>
         <div style={styles.chipsPanel}>
           <div style={styles.chipGroup}>
             <span style={styles.chipGroupLabel}>Single</span>
