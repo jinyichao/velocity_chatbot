@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import { sendMessage } from "../api/chat";
+import { QUICK_REPLIES, MULTI_INTENT_REPLIES, OUT_OF_SCOPE_REPLIES } from "../data/quickReplies";
 
 const buildStyles = (color, offset) => ({
   window: {
@@ -20,27 +21,28 @@ const buildStyles = (color, offset) => ({
   header: {
     background: color,
     color: "#fff",
-    padding: "14px 16px",
+    padding: "10px 14px",
     display: "flex",
     alignItems: "center",
     gap: 10,
   },
   headerAvatar: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: "50%",
     background: "rgba(255,255,255,0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 700,
+    flexShrink: 0,
   },
 });
 
 const baseStyles = {
   headerInfo: { flex: 1 },
-  headerName: { fontWeight: 600, fontSize: 15 },
+  headerName: { fontWeight: 600, fontSize: 14 },
   headerStatus: {
     fontSize: 11, opacity: 0.85, display: "flex", alignItems: "center", gap: 4,
   },
@@ -63,14 +65,110 @@ const baseStyles = {
 function TypingIndicator({ color }) {
   return (
     <div style={baseStyles.typing}>
-      <div style={{ width: 28, height: 28, borderRadius: "50%", background: color,
+      <div style={{
+        width: 28, height: 28, borderRadius: "50%", background: color,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 12, color: "#fff", fontWeight: 600, flexShrink: 0 }}>V</div>
+        fontSize: 12, color: "#fff", fontWeight: 600, flexShrink: 0,
+      }}>V</div>
       <div style={baseStyles.typingDots}>
         {["0s", "0.2s", "0.4s"].map((d, i) => (
           <div key={i} style={baseStyles.dot(d)} />
         ))}
       </div>
+    </div>
+  );
+}
+
+function ModeToggle({ mode, onChange, color }) {
+  return (
+    <div style={{
+      display: "flex",
+      background: "rgba(255,255,255,0.15)",
+      borderRadius: 20,
+      padding: 2,
+      gap: 2,
+    }}>
+      {["chat", "interactive"].map((m) => (
+        <button
+          key={m}
+          onClick={() => onChange(m)}
+          style={{
+            padding: "3px 10px",
+            borderRadius: 16,
+            border: "none",
+            cursor: "pointer",
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.03em",
+            background: mode === m ? "#fff" : "transparent",
+            color: mode === m ? color : "rgba(255,255,255,0.8)",
+            transition: "all 0.15s",
+          }}
+        >
+          {m === "chat" ? "Chat" : "Interactive"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ChipGroup({ title, chips, onSend, loading, color }) {
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{
+        fontSize: 10, fontWeight: 700, color: "#aaa",
+        letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6,
+      }}>{title}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {chips.map(({ label, query }) => (
+          <button
+            key={label}
+            onClick={() => onSend(query)}
+            disabled={loading}
+            style={{
+              padding: "5px 12px",
+              borderRadius: 16,
+              border: `1.5px solid ${color}`,
+              background: "#fff",
+              color: color,
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.5 : 1,
+              transition: "all 0.15s",
+              whiteSpace: "nowrap",
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.target.style.background = color;
+                e.target.style.color = "#fff";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = "#fff";
+              e.target.style.color = color;
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InteractivePanel({ onSend, loading, color }) {
+  return (
+    <div style={{
+      borderTop: "1px solid #e8e8e8",
+      background: "#fff",
+      padding: "12px 14px",
+      overflowY: "auto",
+      maxHeight: 180,
+    }}>
+      <ChipGroup title="Single intent" chips={QUICK_REPLIES} onSend={onSend} loading={loading} color={color} />
+      <ChipGroup title="Multi-intent" chips={MULTI_INTENT_REPLIES} onSend={onSend} loading={loading} color={color} />
+      <ChipGroup title="Out of scope" chips={OUT_OF_SCOPE_REPLIES} onSend={onSend} loading={loading} color={color} />
     </div>
   );
 }
@@ -89,6 +187,7 @@ export default function ChatWidget({
 
   const [messages, setMessages] = useState([{ role: "assistant", content: welcome }]);
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState("chat");
   const bottomRef = useRef(null);
   const prevKeyRef = useRef(null);
 
@@ -96,7 +195,6 @@ export default function ChatWidget({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Fire when a new shared message arrives
   useEffect(() => {
     if (!pendingMessage || pendingMessage.key === prevKeyRef.current) return;
     prevKeyRef.current = pendingMessage.key;
@@ -137,6 +235,7 @@ export default function ChatWidget({
               Online
             </div>
           </div>
+          <ModeToggle mode={mode} onChange={setMode} color={color} />
         </div>
 
         <div style={baseStyles.messages}>
@@ -146,6 +245,10 @@ export default function ChatWidget({
           {loading && <TypingIndicator color={color} />}
           <div ref={bottomRef} />
         </div>
+
+        {mode === "interactive" && (
+          <InteractivePanel onSend={handleSend} loading={loading} color={color} />
+        )}
       </div>
     </>
   );
