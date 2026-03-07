@@ -20,7 +20,7 @@ const styles = {
   },
   placeholder: {
     position: "fixed",
-    top: "calc(50vh - 147px)",
+    top: "calc(50vh - 120px)",
     left: "50%",
     transform: "translate(-50%, -50%)",
     textAlign: "center",
