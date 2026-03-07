@@ -25,7 +25,8 @@ export const MULTI_INTENT_3_REPLIES = [
 ];
 
 export const HALLUCINATION_REPLIES = [
-  { label: "Branch SWIFT?", query: "What is the SWIFT code for OCBC's Jurong East branch specifically?" },
+  { label: "Velocity Downtime?", query: "What was the exact cause and duration of the OCBC Velocity outage on 15 January 2025?" },
+  { label: "SME Adoption?", query: "What percentage of OCBC's SME clients are currently active on Velocity, and how does that compare to last year?" },
   { label: "API Limit?", query: "What is the exact API rate limit for OCBC Velocity's open banking endpoints per minute?" },
 ];
 
