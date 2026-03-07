@@ -33,7 +33,7 @@ const styles = {
     overflow: "hidden",
   },
   inputLabel: {
-    padding: "6px 16px",
+    padding: "6px 12px 6px 16px",
     fontSize: 11,
     color: "#999",
     borderBottom: "1px solid #f0f0f0",
@@ -42,7 +42,9 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
   },
+  labelLeft: { display: "flex", alignItems: "center", gap: 10 },
   logoutBtn: {
     background: "none",
     border: "none",
@@ -55,10 +57,44 @@ const styles = {
   },
 };
 
+function ModeToggle({ mode, onChange }) {
+  return (
+    <div style={{
+      display: "flex",
+      background: "#f0f0f0",
+      borderRadius: 20,
+      padding: 2,
+      gap: 2,
+    }}>
+      {["chat", "interactive"].map((m) => (
+        <button
+          key={m}
+          onClick={() => onChange(m)}
+          style={{
+            padding: "3px 10px",
+            borderRadius: 16,
+            border: "none",
+            cursor: "pointer",
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.03em",
+            background: mode === m ? "#c8102e" : "transparent",
+            color: mode === m ? "#fff" : "#999",
+            transition: "all 0.15s",
+          }}
+        >
+          {m === "chat" ? "Chat" : "Interactive"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function App() {
   const [authed, setAuthed] = useState(!!getToken());
   const [username, setUsername] = useState(getUsername() || "");
   const [pendingMessage, setPendingMessage] = useState(null);
+  const [mode, setMode] = useState("chat");
 
   const handleLogin = (user) => {
     setUsername(user);
@@ -94,6 +130,7 @@ export default function App() {
         offset={784}
         pendingMessage={pendingMessage}
         version={1}
+        mode={mode}
       />
 
       <ChatWidget
@@ -104,6 +141,7 @@ export default function App() {
         offset={404}
         pendingMessage={pendingMessage}
         version={2}
+        mode={mode}
       />
 
       <ChatWidget
@@ -114,17 +152,21 @@ export default function App() {
         offset={24}
         pendingMessage={pendingMessage}
         version={3}
+        mode={mode}
       />
 
       {/* Shared input — sends to all three */}
       <div style={styles.sharedInput}>
         <div style={styles.inputLabel}>
-          <span>Shared input — sends to all · {username}</span>
+          <div style={styles.labelLeft}>
+            <span>Sends to all · {username}</span>
+            <ModeToggle mode={mode} onChange={setMode} />
+          </div>
           <button style={styles.logoutBtn} onClick={handleLogout}>
             Sign Out
           </button>
         </div>
-        <InputBar onSend={handleSharedSend} />
+        {mode === "chat" && <InputBar onSend={handleSharedSend} />}
       </div>
     </div>
   );

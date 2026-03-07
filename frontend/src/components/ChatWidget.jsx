@@ -79,38 +79,6 @@ function TypingIndicator({ color }) {
   );
 }
 
-function ModeToggle({ mode, onChange, color }) {
-  return (
-    <div style={{
-      display: "flex",
-      background: "rgba(255,255,255,0.15)",
-      borderRadius: 20,
-      padding: 2,
-      gap: 2,
-    }}>
-      {["chat", "interactive"].map((m) => (
-        <button
-          key={m}
-          onClick={() => onChange(m)}
-          style={{
-            padding: "3px 10px",
-            borderRadius: 16,
-            border: "none",
-            cursor: "pointer",
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: "0.03em",
-            background: mode === m ? "#fff" : "transparent",
-            color: mode === m ? color : "rgba(255,255,255,0.8)",
-            transition: "all 0.15s",
-          }}
-        >
-          {m === "chat" ? "Chat" : "Interactive"}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function ChipGroup({ title, chips, onSend, loading, color }) {
   return (
@@ -181,13 +149,13 @@ export default function ChatWidget({
   offset = 24,
   pendingMessage = null,
   version = 2,
+  mode = "chat",
 }) {
   const s = buildStyles(color, offset);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
 
   const [messages, setMessages] = useState([{ role: "assistant", content: welcome }]);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState("chat");
   const bottomRef = useRef(null);
   const prevKeyRef = useRef(null);
 
@@ -235,7 +203,6 @@ export default function ChatWidget({
               Online
             </div>
           </div>
-          <ModeToggle mode={mode} onChange={setMode} color={color} />
         </div>
 
         <div style={baseStyles.messages}>
