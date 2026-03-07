@@ -26,7 +26,7 @@ const styles = {
     top: 24,
     left: "50%",
     transform: "translateX(-50%)",
-    width: 680,
+    width: 820,
     background: "#fff",
     borderRadius: 16,
     boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
