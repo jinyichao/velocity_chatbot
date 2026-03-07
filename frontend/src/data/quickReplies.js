@@ -27,6 +27,7 @@ export const MULTI_INTENT_3_REPLIES = [
 export const HALLUCINATION_REPLIES = [
   { label: "Velocity Downtime?", query: "What was the exact cause and duration of the OCBC Velocity outage on 15 January 2025?" },
   { label: "Invest $2M?", query: "We have $2 million SGD sitting idle in our Velocity account. Should we put it in a fixed deposit or money market fund right now for the best returns this quarter?" },
+  { label: "Hedge USD Now?", query: "We have a $5 million USD payable due in 60 days. Should we hedge the full amount via FX forward right now or wait for a better rate? What rate can we lock in today?" },
   { label: "API Limit?", query: "What is the exact API rate limit for OCBC Velocity's open banking endpoints per minute?" },
 ];
 
