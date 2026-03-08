@@ -198,12 +198,6 @@ export default function App() {
             ))}
           </div>
           <div style={styles.chipGroup}>
-            <span style={styles.chipGroupLabel}>Multi ×2</span>
-            {MULTI_INTENT_REPLIES.map(({ label, query }) => (
-              <Chip key={label} label={label} onClick={() => handleSharedSend(query)} />
-            ))}
-          </div>
-          <div style={styles.chipGroup}>
             <span style={styles.chipGroupLabel}>Multi ×3+</span>
             {MULTI_INTENT_3_REPLIES.map(({ label, query }) => (
               <Chip key={label} label={label} onClick={() => handleSharedSend(query)} />
