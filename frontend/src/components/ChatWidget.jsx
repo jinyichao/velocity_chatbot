@@ -5,7 +5,7 @@ import { sendMessage } from "../api/chat";
 const buildStyles = (color, offset) => ({
   window: {
     position: "fixed",
-    bottom: 24,
+    bottom: 12,
     right: offset,
     width: 360,
     height: 520,
