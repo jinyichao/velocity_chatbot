@@ -27,14 +27,18 @@ export const MULTI_INTENT_3_REPLIES = [
 export const HALLUCINATION_REPLIES = [
   { label: "Velocity Downtime?", query: "What was the exact cause and duration of the OCBC Velocity outage on 15 January 2025?" },
   { label: "Invest $2M?", query: "We have $2 million SGD sitting idle in our Velocity account. Should we put it in a fixed deposit or money market fund right now for the best returns this quarter?" },
-  { label: "Hedge USD Now?", query: "We have a $5 million USD payable due in 60 days. Should we hedge the full amount via FX forward right now or wait for a better rate? What rate can we lock in today?" },
   { label: "API Limit?", query: "What is the exact API rate limit for OCBC Velocity's open banking endpoints per minute?" },
 ];
 
+export const MULTILINGUAL_REPLIES = [
+  { label: "工资+报告 (ZH)", query: "本月需要给200名员工发放工资，请问如何通过Velocity批量处理？发放完成后能否自动生成工资报告并发送给财务部门？" },
+  { label: "外汇+转账 (ZH)", query: "我需要查询今天的美元兑新币汇率，并安排一笔10万美元的电汇付款给我们在上海的供应商，请问最快什么时候能到账？" },
+  { label: "残高+明細 (JA)", query: "先月の取引履歴をすべて確認したいのですが、特に50万円以上の大口送金のみをフィルタリングして表示し、CSV形式でエクスポートすることは可能ですか？" },
+  { label: "Gaji+Laporan (ID)", query: "Kami perlu memproses penggajian untuk 150 karyawan pada akhir bulan ini dan sekaligus menghasilkan laporan arus kas untuk kuartal ini. Bagaimana cara melakukannya melalui Velocity?" },
+  { label: "Transfer+Alert (ID)", query: "Saya ingin melakukan transfer GIRO sebesar 200 juta rupiah ke rekening vendor kami, dan mengatur notifikasi otomatis setiap kali saldo rekening turun di bawah 50 juta rupiah" },
+];
+
 export const OUT_OF_SCOPE_REPLIES = [
-  { label: "Weather?", query: "What's the weather like in Singapore today?" },
-  { label: "Restaurant?", query: "Can you recommend a good restaurant near Raffles Place?" },
-  { label: "Write code?", query: "Write me a Python script to automate Excel" },
   { label: "Tell a joke", query: "Tell me a funny joke" },
   { label: "Stock tips?", query: "Which stocks should I buy right now to get rich quickly?" },
   { label: "Competitor?", query: "Is DBS or UOB better than OCBC for business banking?" },

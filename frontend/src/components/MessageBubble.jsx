@@ -21,12 +21,12 @@ const styles = {
     color: "#fff",
     fontWeight: 600,
   },
-  bubble: (role, color) => ({
+  bubble: (role, color, dark) => ({
     maxWidth: "72%",
     padding: "10px 14px",
     borderRadius: role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-    background: role === "user" ? color : "#fff",
-    color: role === "user" ? "#fff" : "#1a1a1a",
+    background: role === "user" ? color : (dark ? "#252525" : "#fff"),
+    color: role === "user" ? "#fff" : (dark ? "#f0f0f0" : "#1a1a1a"),
     fontSize: 14,
     lineHeight: 1.5,
     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
@@ -82,7 +82,7 @@ function renderContent(text) {
       flushList();
       if (labelMatch) {
         result.push(
-          <div key={i} style={{ fontSize: 11, fontWeight: 600, color: "#888", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6 }}>
+          <div key={i} style={{ fontSize: 11, fontWeight: 600, color: "#aaa", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6 }}>
             {labelMatch[1]}
           </div>
         );
@@ -95,14 +95,69 @@ function renderContent(text) {
   return result;
 }
 
-export default function MessageBubble({ message, accentColor = "#c8102e" }) {
+function parseIntents(content) {
+  if (!content.startsWith("Intent identified:")) return null;
+  const lines = content.split("\n").slice(1);
+  const intents = lines
+    .map(l => l.match(/^[•\-]\s*\*?\*?(.+?)\*?\*?$/))
+    .filter(Boolean)
+    .map(m => m[1].trim());
+  return intents.length > 0 ? intents : null;
+}
+
+function IntentBubbles({ intents, accentColor, dark }) {
+  return (
+    <div style={{
+      background: dark ? "#252525" : "#fff",
+      borderRadius: "18px 18px 18px 4px",
+      padding: "10px 14px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+      maxWidth: "72%",
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: dark ? "#888" : "#aaa", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+        Intent identified
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {intents.map((intent) => (
+          <div key={intent} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ color: accentColor, fontSize: 16, lineHeight: 1 }}>•</span>
+            <button style={{
+              display: "inline-flex", alignItems: "center",
+              padding: "6px 14px",
+              borderRadius: 20,
+              background: "transparent",
+              border: `1.5px solid ${accentColor}`,
+              color: accentColor,
+              fontSize: 13, fontWeight: 600,
+              letterSpacing: "0.01em",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              transition: "background 0.15s, color 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
+            >
+              {intent}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function MessageBubble({ message, accentColor = "#c8102e", dark = false }) {
   const { role, content } = message;
+  const intents = role === "assistant" ? parseIntents(content) : null;
   return (
     <div style={styles.row(role)}>
       {role === "assistant" && (
         <div style={{ ...styles.avatar, background: accentColor }}>V</div>
       )}
-      <div style={styles.bubble(role, accentColor)}>{renderContent(content)}</div>
+      {intents
+        ? <IntentBubbles intents={intents} accentColor={accentColor} dark={dark} />
+        : <div style={styles.bubble(role, accentColor, dark)}>{renderContent(content)}</div>
+      }
     </div>
   );
 }

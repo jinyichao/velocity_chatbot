@@ -1,42 +1,6 @@
 import React, { useState } from "react";
 
-const styles = {
-  container: {
-    display: "flex",
-    alignItems: "center",
-    padding: "10px 12px",
-    borderTop: "1px solid #e8e8e8",
-    background: "#fff",
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    border: "1px solid #d9d9d9",
-    borderRadius: 20,
-    padding: "8px 14px",
-    fontSize: 14,
-    outline: "none",
-    resize: "none",
-    fontFamily: "inherit",
-    maxHeight: 100,
-    lineHeight: 1.4,
-  },
-  sendBtn: (disabled) => ({
-    width: 36,
-    height: 36,
-    borderRadius: "50%",
-    background: disabled ? "#e0e0e0" : "#c8102e",
-    border: "none",
-    cursor: disabled ? "not-allowed" : "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    transition: "background 0.2s",
-  }),
-};
-
-export default function InputBar({ onSend, disabled }) {
+export default function InputBar({ onSend, disabled, dark }) {
   const [text, setText] = useState("");
 
   const handleSend = () => {
@@ -53,11 +17,23 @@ export default function InputBar({ onSend, disabled }) {
     }
   };
 
+  const isEmpty = !text.trim() || disabled;
+
   return (
-    <div style={styles.container}>
+    <div style={{
+      display: "flex", alignItems: "center", padding: "10px 12px",
+      borderTop: `1px solid ${dark ? "#2a2a2a" : "#e8e8e8"}`,
+      background: dark ? "#1a1a1a" : "#fff", gap: 8, transition: "background 0.2s",
+    }}>
       <textarea
-        style={styles.input}
-        placeholder="Type a message..."
+        style={{
+          flex: 1, border: `1px solid ${dark ? "#333" : "#d9d9d9"}`,
+          borderRadius: 20, padding: "8px 14px", fontSize: 14, outline: "none",
+          resize: "none", fontFamily: "inherit", maxHeight: 100, lineHeight: 1.4,
+          background: dark ? "#252525" : "#fff", color: dark ? "#fff" : "#111",
+          transition: "background 0.2s, border-color 0.2s",
+        }}
+        placeholder="Type a banking question..."
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -65,9 +41,15 @@ export default function InputBar({ onSend, disabled }) {
         disabled={disabled}
       />
       <button
-        style={styles.sendBtn(!text.trim() || disabled)}
+        style={{
+          width: 32, height: 32, borderRadius: "50%",
+          background: isEmpty ? (dark ? "#333" : "#e0e0e0") : "#c8102e",
+          border: "none", cursor: isEmpty ? "not-allowed" : "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0, transition: "background 0.2s",
+        }}
         onClick={handleSend}
-        disabled={!text.trim() || disabled}
+        disabled={isEmpty}
         aria-label="Send"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
