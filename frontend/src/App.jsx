@@ -147,6 +147,139 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
 }
 
 const VELOCITY_NAV = ["Home", "Accounts", "Pay and transfer", "FX and treasury", "Invoices", "Trade finance", "Tools", "Administration"];
+
+function AddUserForm({ selectedRoles, onClose }) {
+  const hasSignatory = selectedRoles.some(r => r.toLowerCase().includes("signator"));
+  const hasBanking   = selectedRoles.some(r => r.toLowerCase().includes("business online banking") && !r.toLowerCase().includes("administrator"));
+  const hasFX        = selectedRoles.some(r => r.toLowerCase().includes("fx contract"));
+  const hasContact   = selectedRoles.some(r => r.toLowerCase().includes("contact person"));
+
+  const [learnOpen, setLearnOpen] = useState(true);
+  const [name, setName]   = useState("Peter Poh");
+  const [nric, setNric]   = useState("S1234567C");
+  const [mobile, setMobile] = useState("91234567");
+  const [email, setEmail] = useState("Peter.poh@email.com");
+  const [userId, setUserId] = useState("Peterpoh123");
+
+  const inputStyle = {
+    width: "100%", border: "none", borderBottom: "1px solid #ddd",
+    outline: "none", fontSize: 14, padding: "8px 0", fontFamily: "inherit",
+    background: "transparent", color: "#111", boxSizing: "border-box",
+  };
+  const fieldWrap = { background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: 8, padding: "12px 16px", flex: 1 };
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e0e0e0", padding: "28px 32px", maxWidth: 860, boxSizing: "border-box" }}>
+      {/* Title */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+        <div style={{ fontSize: 22, fontWeight: 700 }}>Add user</div>
+        <div style={{
+          background: "linear-gradient(90deg, #67e8f9, #818cf8)",
+          borderRadius: 20, padding: "3px 12px",
+          fontSize: 12, fontWeight: 600, color: "#fff",
+          display: "flex", alignItems: "center", gap: 5,
+        }}>✦ AI Suggested</div>
+        <div style={{ flex: 1 }} />
+        <button onClick={onClose} style={{ background: "#f0f0f0", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+      </div>
+
+      {/* Fields row 1 */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+        <div style={fieldWrap}><input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name (as shown in ID)" style={inputStyle} /></div>
+        <div style={fieldWrap}><input value={nric} onChange={e => setNric(e.target.value)} placeholder="NRIC no." style={inputStyle} /></div>
+      </div>
+      {/* Fields row 2 */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 28 }}>
+        <div style={{ ...fieldWrap, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 13, color: "#555", whiteSpace: "nowrap" }}>Mobile no.</span>
+          <span style={{ fontSize: 13, color: "#333", borderRight: "1px solid #ddd", paddingRight: 8 }}>+65 ▾</span>
+          <input value={mobile} onChange={e => setMobile(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+        </div>
+        <div style={fieldWrap}><input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" style={inputStyle} /></div>
+      </div>
+
+      {/* Roles */}
+      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Roles</div>
+
+      {/* Sign to authorise */}
+      <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
+        <div style={{ width: 20, height: 20, borderRadius: 4, background: hasSignatory ? "#3d5166" : "#fff", border: `2px solid ${hasSignatory ? "#3d5166" : "#ccc"}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
+          {hasSignatory && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
+        </div>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Sign to authorise transactions</div>
+          <div style={{ fontSize: 13, color: "#666", lineHeight: 1.5 }}>Authorised Signatory who can sign or accept documents (e.g. payment instructions, bills of exchange) on behalf of the account holder. Automatically acts as entity's contact person.</div>
+        </div>
+      </div>
+
+      {/* View create authorise */}
+      <div style={{ display: "flex", gap: 14, marginBottom: hasBanking ? 12 : 20 }}>
+        <div style={{ width: 20, height: 20, borderRadius: 4, background: hasBanking ? "#3d5166" : "#fff", border: `2px solid ${hasBanking ? "#3d5166" : "#ccc"}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
+          {hasBanking && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>View, create and authorise online transactions</div>
+          <div style={{ fontSize: 13, color: "#666", marginBottom: 10 }}>Business online banking user (Maker and Authoriser)</div>
+          {hasBanking && (
+            <>
+              <div style={{ background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: 8, padding: "10px 14px", maxWidth: 320, marginBottom: 6 }}>
+                <input value={userId} onChange={e => setUserId(e.target.value)} style={{ ...inputStyle, background: "transparent" }} placeholder="User ID" />
+              </div>
+              <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.</div>
+              {/* Learn what user can do */}
+              <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", maxWidth: 480 }}>
+                <div onClick={() => setLearnOpen(v => !v)} style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+                  <span>Learn what the user can do</span>
+                  <span style={{ fontSize: 12, color: "#888" }}>{learnOpen ? "Hide ∧" : "Show ∨"}</span>
+                </div>
+                {learnOpen && (
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: "#fafafa", borderTop: "1px solid #e0e0e0" }}>
+                        <th style={{ padding: "8px 16px", textAlign: "left", fontWeight: 600, borderRight: "1px solid #e0e0e0" }}>Role</th>
+                        <th style={{ padding: "8px 16px", textAlign: "left", fontWeight: 600 }}>What the user can do</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        ["Maker", "Create transactions (e.g. Telegraphic Transfers) that will be sent to the Authoriser(s) for review."],
+                        ["Authoriser", "Authorise transactions that have been requested by a Maker. Depending on your entity's setup, transactions will require the approval of one or more Authorisers."],
+                      ].map(([role, desc]) => (
+                        <tr key={role} style={{ borderTop: "1px solid #e0e0e0" }}>
+                          <td style={{ padding: "10px 16px", fontWeight: 600, borderRight: "1px solid #e0e0e0", verticalAlign: "top", whiteSpace: "nowrap" }}>{role}</td>
+                          <td style={{ padding: "10px 16px", color: "#555", lineHeight: 1.5 }}>{desc}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Other roles */}
+      <div style={{ fontWeight: 700, fontSize: 16, margin: "24px 0 16px" }}>Other roles</div>
+      {[
+        { label: "Book FX Contract (only for business online banking users)", checked: hasFX },
+        { label: "Act as entity's contact person", checked: hasContact },
+      ].map(({ label, checked }) => (
+        <div key={label} style={{ display: "flex", gap: 14, marginBottom: 14, alignItems: "flex-start" }}>
+          <div style={{ width: 20, height: 20, borderRadius: 4, background: checked ? "#3d5166" : "#fff", border: `2px solid ${checked ? "#3d5166" : "#ccc"}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+            {checked && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
+          </div>
+          <div style={{ fontSize: 14, color: "#333" }}>{label}</div>
+        </div>
+      ))}
+
+      {/* Confirm */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 28 }}>
+        <button onClick={onClose} style={{ padding: "10px 32px", background: "#3d5166", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Confirm</button>
+      </div>
+    </div>
+  );
+}
 const JOURNEY_USERS = [
   { name: "Peter Poh Wen Xiang", sub: "", ap: true,  as: false, role: "Maker and Authoriser" },
   { name: "Alex Loh", sub: "Entity's contact person\nBusiness online banking contact person", ap: true, as: true, role: "Maker and Authoriser" },
@@ -160,6 +293,7 @@ function JourneyPage({ dark }) {
   const [pendingMessage, setPendingMessage] = useState(null);
   const [chipsOpen, setChipsOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [addUserRoles, setAddUserRoles] = useState(null);
 
   const handleChatSend = () => {
     const text = chatInput.trim();
@@ -264,6 +398,9 @@ function JourneyPage({ dark }) {
             }}>Roles</button>
           </div>
 
+          {addUserRoles ? (
+            <AddUserForm selectedRoles={addUserRoles} onClose={() => setAddUserRoles(null)} />
+          ) : (<>
           {/* Account dropdown + Manage users */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
             <div>
@@ -291,7 +428,6 @@ function JourneyPage({ dark }) {
 
           {/* Table */}
           <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
-            {/* Header row */}
             <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", background: "#fafafa", borderBottom: "1px solid #e0e0e0" }}>
               <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
               <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
@@ -310,7 +446,6 @@ function JourneyPage({ dark }) {
                 <div style={{ color: "#0057a8", fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
               </div>
             </div>
-            {/* Data rows */}
             {JOURNEY_USERS.map((u, i) => (
               <div key={u.name} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < JOURNEY_USERS.length - 1 ? "1px solid #e0e0e0" : "none" }}>
                 <div style={{ padding: "16px 20px" }}>
@@ -329,6 +464,7 @@ function JourneyPage({ dark }) {
               </div>
             ))}
           </div>
+          </>)}
 
           {/* Footer */}
           <div style={{ marginTop: 60, paddingTop: 20, borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#888" }}>
@@ -379,6 +515,7 @@ function JourneyPage({ dark }) {
               "add user": { type: "role_selector" },
               "add_user": { type: "role_selector" },
             }}
+            onRoleConfirm={(roles) => setAddUserRoles(roles)}
           />
 
           {/* Input bar */}

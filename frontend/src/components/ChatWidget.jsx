@@ -161,6 +161,7 @@ export default function ChatWidget({
   showHeader = true,
   assistantBg,
   intentResponses = {},
+  onRoleConfirm,
 }) {
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -201,6 +202,7 @@ export default function ChatWidget({
       { role: "user", content: `Selected roles: ${roleList}` },
       { role: "assistant", content: "Got it! We will need a few more user details to proceed. Please provide us the following details in the following formats:\n\n1. Full Name (as shown in ID)\n2. NRIC no.\n3. Mobile no.\n4. Email\n5. UserID (Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.)" },
     ]);
+    if (onRoleConfirm) onRoleConfirm(selectedRoles);
   };
 
   const handleRoleCancel = () => setShowRoleSelector(false);
