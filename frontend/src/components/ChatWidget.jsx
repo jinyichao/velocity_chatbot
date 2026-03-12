@@ -2,6 +2,65 @@ import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import { sendMessage } from "../api/chat";
 
+const ROLES = [
+  "Business Online Banking - Viewer",
+  "Business Online Banking - Maker",
+  "Business Online Banking - Authoriser",
+  "Business Online Banking - Administrator",
+  "Authorised Signatories",
+  "Book FX Contract",
+  "Entity's Contact Person",
+];
+
+function RoleSelectorBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
+  const [selected, setSelected] = useState([]);
+  const toggle = (role) =>
+    setSelected((prev) => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{
+        background: assistantBg || "#fff",
+        borderRadius: 12, padding: "14px 16px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        marginBottom: 10, fontSize: 14, lineHeight: 1.5, color: "#1a1a1a",
+      }}>
+        Which role(s) are you looking to add? You may select more than 1 role and select 'confirm' once ready.
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+        {ROLES.map((role) => {
+          const active = selected.includes(role);
+          return (
+            <button key={role} onClick={() => toggle(role)} style={{
+              padding: "7px 14px", borderRadius: 20,
+              border: `1.5px solid ${active ? accentColor : "#ccc"}`,
+              background: "#fff",
+              color: active ? accentColor : "#555",
+              fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+              display: "flex", alignItems: "center", gap: 6,
+              transition: "all 0.15s",
+            }}>
+              {active && <span style={{ fontSize: 12 }}>✓</span>}
+              {role}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onCancel} style={{
+          padding: "8px 20px", borderRadius: 6, border: "1.5px solid #ccc",
+          background: "#fff", color: "#333", fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+        }}>Cancel</button>
+        <button onClick={() => onConfirm(selected)} style={{
+          padding: "8px 20px", borderRadius: 6, border: "none",
+          background: "#3d5166", color: "#fff", fontSize: 13, fontWeight: 600,
+          cursor: "pointer", fontFamily: "inherit",
+        }}>Confirm</button>
+      </div>
+    </div>
+  );
+}
+
 const buildStyles = (color, offset, mobile, dark) => ({
   window: mobile ? {
     position: "relative",
@@ -89,8 +148,6 @@ function TypingIndicator({ color, dark }) {
   );
 }
 
-
-
 export default function ChatWidget({
   sessionId,
   title = "Velocity Assistant",
@@ -110,12 +167,13 @@ export default function ChatWidget({
 
   const [messages, setMessages] = useState([{ role: "assistant", content: welcome }]);
   const [loading, setLoading] = useState(false);
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
   const bottomRef = useRef(null);
   const prevKeyRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, loading, showRoleSelector]);
 
   useEffect(() => {
     if (!pendingMessage || pendingMessage.key === prevKeyRef.current) return;
@@ -126,12 +184,26 @@ export default function ChatWidget({
   const handleIntentClick = (intentLabel) => {
     const key = intentLabel.toLowerCase().replace(/\s+/g, "_");
     const response = intentResponses[intentLabel] || intentResponses[key];
-    if (response) {
+    if (response && typeof response === "object" && response.type === "role_selector") {
+      setShowRoleSelector(true);
+    } else if (response) {
       setMessages((prev) => [...prev, { role: "assistant", content: response }]);
     } else {
       handleSend(intentLabel);
     }
   };
+
+  const handleRoleConfirm = (selectedRoles) => {
+    setShowRoleSelector(false);
+    const roleList = selectedRoles.length > 0 ? selectedRoles.join(", ") : "no specific role";
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: `Selected roles: ${roleList}` },
+      { role: "assistant", content: "Got it! We will need a few more user details to proceed. Please provide us the following details in the following formats:\n\n1. Full Name (as shown in ID)\n2. NRIC no.\n3. Mobile no.\n4. Email\n5. UserID (Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.)" },
+    ]);
+  };
+
+  const handleRoleCancel = () => setShowRoleSelector(false);
 
   const handleSend = async (text) => {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
@@ -176,6 +248,14 @@ export default function ChatWidget({
             <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} />
           ))}
           {loading && <TypingIndicator color={color} dark={dark} />}
+          {showRoleSelector && (
+            <RoleSelectorBubble
+              onConfirm={handleRoleConfirm}
+              onCancel={handleRoleCancel}
+              accentColor={color}
+              assistantBg={assistantBg}
+            />
+          )}
           <div ref={bottomRef} />
         </div>
 

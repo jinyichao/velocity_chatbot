@@ -376,8 +376,8 @@ function JourneyPage({ dark }) {
             showHeader={false}
             assistantBg="#ebebeb"
             intentResponses={{
-              "add user": "Got it! We will need a few more user details to proceed. Please provide us the following details in the following formats:\n\n1. Full Name (as shown in ID)\n2. NRIC no.\n3. Mobile no.\n4. Email\n5. UserID (Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.)",
-              "add_user": "Got it! We will need a few more user details to proceed. Please provide us the following details in the following formats:\n\n1. Full Name (as shown in ID)\n2. NRIC no.\n3. Mobile no.\n4. Email\n5. UserID (Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.)",
+              "add user": { type: "role_selector" },
+              "add_user": { type: "role_selector" },
             }}
           />
 
