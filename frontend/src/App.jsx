@@ -155,6 +155,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
   const hasContact   = selectedRoles.some(r => r.toLowerCase().includes("contact person"));
 
   const [learnOpen, setLearnOpen] = useState(true);
+  const [confirmed, setConfirmed] = useState(false);
   const name   = formData?.name   ?? "";
   const nric   = formData?.nric   ?? "";
   const mobile = formData?.mobile ?? "";
@@ -172,6 +173,15 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
     background: "transparent", color: "#111", boxSizing: "border-box",
   };
   const fieldWrap = { background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: 8, padding: "12px 16px", flex: 1 };
+
+  if (confirmed) return (
+    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e0e0e0", padding: "48px 32px", maxWidth: 860, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" }}>
+      <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#e6f4ea", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>✓</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: "#111" }}>User Added Successfully</div>
+      <div style={{ fontSize: 15, color: "#555" }}>New user <strong>"{name || "Unknown"}"</strong> has been added.</div>
+      <button onClick={onClose} style={{ marginTop: 8, padding: "9px 28px", background: "#3d5166", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
+    </div>
+  );
 
   return (
     <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e0e0e0", padding: "28px 32px", maxWidth: 860, boxSizing: "border-box" }}>
@@ -280,7 +290,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
 
       {/* Confirm */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 28 }}>
-        <button onClick={onClose} style={{ padding: "10px 32px", background: "#3d5166", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Confirm</button>
+        <button onClick={() => setConfirmed(true)} style={{ padding: "10px 32px", background: "#3d5166", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Confirm</button>
       </div>
     </div>
   );
