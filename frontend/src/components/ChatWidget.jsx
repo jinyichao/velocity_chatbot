@@ -162,13 +162,24 @@ export default function ChatWidget({
   assistantBg,
   intentResponses = {},
   onRoleConfirm,
+  onFieldCollected,
 }) {
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
 
+  const FIELD_QUESTIONS = [
+    "Please provide the **Full Name** (as shown in ID).",
+    "What is the **NRIC no.**?",
+    "What is the **Mobile no.**? (e.g. 91234567)",
+    "What is the **Email** address?",
+    "Create a **UserID** for this user. Only numbers or letters can be used.",
+  ];
+  const FIELD_KEYS = ["name", "nric", "mobile", "email", "userId"];
+
   const [messages, setMessages] = useState([{ role: "assistant", content: welcome }]);
   const [loading, setLoading] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
+  const [fieldIndex, setFieldIndex] = useState(-1);
   const bottomRef = useRef(null);
   const prevKeyRef = useRef(null);
 
@@ -200,8 +211,9 @@ export default function ChatWidget({
     setMessages((prev) => [
       ...prev,
       { role: "user", content: `Selected roles: ${roleList}` },
-      { role: "assistant", content: "Got it! We will need a few more user details to proceed. Please provide us the following details in the following formats:\n\n1. Full Name (as shown in ID)\n2. NRIC no.\n3. Mobile no.\n4. Email\n5. UserID (Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.)" },
+      { role: "assistant", content: "Got it! Let's collect the user's details one by one.\n\n" + FIELD_QUESTIONS[0] },
     ]);
+    setFieldIndex(0);
     if (onRoleConfirm) onRoleConfirm(selectedRoles);
   };
 
@@ -209,6 +221,21 @@ export default function ChatWidget({
 
   const handleSend = async (text) => {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
+
+    // Sequential field collection mode
+    if (fieldIndex >= 0 && fieldIndex < FIELD_KEYS.length) {
+      if (onFieldCollected) onFieldCollected(FIELD_KEYS[fieldIndex], text);
+      const next = fieldIndex + 1;
+      if (next < FIELD_QUESTIONS.length) {
+        setMessages((prev) => [...prev, { role: "assistant", content: FIELD_QUESTIONS[next] }]);
+        setFieldIndex(next);
+      } else {
+        setMessages((prev) => [...prev, { role: "assistant", content: "Thank you! All details have been captured. Please review and confirm on the form." }]);
+        setFieldIndex(-1);
+      }
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await sendMessage({ message: text, sessionId, history: messages, version });

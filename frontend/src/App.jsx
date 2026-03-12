@@ -148,18 +148,23 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
 
 const VELOCITY_NAV = ["Home", "Accounts", "Pay and transfer", "FX and treasury", "Invoices", "Trade finance", "Tools", "Administration"];
 
-function AddUserForm({ selectedRoles, onClose }) {
+function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
   const hasSignatory = selectedRoles.some(r => r.toLowerCase().includes("signator"));
   const hasBanking   = selectedRoles.some(r => r.toLowerCase().includes("business online banking") && !r.toLowerCase().includes("administrator"));
   const hasFX        = selectedRoles.some(r => r.toLowerCase().includes("fx contract"));
   const hasContact   = selectedRoles.some(r => r.toLowerCase().includes("contact person"));
 
   const [learnOpen, setLearnOpen] = useState(true);
-  const [name, setName]   = useState("Peter Poh");
-  const [nric, setNric]   = useState("S1234567C");
-  const [mobile, setMobile] = useState("91234567");
-  const [email, setEmail] = useState("Peter.poh@email.com");
-  const [userId, setUserId] = useState("Peterpoh123");
+  const name   = formData?.name   ?? "";
+  const nric   = formData?.nric   ?? "";
+  const mobile = formData?.mobile ?? "";
+  const email  = formData?.email  ?? "";
+  const userId = formData?.userId ?? "";
+  const setName   = v => onFormChange({ ...formData, name: v });
+  const setNric   = v => onFormChange({ ...formData, nric: v });
+  const setMobile = v => onFormChange({ ...formData, mobile: v });
+  const setEmail  = v => onFormChange({ ...formData, email: v });
+  const setUserId = v => onFormChange({ ...formData, userId: v });
 
   const inputStyle = {
     width: "100%", border: "none", borderBottom: "1px solid #ddd",
@@ -294,6 +299,7 @@ function JourneyPage({ dark }) {
   const [chipsOpen, setChipsOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [addUserRoles, setAddUserRoles] = useState(null);
+  const [addUserData, setAddUserData] = useState({});
 
   const handleChatSend = () => {
     const text = chatInput.trim();
@@ -399,7 +405,7 @@ function JourneyPage({ dark }) {
           </div>
 
           {addUserRoles ? (
-            <AddUserForm selectedRoles={addUserRoles} onClose={() => setAddUserRoles(null)} />
+            <AddUserForm selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); }} formData={addUserData} onFormChange={setAddUserData} />
           ) : (<>
           {/* Account dropdown + Manage users */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
@@ -515,7 +521,8 @@ function JourneyPage({ dark }) {
               "add user": { type: "role_selector" },
               "add_user": { type: "role_selector" },
             }}
-            onRoleConfirm={(roles) => setAddUserRoles(roles)}
+            onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); }}
+            onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
           />
 
           {/* Input bar */}
