@@ -45,9 +45,13 @@ INTENT_EXAMPLES: dict[str, list[str]] = {
         "documentary collection", "bank guarantee", "trade financing",
         "import LC", "export LC",
     ],
-    "user_management": [
-        "add a new user", "remove user access", "assign role", "maker checker",
-        "change permissions", "deactivate user", "digital security token",
+    "add_user": [
+        "add a new user", "invite user", "create user account", "onboard user",
+        "assign role", "new user setup", "digital security token", "maker checker",
+    ],
+    "delete_user": [
+        "remove user access", "deactivate user", "delete user", "revoke access",
+        "disable user account", "remove employee from Velocity", "offboard user",
     ],
     "alerts_notifications": [
         "set up alert", "low balance notification", "transaction alert",

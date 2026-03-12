@@ -218,8 +218,8 @@ function JourneyPage({ dark }) {
           <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
             {[
               { label: "➕ Add User", query: "How do I add a new user to Velocity and assign them a role?" },
-              { label: "🗑 Delete User", query: "How do I remove a user's access from Velocity?" },
-              { label: "👥 Manage Roles", query: "How do I change a user's role or permissions in Velocity?" },
+              { label: "🗑 Delete User", query: "How do I deactivate or delete a user from Velocity?" },
+              { label: "👥 Edit Permissions", query: "How do I change a user's role or permissions in Velocity?" },
             ].map(({ label, query }) => (
               <button key={label} onClick={() => { setAiInput(query); setChatOpen(true); setPendingMessage({ text: query, key: Date.now() }); }} style={{
                 padding: "6px 14px", borderRadius: 20, border: "1.5px solid #0057a8",

@@ -1,8 +1,8 @@
-intent: user_management
+intent: add_user
 
-# User Management
+# Adding a User
 
-## Adding a user
+## Steps to add a user
 Go to Administration > User Management > Add User. Enter the user's NRIC/FIN, name, and email. Assign a role and set transaction limits. Requires Super Admin or Admin rights.
 
 ## User roles
@@ -15,14 +15,11 @@ Go to Administration > User Management > Add User. Enter the user's NRIC/FIN, na
 ## Editing user permissions
 Go to Administration > User Management > select user > Edit. Permissions, limits, and accessible accounts can be modified.
 
-## Deactivating a user
-Select the user and click Deactivate. The user immediately loses login access. Reactivation requires Admin action.
-
 ## Token (Digital Security Token)
 New users must activate their Digital Security Token (DST) via the OCBC Business app before they can log in to Velocity.
 
 ## Maker-Checker requirement
 All user additions and permission changes require a second Admin to approve (Maker-Checker) for security.
 
-## Audit trail for user changes
-All user management actions are logged and accessible under Administration > Audit Trail.
+## Audit trail
+All user addition actions are logged under Administration > Audit Trail.
