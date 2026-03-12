@@ -7,6 +7,7 @@ const ROLES = [
   "Business Online Banking - Maker",
   "Business Online Banking - Authoriser",
   "Business Online Banking - Administrator",
+  "Authorised Person",
   "Authorised Signatories",
   "Book FX Contract",
   "Entity's Contact Person",
@@ -163,6 +164,9 @@ export default function ChatWidget({
   intentResponses = {},
   onRoleConfirm,
   onFieldCollected,
+  assistantMessage = null,
+  onIntentsDetected,
+  onIntentStarted,
 }) {
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -182,6 +186,7 @@ export default function ChatWidget({
   const [fieldIndex, setFieldIndex] = useState(-1);
   const bottomRef = useRef(null);
   const prevKeyRef = useRef(null);
+  const prevAssistantKeyRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -193,7 +198,14 @@ export default function ChatWidget({
     handleSend(pendingMessage.text);
   }, [pendingMessage]);
 
+  useEffect(() => {
+    if (!assistantMessage || assistantMessage.key === prevAssistantKeyRef.current) return;
+    prevAssistantKeyRef.current = assistantMessage.key;
+    setMessages(prev => [...prev, { role: "assistant", content: assistantMessage.text }]);
+  }, [assistantMessage]);
+
   const handleIntentClick = (intentLabel) => {
+    if (onIntentStarted) onIntentStarted(intentLabel);
     const key = intentLabel.toLowerCase().replace(/\s+/g, "_");
     const response = intentResponses[intentLabel] || intentResponses[key];
     if (response && typeof response === "object" && response.type === "role_selector") {
@@ -219,12 +231,24 @@ export default function ChatWidget({
 
   const handleRoleCancel = () => setShowRoleSelector(false);
 
+  const FIELD_VALIDATORS = {
+    nric:   { fn: v => /^[STFGM]\d{7}[A-Z]$/i.test(v.trim()), msg: "That doesn't look like a valid NRIC/FIN (e.g. S1234567A). Please try again." },
+    mobile: { fn: v => /^[89]\d{7}$/.test(v.trim()), msg: "That doesn't look like a valid Singapore mobile number (8 digits starting with 8 or 9). Please try again." },
+    email:  { fn: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()), msg: "That doesn't look like a valid email address. Please try again." },
+  };
+
   const handleSend = async (text) => {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
     // Sequential field collection mode
     if (fieldIndex >= 0 && fieldIndex < FIELD_KEYS.length) {
-      if (onFieldCollected) onFieldCollected(FIELD_KEYS[fieldIndex], text);
+      const currentKey = FIELD_KEYS[fieldIndex];
+      const validator = FIELD_VALIDATORS[currentKey];
+      if (validator && !validator.fn(text)) {
+        setMessages((prev) => [...prev, { role: "assistant", content: validator.msg }]);
+        return;
+      }
+      if (onFieldCollected) onFieldCollected(currentKey, text);
       const next = fieldIndex + 1;
       if (next < FIELD_QUESTIONS.length) {
         setMessages((prev) => [...prev, { role: "assistant", content: FIELD_QUESTIONS[next] }]);
@@ -240,6 +264,11 @@ export default function ChatWidget({
     try {
       const data = await sendMessage({ message: text, sessionId, history: messages, version });
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+      if (onIntentsDetected && data.reply.startsWith("Intent identified:")) {
+        const lines = data.reply.split("\n").slice(1);
+        const intents = lines.map(l => l.match(/^[•\-]\s*\*?\*?(.+?)\*?\*?$/)).filter(Boolean).map(m => m[1].trim());
+        if (intents.length > 0) onIntentsDetected(intents);
+      }
     } catch {
       setMessages((prev) => [
         ...prev,

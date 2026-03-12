@@ -118,30 +118,42 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick }) {
         Intent identified
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {intents.map((intent) => (
+        {intents.map((intent) => {
+          const isDone = intent.startsWith("✓ ");
+          const label = isDone ? intent.slice(2) : intent;
+          return (
           <div key={intent} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ color: accentColor, fontSize: 16, lineHeight: 1 }}>•</span>
-            <button style={{
-              display: "inline-flex", alignItems: "center",
-              padding: "6px 14px",
-              borderRadius: 20,
-              background: "transparent",
-              border: `1.5px solid ${accentColor}`,
-              color: accentColor,
-              fontSize: 13, fontWeight: 600,
-              letterSpacing: "0.01em",
-              cursor: onIntentClick ? "pointer" : "default",
-              fontFamily: "inherit",
-              transition: "background 0.15s, color 0.15s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
-            onClick={() => onIntentClick && onIntentClick(intent)}
-            >
-              {intent}
-            </button>
+            {isDone ? (
+              <span style={{ color: "#00703c", fontSize: 13, fontWeight: 600, padding: "6px 14px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 15 }}>✓</span> {label}
+              </span>
+            ) : (
+              <>
+                <span style={{ color: accentColor, fontSize: 16, lineHeight: 1 }}>•</span>
+                <button style={{
+                  display: "inline-flex", alignItems: "center",
+                  padding: "6px 14px",
+                  borderRadius: 20,
+                  background: "transparent",
+                  border: `1.5px solid ${accentColor}`,
+                  color: accentColor,
+                  fontSize: 13, fontWeight: 600,
+                  letterSpacing: "0.01em",
+                  cursor: onIntentClick ? "pointer" : "default",
+                  fontFamily: "inherit",
+                  transition: "background 0.15s, color 0.15s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
+                onClick={() => onIntentClick && onIntentClick(label)}
+                >
+                  {label}
+                </button>
+              </>
+            )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

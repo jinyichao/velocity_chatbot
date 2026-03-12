@@ -148,7 +148,7 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
 
 const VELOCITY_NAV = ["Home", "Accounts", "Pay and transfer", "FX and treasury", "Invoices", "Trade finance", "Tools", "Administration"];
 
-function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
+function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm }) {
   const hasSignatory = selectedRoles.some(r => r.toLowerCase().includes("signator"));
   const hasBanking   = selectedRoles.some(r => r.toLowerCase().includes("business online banking") && !r.toLowerCase().includes("administrator"));
   const hasFX        = selectedRoles.some(r => r.toLowerCase().includes("fx contract"));
@@ -156,6 +156,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
 
   const [learnOpen, setLearnOpen] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const name   = formData?.name   ?? "";
   const nric   = formData?.nric   ?? "";
   const mobile = formData?.mobile ?? "";
@@ -167,12 +168,28 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
   const setEmail  = v => onFormChange({ ...formData, email: v });
   const setUserId = v => onFormChange({ ...formData, userId: v });
 
+  const VALIDATORS = {
+    nric:   { fn: v => /^[STFGM]\d{7}[A-Z]$/i.test(v.trim()), msg: "Invalid NRIC/FIN format (e.g. S1234567A)" },
+    mobile: { fn: v => /^[89]\d{7}$/.test(v.trim()), msg: "Invalid mobile number (must be 8 digits starting with 8 or 9)" },
+    email:  { fn: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()), msg: "Invalid email address" },
+  };
+  const validateField = (field, value) => {
+    if (!VALIDATORS[field] || !value) return;
+    const { fn, msg } = VALIDATORS[field];
+    setFieldErrors(prev => ({ ...prev, [field]: fn(value) ? null : msg }));
+  };
+  const hasErrors = Object.values(fieldErrors).some(Boolean);
+
   const inputStyle = {
     width: "100%", border: "none", borderBottom: "1px solid #ddd",
     outline: "none", fontSize: 14, padding: "8px 0", fontFamily: "inherit",
     background: "transparent", color: "#111", boxSizing: "border-box",
   };
-  const fieldWrap = { background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: 8, padding: "12px 16px", flex: 1 };
+  const fieldWrap = (field) => ({
+    background: "#fafafa",
+    border: `1px solid ${fieldErrors[field] ? "#e53e3e" : "#e8e8e8"}`,
+    borderRadius: 8, padding: "12px 16px", flex: 1,
+  });
 
   if (confirmed) return (
     <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e0e0e0", padding: "48px 32px", maxWidth: 860, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" }}>
@@ -200,17 +217,26 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
 
       {/* Fields row 1 */}
       <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-        <div style={fieldWrap}><input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name (as shown in ID)" style={inputStyle} /></div>
-        <div style={fieldWrap}><input value={nric} onChange={e => setNric(e.target.value)} placeholder="NRIC no." style={inputStyle} /></div>
+        <div style={fieldWrap("name")}><input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name (as shown in ID)" style={inputStyle} /></div>
+        <div style={{ flex: 1 }}>
+          <div style={fieldWrap("nric")}><input value={nric} onChange={e => setNric(e.target.value)} onBlur={() => validateField("nric", nric)} placeholder="NRIC no." style={inputStyle} /></div>
+          {fieldErrors.nric && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.nric}</div>}
+        </div>
       </div>
       {/* Fields row 2 */}
       <div style={{ display: "flex", gap: 16, marginBottom: 28 }}>
-        <div style={{ ...fieldWrap, display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, color: "#555", whiteSpace: "nowrap" }}>Mobile no.</span>
-          <span style={{ fontSize: 13, color: "#333", borderRight: "1px solid #ddd", paddingRight: 8 }}>+65 ▾</span>
-          <input value={mobile} onChange={e => setMobile(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ ...fieldWrap("mobile"), display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 13, color: "#555", whiteSpace: "nowrap" }}>Mobile no.</span>
+            <span style={{ fontSize: 13, color: "#333", borderRight: "1px solid #ddd", paddingRight: 8 }}>+65 ▾</span>
+            <input value={mobile} onChange={e => setMobile(e.target.value)} onBlur={() => validateField("mobile", mobile)} style={{ ...inputStyle, flex: 1 }} />
+          </div>
+          {fieldErrors.mobile && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.mobile}</div>}
         </div>
-        <div style={fieldWrap}><input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" style={inputStyle} /></div>
+        <div style={{ flex: 1 }}>
+          <div style={fieldWrap("email")}><input value={email} onChange={e => setEmail(e.target.value)} onBlur={() => validateField("email", email)} placeholder="Email" style={inputStyle} /></div>
+          {fieldErrors.email && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.email}</div>}
+        </div>
       </div>
 
       {/* Roles */}
@@ -257,9 +283,12 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
                     </thead>
                     <tbody>
                       {[
-                        ["Maker", "Create transactions (e.g. Telegraphic Transfers) that will be sent to the Authoriser(s) for review."],
-                        ["Authoriser", "Authorise transactions that have been requested by a Maker. Depending on your entity's setup, transactions will require the approval of one or more Authorisers."],
-                      ].map(([role, desc]) => (
+                        ["Viewer",        "View accounts, transaction history, and reports. Cannot initiate or approve any transactions."],
+                        ["Maker",         "Create transactions (e.g. Telegraphic Transfers) that will be sent to the Authoriser(s) for review."],
+                        ["Authoriser",    "Authorise transactions that have been requested by a Maker. Depending on your entity's setup, transactions will require the approval of one or more Authorisers."],
+                        ["Administrator", "Manage users, roles, and permissions. Cannot initiate or authorise financial transactions."],
+                      ].filter(([role]) => selectedRoles.some(r => r.toLowerCase().includes(role.toLowerCase())))
+                       .map(([role, desc]) => (
                         <tr key={role} style={{ borderTop: "1px solid #e0e0e0" }}>
                           <td style={{ padding: "10px 16px", fontWeight: 600, borderRight: "1px solid #e0e0e0", verticalAlign: "top", whiteSpace: "nowrap" }}>{role}</td>
                           <td style={{ padding: "10px 16px", color: "#555", lineHeight: 1.5 }}>{desc}</td>
@@ -290,16 +319,47 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange }) {
 
       {/* Confirm */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 28 }}>
-        <button onClick={() => setConfirmed(true)} style={{ padding: "10px 32px", background: "#3d5166", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Confirm</button>
+        <button
+          onClick={() => {
+            // Validate all fields before confirming
+            const errors = {};
+            if (nric) { const { fn, msg } = VALIDATORS.nric; if (!fn(nric)) errors.nric = msg; }
+            if (mobile) { const { fn, msg } = VALIDATORS.mobile; if (!fn(mobile)) errors.mobile = msg; }
+            if (email) { const { fn, msg } = VALIDATORS.email; if (!fn(email)) errors.email = msg; }
+            if (Object.values(errors).some(Boolean)) { setFieldErrors(errors); return; }
+            setConfirmed(true);
+            if (onConfirm) onConfirm(name || "Unknown");
+          }}
+          style={{ padding: "10px 32px", background: "#3d5166", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+        >Confirm</button>
       </div>
     </div>
   );
 }
-const JOURNEY_USERS = [
+const INITIAL_JOURNEY_USERS = [
   { name: "Peter Poh Wen Xiang", sub: "", ap: true,  as: false, role: "Maker and Authoriser" },
   { name: "Alex Loh", sub: "Entity's contact person\nBusiness online banking contact person", ap: true, as: true, role: "Maker and Authoriser" },
   { name: "Mabel Teoh", sub: "Entity's contact person", ap: true, as: true, role: "Viewer" },
 ];
+
+function buildUserEntry(name, roles) {
+  const BOB_LABEL_MAP = {
+    "viewer": "Viewer",
+    "maker": "Maker",
+    "authoriser": "Authoriser",
+    "administrator": "Administrator",
+  };
+  const bankingRoles = roles
+    .filter(r => r.toLowerCase().startsWith("business online banking - "))
+    .map(r => {
+      const suffix = r.replace(/business online banking - /i, "").toLowerCase();
+      return BOB_LABEL_MAP[suffix] || suffix;
+    });
+  const roleStr = bankingRoles.join(" and ");
+  const ap = roles.some(r => r.toLowerCase() === "authorised person");
+  const as_ = roles.some(r => r.toLowerCase().includes("signator"));
+  return { name, sub: "", ap, as: as_, role: roleStr };
+}
 
 function JourneyPage({ dark }) {
   const [activeSubTab, setActiveSubTab] = useState("Roles");
@@ -310,6 +370,11 @@ function JourneyPage({ dark }) {
   const [chatInput, setChatInput] = useState("");
   const [addUserRoles, setAddUserRoles] = useState(null);
   const [addUserData, setAddUserData] = useState({});
+  const [journeyUsers, setJourneyUsers] = useState(INITIAL_JOURNEY_USERS);
+  const [assistantNotification, setAssistantNotification] = useState(null);
+  const [lastIntents, setLastIntents] = useState([]);
+  const [activeIntent, setActiveIntent] = useState(null);
+  const [deleteTabOpen, setDeleteTabOpen] = useState(false);
 
   const handleChatSend = () => {
     const text = chatInput.trim();
@@ -404,19 +469,88 @@ function JourneyPage({ dark }) {
             )}
           </div>
 
-          {/* Sub-tab */}
-          <div style={{ borderBottom: "1px solid #e8e8e8", marginBottom: 24 }}>
-            <button style={{
-              background: "none", border: "none", padding: "10px 20px 10px 0",
-              fontSize: 14, fontWeight: 600, color: "#c8102e",
-              borderBottom: "2px solid #c8102e",
-              cursor: "default", fontFamily: "inherit", marginBottom: -1,
-            }}>{addUserRoles ? "Add User" : "Roles"}</button>
+          {/* Sub-tabs */}
+          <div style={{ borderBottom: "1px solid #e8e8e8", marginBottom: 24, display: "flex" }}>
+            {[
+              "Roles",
+              ...(addUserRoles ? ["Add User"] : []),
+              ...(deleteTabOpen ? ["Delete Users"] : []),
+            ].map(tab => {
+              const active = activeSubTab === tab;
+              return (
+                <button key={tab} onClick={() => setActiveSubTab(tab)} style={{
+                  background: "none", border: "none", padding: "10px 20px 10px 0",
+                  fontSize: 14, fontWeight: active ? 600 : 400,
+                  color: active ? "#c8102e" : "#888",
+                  borderBottom: active ? "2px solid #c8102e" : "2px solid transparent",
+                  cursor: "pointer", fontFamily: "inherit", marginBottom: -1,
+                }}>{tab}</button>
+              );
+            })}
           </div>
 
-          {addUserRoles ? (
-            <AddUserForm selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); }} formData={addUserData} onFormChange={setAddUserData} />
-          ) : (<>
+          {activeSubTab === "Add User" && addUserRoles ? (
+            <AddUserForm selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); }} formData={addUserData} onFormChange={setAddUserData} onConfirm={(userName) => {
+              setJourneyUsers(prev => [...prev, buildUserEntry(userName, addUserRoles || [])]);
+              setAssistantNotification({ text: `New user "${userName}" has been added successfully! ✓`, key: Date.now() });
+              const remaining = lastIntents.filter(i => i.toLowerCase() !== (activeIntent || "").toLowerCase());
+              if (remaining.length > 0) {
+                setTimeout(() => {
+                  setAssistantNotification({
+                    text: `Intent identified:\n${lastIntents.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
+                    key: Date.now(),
+                  });
+                }, 600);
+              }
+            }} />
+          ) : activeSubTab === "Delete Users" && deleteTabOpen ? (<>
+          {/* Delete Users table */}
+          <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 100px", background: "#fafafa", borderBottom: "1px solid #e0e0e0" }}>
+              <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
+              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
+                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
+                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Open and close accounts, and apply for banking facilities</div>
+              </div>
+              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
+                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
+                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Sign to authorise transactions</div>
+              </div>
+              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
+                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
+                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>View and/or manage online transactions</div>
+              </div>
+              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", fontWeight: 600 }}>Action</div>
+            </div>
+            {journeyUsers.map((u, i) => (
+              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 100px", borderBottom: i < journeyUsers.length - 1 ? "1px solid #e0e0e0" : "none" }}>
+                <div style={{ padding: "16px 20px" }}>
+                  <div style={{ fontWeight: 600 }}>{u.name}</div>
+                  {u.sub && <div style={{ color: "#888", fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
+                </div>
+                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                  {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
+                </div>
+                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                  {u.as && <span style={{ fontSize: 18 }}>✓</span>}
+                </div>
+                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                  {u.role}
+                </div>
+                <div style={{ padding: "12px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                  <button onClick={() => setJourneyUsers(prev => prev.filter((_, idx) => idx !== i))} style={{
+                    padding: "5px 12px", borderRadius: 6, border: "1.5px solid #e53e3e",
+                    background: "#fff", color: "#e53e3e", fontSize: 12, fontWeight: 600,
+                    cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#e53e3e"; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#e53e3e"; }}
+                  >Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          </>) : (<>
           {/* Account dropdown + Manage users */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
             <div>
@@ -433,13 +567,6 @@ function JourneyPage({ dark }) {
             }}>
               👤 Manage users
             </button>
-          </div>
-
-          {/* Search */}
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid #ccc", borderRadius: 6, padding: "7px 14px", width: 220, fontSize: 13, color: "#888" }}>
-              🔍 <input placeholder="Search" style={{ border: "none", outline: "none", fontSize: 13, fontFamily: "inherit", width: "100%", color: "#333" }} />
-            </div>
           </div>
 
           {/* Table */}
@@ -462,8 +589,8 @@ function JourneyPage({ dark }) {
                 <div style={{ color: "#0057a8", fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
               </div>
             </div>
-            {JOURNEY_USERS.map((u, i) => (
-              <div key={u.name} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < JOURNEY_USERS.length - 1 ? "1px solid #e0e0e0" : "none" }}>
+            {journeyUsers.map((u, i) => (
+              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < journeyUsers.length - 1 ? "1px solid #e0e0e0" : "none" }}>
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ fontWeight: 600 }}>{u.name}</div>
                   {u.sub && <div style={{ color: "#888", fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
@@ -531,8 +658,17 @@ function JourneyPage({ dark }) {
               "add user": { type: "role_selector" },
               "add_user": { type: "role_selector" },
             }}
-            onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); }}
+            onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setActiveSubTab("Add User"); }}
             onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
+            assistantMessage={assistantNotification}
+            onIntentsDetected={(intents) => setLastIntents(intents)}
+            onIntentStarted={(label) => {
+              setActiveIntent(label);
+              if (label.toLowerCase().includes("delete")) {
+                setDeleteTabOpen(true);
+                setActiveSubTab("Delete Users");
+              }
+            }}
           />
 
           {/* Input bar */}
