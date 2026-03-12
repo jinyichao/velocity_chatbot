@@ -219,7 +219,7 @@ function JourneyPage({ dark }) {
           <div style={{ marginBottom: 24 }}>
             <button onClick={() => setChipsOpen(v => !v)} style={{
               background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
-              fontSize: 12, color: "#0057a8", fontWeight: 600, padding: 0,
+              fontSize: 12, color: "#c8102e", fontWeight: 600, padding: 0,
               display: "flex", alignItems: "center", gap: 5, marginBottom: chipsOpen ? 12 : 0,
             }}>
               <span style={{ fontSize: 10, transition: "transform 0.2s", display: "inline-block", transform: chipsOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
