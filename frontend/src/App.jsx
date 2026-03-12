@@ -159,6 +159,14 @@ function JourneyPage({ dark }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
   const [chipsOpen, setChipsOpen] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+
+  const handleChatSend = () => {
+    const text = chatInput.trim();
+    if (!text) return;
+    setChatInput("");
+    setPendingMessage({ text, key: Date.now() });
+  };
 
   const handleAiSubmit = () => {
     const text = aiInput.trim();
@@ -334,10 +342,10 @@ function JourneyPage({ dark }) {
       {chatOpen && (
         <div style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 2000,
-          width: 440, height: 520, borderRadius: 16,
+          width: 580, height: 580, borderRadius: 16,
           boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
           display: "flex", flexDirection: "column", overflow: "hidden",
-          border: "1px solid #e0e0e0",
+          border: "1px solid #e0e0e0", background: "#fff",
         }}>
           {/* Chat header */}
           <div style={{
@@ -354,7 +362,8 @@ function JourneyPage({ dark }) {
               cursor: "pointer", lineHeight: 1, padding: 0, opacity: 0.7, marginTop: 2,
             }}>×</button>
           </div>
-          {/* ChatWidget body (mobile mode fills the container) */}
+
+          {/* ChatWidget body */}
           <ChatWidget
             sessionId={SESSION_JOURNEY}
             title="Gen-AI Powered Engine"
@@ -371,6 +380,33 @@ function JourneyPage({ dark }) {
               "add_user": "Got it! We will need a few more user details to proceed. Please provide us the following details in the following formats:\n\n1. Full Name (as shown in ID)\n2. NRIC no.\n3. Mobile no.\n4. Email\n5. UserID (Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.)",
             }}
           />
+
+          {/* Input bar */}
+          <div style={{ flexShrink: 0, padding: "10px 16px 0", background: "#fff" }}>
+            <div style={{
+              border: "1px solid #e8e8e8", borderRadius: 10,
+              display: "flex", alignItems: "center", padding: "10px 14px", gap: 10,
+            }}>
+              <input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleChatSend()}
+                placeholder="Type your question"
+                style={{
+                  flex: 1, border: "none", outline: "none",
+                  fontSize: 14, color: "#333", fontFamily: "inherit",
+                  background: "transparent",
+                }}
+              />
+              <button onClick={handleChatSend} style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "#999", fontSize: 18, padding: 0, lineHeight: 1,
+                display: "flex", alignItems: "center",
+              }}>➤</button>
+            </div>
+            {/* Gradient bottom bar */}
+            <div style={{ height: 3, borderRadius: "0 0 4px 4px", background: "linear-gradient(90deg, #67e8f9, #818cf8, #c084fc)", margin: "0 0 10px" }} />
+          </div>
         </div>
       )}
     </div>
