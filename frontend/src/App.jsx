@@ -163,9 +163,9 @@ function JourneyPage({ dark }) {
       <div style={{ display: "flex", padding: "36px 32px", gap: 40, maxWidth: 1200 }}>
 
         {/* Left label */}
-        <div style={{ width: 200, flexShrink: 0, paddingTop: 4 }}>
-          <div style={{ width: 32, height: 3, background: "#c8102e", marginBottom: 12 }} />
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.6, color: "#111" }}>
+        <div style={{ width: 280, flexShrink: 0, paddingTop: 4 }}>
+          <div style={{ width: 40, height: 4, background: "#c8102e", marginBottom: 16 }} />
+          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.7, color: "#111" }}>
             Manage Roles<br />and Authorisation
           </div>
         </div>
