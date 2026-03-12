@@ -96,29 +96,67 @@ function Chip({ label, onClick, dark }) {
   );
 }
 
-function Navbar({ dark, onToggleDark, onLogout }) {
+const NAV_TABS = [
+  { id: "benchmark",  label: "Chatbot Technology Benchmark" },
+  { id: "journey",    label: "Service AI End-to-End Journey" },
+];
+
+function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
   const border = dark ? "#2a2a2a" : "#e8e8e8";
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 1100,
       background: dark ? "#141414" : "#fff",
       borderBottom: `1px solid ${border}`,
-      height: 60, display: "flex", alignItems: "center", padding: "0 28px", gap: 14,
+      height: 60, display: "flex", alignItems: "center", padding: "0 28px", gap: 0,
       transition: "background 0.2s",
     }}>
-      <img src="/ocbc-logo-color.svg" alt="OCBC" style={{ height: 28 }} />
-      <div style={{ width: 1, height: 24, background: border }} />
-      <span style={{ fontSize: 15, fontWeight: 500, color: dark ? "#888" : "#555", letterSpacing: "-0.2px" }}>
-        Chatbot Technology Benchmark
-      </span>
+      <img src="/ocbc-logo-color.svg" alt="OCBC" style={{ height: 28, marginRight: 20 }} />
+      {NAV_TABS.map((tab) => {
+        const active = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            style={{
+              background: "none", border: "none",
+              borderBottom: active ? "2px solid #c8102e" : "2px solid transparent",
+              height: 60, padding: "0 18px",
+              fontSize: 14, fontWeight: active ? 600 : 400,
+              color: active ? (dark ? "#f0f0f0" : "#111") : (dark ? "#666" : "#888"),
+              cursor: "pointer", transition: "all 0.15s",
+              letterSpacing: "-0.2px", whiteSpace: "nowrap",
+              fontFamily: "inherit",
+            }}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
       <div style={{ flex: 1 }} />
       <ThemeToggle dark={dark} onToggle={onToggleDark} />
       <button
         onClick={onLogout}
-        style={{ background: "none", border: "none", fontSize: 13, color: dark ? "#888" : "#555", cursor: "pointer", padding: "6px 0 6px 8px", fontFamily: "inherit" }}
+        style={{ background: "none", border: "none", fontSize: 13, color: dark ? "#888" : "#555", cursor: "pointer", padding: "6px 0 6px 12px", fontFamily: "inherit" }}
       >
         Sign Out
       </button>
+    </div>
+  );
+}
+
+function JourneyPage({ dark }) {
+  const t = {
+    title:  dark ? "#f0f0f0" : "#111",
+    sub:    dark ? "#888"    : "#666",
+    card:   dark ? "#1a1a1a" : "#fff",
+    border: dark ? "#2a2a2a" : "#e8e8e8",
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 12 }}>
+      <div style={{ fontSize: 40, marginBottom: 8 }}>🚧</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: t.title }}>Service AI End-to-End Journey</div>
+      <div style={{ fontSize: 14, color: t.sub }}>Coming soon — this section is under construction.</div>
     </div>
   );
 }
@@ -290,6 +328,7 @@ export default function App() {
   const [showChips, setShowChips] = useState(false);
   const [visibleWidgets, setVisibleWidgets] = useState([true, true, true]);
   const [showBanner, setShowBanner] = useState(true);
+  const [activeTab, setActiveTab] = useState("benchmark");
   const toggleWidget = (i) => setVisibleWidgets(v => v.map((val, idx) => idx === i ? !val : val));
 
   useEffect(() => {
@@ -318,41 +357,45 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: t.bg, transition: "background 0.2s", fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
-      <Navbar dark={dark} onToggleDark={() => setDark(v => !v)} onLogout={handleLogout} />
+      <Navbar dark={dark} onToggleDark={() => setDark(v => !v)} onLogout={handleLogout} activeTab={activeTab} onTabChange={setActiveTab} />
       {showBanner && <WarningBanner onDismiss={() => setShowBanner(false)} dark={dark} />}
 
       {/* Scrollable content */}
       <div style={{ paddingTop: topOffset + 36, paddingBottom: 110, display: "flex", justifyContent: "center", minHeight: "100vh", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", gap: 28, alignItems: "stretch" }}>
-          {WIDGETS.map((w, i) => (
-            <div key={w.sessionId} style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
-              <PhoneFrame dark={dark} visible={visibleWidgets[i]}>
-                <ChatWidget
-                  sessionId={w.sessionId}
-                  title={w.title}
-                  label={w.label}
-                  color={dark ? w.darkColor : w.color}
-                  pendingMessage={visibleWidgets[i] ? pendingMessage : null}
-                  version={w.version}
-                  mobile={true}
+        {activeTab === "benchmark" ? (
+          <div style={{ display: "flex", gap: 28, alignItems: "stretch" }}>
+            {WIDGETS.map((w, i) => (
+              <div key={w.sessionId} style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
+                <PhoneFrame dark={dark} visible={visibleWidgets[i]}>
+                  <ChatWidget
+                    sessionId={w.sessionId}
+                    title={w.title}
+                    label={w.label}
+                    color={dark ? w.darkColor : w.color}
+                    pendingMessage={visibleWidgets[i] ? pendingMessage : null}
+                    version={w.version}
+                    mobile={true}
+                    dark={dark}
+                    showHeader={false}
+                  />
+                </PhoneFrame>
+                <InfoCard
+                  widget={w}
+                  info={WIDGET_INFO[i]}
                   dark={dark}
-                  showHeader={false}
+                  visible={visibleWidgets[i]}
+                  onToggle={() => toggleWidget(i)}
                 />
-              </PhoneFrame>
-              <InfoCard
-                widget={w}
-                info={WIDGET_INFO[i]}
-                dark={dark}
-                visible={visibleWidgets[i]}
-                onToggle={() => toggleWidget(i)}
-              />
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <JourneyPage dark={dark} />
+        )}
       </div>
 
-      {/* Fixed bottom input bar */}
-      <div style={{
+      {/* Fixed bottom input bar — only on benchmark tab */}
+      {activeTab !== "benchmark" ? null : <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
         background: t.panelBg, borderTop: `1px solid ${t.border}`,
         zIndex: 1001, transition: "background 0.2s",
@@ -383,7 +426,7 @@ export default function App() {
             </div>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
