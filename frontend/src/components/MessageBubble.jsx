@@ -105,7 +105,7 @@ function parseIntents(content) {
   return intents.length > 0 ? intents : null;
 }
 
-function IntentBubbles({ intents, accentColor, dark }) {
+function IntentBubbles({ intents, accentColor, dark, onIntentClick }) {
   return (
     <div style={{
       background: dark ? "#252525" : "#fff",
@@ -130,12 +130,13 @@ function IntentBubbles({ intents, accentColor, dark }) {
               color: accentColor,
               fontSize: 13, fontWeight: 600,
               letterSpacing: "0.01em",
-              cursor: "pointer",
+              cursor: onIntentClick ? "pointer" : "default",
               fontFamily: "inherit",
               transition: "background 0.15s, color 0.15s",
             }}
             onMouseEnter={e => { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
+            onClick={() => onIntentClick && onIntentClick(intent)}
             >
               {intent}
             </button>
@@ -146,7 +147,7 @@ function IntentBubbles({ intents, accentColor, dark }) {
   );
 }
 
-export default function MessageBubble({ message, accentColor = "#c8102e", dark = false, assistantBg }) {
+export default function MessageBubble({ message, accentColor = "#c8102e", dark = false, assistantBg, onIntentClick }) {
   const { role, content } = message;
   const intents = role === "assistant" ? parseIntents(content) : null;
   return (
@@ -155,7 +156,7 @@ export default function MessageBubble({ message, accentColor = "#c8102e", dark =
         <div style={{ ...styles.avatar, background: accentColor }}>V</div>
       )}
       {intents
-        ? <IntentBubbles intents={intents} accentColor={accentColor} dark={dark} />
+        ? <IntentBubbles intents={intents} accentColor={accentColor} dark={dark} onIntentClick={onIntentClick} />
         : <div style={styles.bubble(role, accentColor, dark, assistantBg)}>{renderContent(content)}</div>
       }
     </div>

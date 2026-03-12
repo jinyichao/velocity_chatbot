@@ -103,6 +103,7 @@ export default function ChatWidget({
   dark = false,
   showHeader = true,
   assistantBg,
+  intentResponses = {},
 }) {
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -121,6 +122,16 @@ export default function ChatWidget({
     prevKeyRef.current = pendingMessage.key;
     handleSend(pendingMessage.text);
   }, [pendingMessage]);
+
+  const handleIntentClick = (intentLabel) => {
+    const key = intentLabel.toLowerCase().replace(/\s+/g, "_");
+    const response = intentResponses[intentLabel] || intentResponses[key];
+    if (response) {
+      setMessages((prev) => [...prev, { role: "assistant", content: response }]);
+    } else {
+      handleSend(intentLabel);
+    }
+  };
 
   const handleSend = async (text) => {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
@@ -162,7 +173,7 @@ export default function ChatWidget({
 
         <div style={baseStyles.messages(dark)}>
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} />
+            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} />
           ))}
           {loading && <TypingIndicator color={color} dark={dark} />}
           <div ref={bottomRef} />
