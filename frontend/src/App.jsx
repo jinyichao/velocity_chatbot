@@ -98,7 +98,7 @@ function Chip({ label, onClick, dark }) {
 
 const NAV_TABS = [
   { id: "benchmark",  label: "Chatbot Technology Benchmark" },
-  { id: "journey",    label: "Service AI End-to-End Journey" },
+  { id: "journey",    label: "Service AI Chatbot Journey" },
 ];
 
 function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
@@ -145,18 +145,180 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
   );
 }
 
+const VELOCITY_NAV = ["Home", "Accounts", "Pay and transfer", "FX and treasury", "Invoices", "Trade finance", "Tools", "Administration"];
+const JOURNEY_USERS = [
+  { name: "Peter Poh Wen Xiang", sub: "", ap: true,  as: false, role: "Maker and Authoriser" },
+  { name: "Alex Loh", sub: "Entity's contact person\nBusiness online banking contact person", ap: true, as: true, role: "Maker and Authoriser" },
+  { name: "Mabel Teoh", sub: "Entity's contact person", ap: true, as: true, role: "Viewer" },
+];
+
 function JourneyPage({ dark }) {
-  const t = {
-    title:  dark ? "#f0f0f0" : "#111",
-    sub:    dark ? "#888"    : "#666",
-    card:   dark ? "#1a1a1a" : "#fff",
-    border: dark ? "#2a2a2a" : "#e8e8e8",
-  };
+  const [activeSubTab, setActiveSubTab] = useState("Roles");
+  const [aiInput, setAiInput] = useState("");
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 12 }}>
-      <div style={{ fontSize: 40, marginBottom: 8 }}>🚧</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: t.title }}>Service AI End-to-End Journey</div>
-      <div style={{ fontSize: 14, color: t.sub }}>Coming soon — this section is under construction.</div>
+    <div style={{ width: "100%", minHeight: "100vh", background: "#fff", fontFamily: "'Helvetica Neue', Arial, sans-serif", color: "#111" }}>
+
+      {/* Velocity top info bar */}
+      <div style={{ borderBottom: "1px solid #e8e8e8", padding: "8px 32px", display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: "#555" }}>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 13, color: "#111" }}>Patrick Tan</div>
+          <div style={{ color: "#888" }}>ESOLUTIONS ALPHA PTE LTD &nbsp;·&nbsp; Last login: 12 May 2021, 13:58:31</div>
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #ddd", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 12 }}>
+          🌐 EN <span style={{ fontSize: 10 }}>▾</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #ddd", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 12, position: "relative" }}>
+          <span>📋</span> Tasks and statuses
+          <span style={{ position: "absolute", top: -6, right: -6, background: "#c8102e", color: "#fff", borderRadius: "50%", width: 16, height: 16, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>2</span>
+        </div>
+        <div style={{ width: 34, height: 34, border: "1px solid #ddd", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>✉</div>
+        <div style={{ width: 34, height: 34, border: "1px solid #ddd", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>⊕</div>
+      </div>
+
+      {/* Velocity nav */}
+      <div style={{ borderBottom: "1px solid #e8e8e8", padding: "0 32px", display: "flex", gap: 0 }}>
+        {VELOCITY_NAV.map((item) => (
+          <div key={item} style={{
+            padding: "14px 16px", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap",
+            color: "#333", borderBottom: "2px solid transparent",
+          }}
+            onMouseEnter={e => e.currentTarget.style.color = "#c8102e"}
+            onMouseLeave={e => e.currentTarget.style.color = "#333"}
+          >{item}</div>
+        ))}
+      </div>
+
+      {/* Main content */}
+      <div style={{ display: "flex", padding: "36px 32px", gap: 40, maxWidth: 1200 }}>
+
+        {/* Left label */}
+        <div style={{ width: 200, flexShrink: 0, paddingTop: 4 }}>
+          <div style={{ width: 32, height: 3, background: "#c8102e", marginBottom: 12 }} />
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.6, color: "#111" }}>
+            Manage Roles<br />and Authorisation
+          </div>
+        </div>
+
+        {/* Right content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+
+          {/* AI input */}
+          <div style={{
+            border: "1px solid #e0e0e0", borderRadius: 10, padding: "12px 14px 0 18px",
+            marginBottom: 28, boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+            background: "#fff",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <input
+                value={aiInput}
+                onChange={e => setAiInput(e.target.value)}
+                placeholder="Simply describe what you want to do, and our AI will help you complete the task."
+                style={{
+                  flex: 1, border: "none", outline: "none", fontSize: 14, color: "#333",
+                  background: "transparent", fontFamily: "inherit", padding: "4px 0 12px",
+                }}
+              />
+              <div style={{
+                width: 42, height: 42, borderRadius: "50%", background: "#1a1a2e",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", flexShrink: 0, marginBottom: 10,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+              }}>
+                <span style={{ color: "#fff", fontSize: 18 }}>✦</span>
+              </div>
+            </div>
+            {/* Gradient border bottom */}
+            <div style={{ height: 3, borderRadius: "0 0 10px 10px", background: "linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4)", margin: "0 -14px" }} />
+          </div>
+
+          {/* Sub-tabs */}
+          <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #e8e8e8", marginBottom: 24 }}>
+            {["Roles", "Authorisation"].map(tab => (
+              <button key={tab} onClick={() => setActiveSubTab(tab)} style={{
+                background: "none", border: "none", padding: "10px 20px 10px 0",
+                fontSize: 14, fontWeight: activeSubTab === tab ? 600 : 400,
+                color: activeSubTab === tab ? "#c8102e" : "#555",
+                borderBottom: activeSubTab === tab ? "2px solid #c8102e" : "2px solid transparent",
+                cursor: "pointer", fontFamily: "inherit", marginBottom: -1,
+              }}>{tab}</button>
+            ))}
+          </div>
+
+          {/* Account dropdown + Manage users */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid #ccc", borderRadius: 6, padding: "8px 14px", fontSize: 13, cursor: "pointer", minWidth: 280 }}>
+                <span>612873120012SGD - PURE DELIVERY P...</span>
+                <span style={{ fontSize: 11 }}>▾</span>
+              </div>
+              <div style={{ fontSize: 11, color: "#888", marginTop: 6 }}>Last updated 24 Dec 2022</div>
+            </div>
+            <button style={{
+              display: "flex", alignItems: "center", gap: 8,
+              border: "1px solid #ccc", borderRadius: 6, padding: "8px 16px",
+              background: "#fff", fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+            }}>
+              👤 Manage users
+            </button>
+          </div>
+
+          {/* Search */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid #ccc", borderRadius: 6, padding: "7px 14px", width: 220, fontSize: 13, color: "#888" }}>
+              🔍 <input placeholder="Search" style={{ border: "none", outline: "none", fontSize: 13, fontFamily: "inherit", width: "100%", color: "#333" }} />
+            </div>
+          </div>
+
+          {/* Table */}
+          <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
+            {/* Header row */}
+            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", background: "#fafafa", borderBottom: "1px solid #e0e0e0" }}>
+              <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
+              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
+                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
+                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Open and close accounts, and apply for banking facilities</div>
+                <div style={{ color: "#0057a8", fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+              </div>
+              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
+                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
+                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Sign to authorise transactions</div>
+                <div style={{ color: "#0057a8", fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+              </div>
+              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
+                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
+                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>View and/or manage online transactions</div>
+                <div style={{ color: "#0057a8", fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+              </div>
+            </div>
+            {/* Data rows */}
+            {JOURNEY_USERS.map((u, i) => (
+              <div key={u.name} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < JOURNEY_USERS.length - 1 ? "1px solid #e0e0e0" : "none" }}>
+                <div style={{ padding: "16px 20px" }}>
+                  <div style={{ fontWeight: 600 }}>{u.name}</div>
+                  {u.sub && <div style={{ color: "#888", fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
+                </div>
+                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                  {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
+                </div>
+                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                  {u.as && <span style={{ fontSize: 18 }}>✓</span>}
+                </div>
+                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                  {u.role}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div style={{ marginTop: 60, paddingTop: 20, borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#888" }}>
+            <span>© OCBC. All Rights Reserved.</span>
+            <span>Conditions of Access &nbsp;|&nbsp; Security &amp; Privacy</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
