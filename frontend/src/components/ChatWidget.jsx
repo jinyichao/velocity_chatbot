@@ -102,6 +102,7 @@ export default function ChatWidget({
   mobile = false,
   dark = false,
   showHeader = true,
+  assistantBg,
 }) {
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -161,7 +162,7 @@ export default function ChatWidget({
 
         <div style={baseStyles.messages(dark)}>
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} />
+            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} />
           ))}
           {loading && <TypingIndicator color={color} dark={dark} />}
           <div ref={bottomRef} />

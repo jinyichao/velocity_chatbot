@@ -21,11 +21,11 @@ const styles = {
     color: "#fff",
     fontWeight: 600,
   },
-  bubble: (role, color, dark) => ({
+  bubble: (role, color, dark, assistantBg) => ({
     maxWidth: "72%",
     padding: "10px 14px",
     borderRadius: role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-    background: role === "user" ? color : (dark ? "#252525" : "#fff"),
+    background: role === "user" ? color : (dark ? "#252525" : (assistantBg || "#fff")),
     color: role === "user" ? "#fff" : (dark ? "#f0f0f0" : "#1a1a1a"),
     fontSize: 14,
     lineHeight: 1.5,
@@ -146,7 +146,7 @@ function IntentBubbles({ intents, accentColor, dark }) {
   );
 }
 
-export default function MessageBubble({ message, accentColor = "#c8102e", dark = false }) {
+export default function MessageBubble({ message, accentColor = "#c8102e", dark = false, assistantBg }) {
   const { role, content } = message;
   const intents = role === "assistant" ? parseIntents(content) : null;
   return (
@@ -156,7 +156,7 @@ export default function MessageBubble({ message, accentColor = "#c8102e", dark =
       )}
       {intents
         ? <IntentBubbles intents={intents} accentColor={accentColor} dark={dark} />
-        : <div style={styles.bubble(role, accentColor, dark)}>{renderContent(content)}</div>
+        : <div style={styles.bubble(role, accentColor, dark, assistantBg)}>{renderContent(content)}</div>
       }
     </div>
   );

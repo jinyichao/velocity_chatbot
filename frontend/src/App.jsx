@@ -334,31 +334,24 @@ function JourneyPage({ dark }) {
       {chatOpen && (
         <div style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 2000,
-          width: 360, height: 520, borderRadius: 16,
+          width: 440, height: 520, borderRadius: 16,
           boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
           display: "flex", flexDirection: "column", overflow: "hidden",
           border: "1px solid #e0e0e0",
         }}>
           {/* Chat header */}
           <div style={{
-            background: "#c8102e", color: "#fff",
-            padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
+            background: "#3d5166", color: "#fff",
+            padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: 12, flexShrink: 0,
           }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: 700,
-            }}>V2</div>
+            <span style={{ fontSize: 20, lineHeight: 1, marginTop: 2 }}>✦</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>Gen-AI Powered Engine</div>
-              <div style={{ fontSize: 11, opacity: 0.85, display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4cff91", display: "inline-block" }} />
-                Online
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>Manage with AI</div>
+              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>Our chatbot will assist with your enquiries.</div>
             </div>
             <button onClick={() => setChatOpen(false)} style={{
               background: "none", border: "none", color: "#fff", fontSize: 20,
-              cursor: "pointer", lineHeight: 1, padding: 0, opacity: 0.8,
+              cursor: "pointer", lineHeight: 1, padding: 0, opacity: 0.7, marginTop: 2,
             }}>×</button>
           </div>
           {/* ChatWidget body (mobile mode fills the container) */}
@@ -366,12 +359,13 @@ function JourneyPage({ dark }) {
             sessionId={SESSION_JOURNEY}
             title="Gen-AI Powered Engine"
             label="V2"
-            color="#c8102e"
+            color="#3d5166"
             pendingMessage={pendingMessage}
             version={2}
             mobile={true}
             dark={false}
             showHeader={false}
+            assistantBg="#ebebeb"
           />
         </div>
       )}
