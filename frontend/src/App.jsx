@@ -202,17 +202,14 @@ function JourneyPage({ dark }) {
             <div style={{ height: 3, borderRadius: "0 0 10px 10px", background: "linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4)", margin: "0 -14px" }} />
           </div>
 
-          {/* Sub-tabs */}
-          <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #e8e8e8", marginBottom: 24 }}>
-            {["Roles", "Authorisation"].map(tab => (
-              <button key={tab} onClick={() => setActiveSubTab(tab)} style={{
-                background: "none", border: "none", padding: "10px 20px 10px 0",
-                fontSize: 14, fontWeight: activeSubTab === tab ? 600 : 400,
-                color: activeSubTab === tab ? "#c8102e" : "#555",
-                borderBottom: activeSubTab === tab ? "2px solid #c8102e" : "2px solid transparent",
-                cursor: "pointer", fontFamily: "inherit", marginBottom: -1,
-              }}>{tab}</button>
-            ))}
+          {/* Sub-tab */}
+          <div style={{ borderBottom: "1px solid #e8e8e8", marginBottom: 24 }}>
+            <button style={{
+              background: "none", border: "none", padding: "10px 20px 10px 0",
+              fontSize: 14, fontWeight: 600, color: "#c8102e",
+              borderBottom: "2px solid #c8102e",
+              cursor: "default", fontFamily: "inherit", marginBottom: -1,
+            }}>Roles</button>
           </div>
 
           {/* Account dropdown + Manage users */}
