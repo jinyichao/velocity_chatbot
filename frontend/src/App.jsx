@@ -159,37 +159,6 @@ function JourneyPage({ dark }) {
   return (
     <div style={{ width: "100%", minHeight: "100vh", background: "#fff", fontFamily: "'Helvetica Neue', Arial, sans-serif", color: "#111" }}>
 
-      {/* Velocity top info bar */}
-      <div style={{ borderBottom: "1px solid #e8e8e8", padding: "8px 32px", display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: "#555" }}>
-        <div>
-          <div style={{ fontWeight: 600, fontSize: 13, color: "#111" }}>Patrick Tan</div>
-          <div style={{ color: "#888" }}>ESOLUTIONS ALPHA PTE LTD &nbsp;·&nbsp; Last login: 12 May 2021, 13:58:31</div>
-        </div>
-        <div style={{ flex: 1 }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #ddd", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 12 }}>
-          🌐 EN <span style={{ fontSize: 10 }}>▾</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid #ddd", borderRadius: 6, padding: "5px 10px", cursor: "pointer", fontSize: 12, position: "relative" }}>
-          <span>📋</span> Tasks and statuses
-          <span style={{ position: "absolute", top: -6, right: -6, background: "#c8102e", color: "#fff", borderRadius: "50%", width: 16, height: 16, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>2</span>
-        </div>
-        <div style={{ width: 34, height: 34, border: "1px solid #ddd", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>✉</div>
-        <div style={{ width: 34, height: 34, border: "1px solid #ddd", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16 }}>⊕</div>
-      </div>
-
-      {/* Velocity nav */}
-      <div style={{ borderBottom: "1px solid #e8e8e8", padding: "0 32px", display: "flex", gap: 0 }}>
-        {VELOCITY_NAV.map((item) => (
-          <div key={item} style={{
-            padding: "14px 16px", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap",
-            color: "#333", borderBottom: "2px solid transparent",
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = "#c8102e"}
-            onMouseLeave={e => e.currentTarget.style.color = "#333"}
-          >{item}</div>
-        ))}
-      </div>
-
       {/* Main content */}
       <div style={{ display: "flex", padding: "36px 32px", gap: 40, maxWidth: 1200 }}>
 
