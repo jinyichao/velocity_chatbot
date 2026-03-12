@@ -12,8 +12,8 @@ const SESSION_C = uuidv4();
 const SESSION_JOURNEY = uuidv4();
 
 const WIDGETS = [
-  { sessionId: SESSION_A, title: "NLU-Based Engine",         label: "V1", color: "#c8102e", darkColor: "#8b2a3a", version: 1 },
-  { sessionId: SESSION_B, title: "Gen-AI Powered Engine",    label: "V2", color: "#0057a8", darkColor: "#2a5a8b", version: 2 },
+  { sessionId: SESSION_A, title: "NLU-Based Engine",         label: "V1", color: "#0057a8", darkColor: "#2a5a8b", version: 1 },
+  { sessionId: SESSION_B, title: "Gen-AI Powered Engine",    label: "V2", color: "#c8102e", darkColor: "#8b2a3a", version: 2 },
   { sessionId: SESSION_C, title: "Gen AI Knowledge Chatbot", label: "V3", color: "#00703c", darkColor: "#1a6b45", version: 3 },
 ];
 
@@ -341,7 +341,7 @@ function JourneyPage({ dark }) {
         }}>
           {/* Chat header */}
           <div style={{
-            background: "#0057a8", color: "#fff",
+            background: "#c8102e", color: "#fff",
             padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
           }}>
             <div style={{
@@ -366,7 +366,7 @@ function JourneyPage({ dark }) {
             sessionId={SESSION_JOURNEY}
             title="Gen-AI Powered Engine"
             label="V2"
-            color="#0057a8"
+            color="#c8102e"
             pendingMessage={pendingMessage}
             version={2}
             mobile={true}
