@@ -9,6 +9,7 @@ import { QUICK_REPLIES, MULTI_INTENT_3_REPLIES, HALLUCINATION_REPLIES, OUT_OF_SC
 const SESSION_A = uuidv4();
 const SESSION_B = uuidv4();
 const SESSION_C = uuidv4();
+const SESSION_JOURNEY = uuidv4();
 
 const WIDGETS = [
   { sessionId: SESSION_A, title: "NLU-Based Engine",         label: "V1", color: "#c8102e", darkColor: "#8b2a3a", version: 1 },
@@ -155,6 +156,16 @@ const JOURNEY_USERS = [
 function JourneyPage({ dark }) {
   const [activeSubTab, setActiveSubTab] = useState("Roles");
   const [aiInput, setAiInput] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState(null);
+
+  const handleAiSubmit = () => {
+    const text = aiInput.trim();
+    if (!text) return;
+    setAiInput("");
+    setChatOpen(true);
+    setPendingMessage({ text, key: Date.now() });
+  };
 
   return (
     <div style={{ width: "100%", minHeight: "100vh", background: "#fff", fontFamily: "'Helvetica Neue', Arial, sans-serif", color: "#111" }}>
@@ -183,13 +194,14 @@ function JourneyPage({ dark }) {
               <input
                 value={aiInput}
                 onChange={e => setAiInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleAiSubmit()}
                 placeholder="Simply describe what you want to do, and our AI will help you complete the task."
                 style={{
                   flex: 1, border: "none", outline: "none", fontSize: 14, color: "#333",
                   background: "transparent", fontFamily: "inherit", padding: "4px 0 12px",
                 }}
               />
-              <div style={{
+              <div onClick={handleAiSubmit} style={{
                 width: 42, height: 42, borderRadius: "50%", background: "#1a1a2e",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer", flexShrink: 0, marginBottom: 10,
@@ -285,6 +297,52 @@ function JourneyPage({ dark }) {
           </div>
         </div>
       </div>
+
+      {/* Floating V2 chat panel */}
+      {chatOpen && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 2000,
+          width: 360, height: 520, borderRadius: 16,
+          boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
+          display: "flex", flexDirection: "column", overflow: "hidden",
+          border: "1px solid #e0e0e0",
+        }}>
+          {/* Chat header */}
+          <div style={{
+            background: "#0057a8", color: "#fff",
+            padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 13, fontWeight: 700,
+            }}>V2</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>Gen-AI Powered Engine</div>
+              <div style={{ fontSize: 11, opacity: 0.85, display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4cff91", display: "inline-block" }} />
+                Online
+              </div>
+            </div>
+            <button onClick={() => setChatOpen(false)} style={{
+              background: "none", border: "none", color: "#fff", fontSize: 20,
+              cursor: "pointer", lineHeight: 1, padding: 0, opacity: 0.8,
+            }}>×</button>
+          </div>
+          {/* ChatWidget body (mobile mode fills the container) */}
+          <ChatWidget
+            sessionId={SESSION_JOURNEY}
+            title="Gen-AI Powered Engine"
+            label="V2"
+            color="#0057a8"
+            pendingMessage={pendingMessage}
+            version={2}
+            mobile={true}
+            dark={false}
+            showHeader={false}
+          />
+        </div>
+      )}
     </div>
   );
 }
