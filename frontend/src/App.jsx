@@ -395,7 +395,7 @@ function JourneyPage({ dark }) {
               fontSize: 14, fontWeight: 600, color: "#c8102e",
               borderBottom: "2px solid #c8102e",
               cursor: "default", fontFamily: "inherit", marginBottom: -1,
-            }}>Roles</button>
+            }}>{addUserRoles ? "Add User" : "Roles"}</button>
           </div>
 
           {addUserRoles ? (
