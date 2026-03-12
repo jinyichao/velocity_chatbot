@@ -158,6 +158,7 @@ function JourneyPage({ dark }) {
   const [aiInput, setAiInput] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
+  const [chipsOpen, setChipsOpen] = useState(false);
 
   const handleAiSubmit = () => {
     const text = aiInput.trim();
@@ -214,22 +215,34 @@ function JourneyPage({ dark }) {
             <div style={{ height: 3, borderRadius: "0 0 10px 10px", background: "linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4)", margin: "0 -14px" }} />
           </div>
 
-          {/* Suggestion chips */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-            {[
-              { label: "➕ Add User", query: "How do I add a new user to Velocity and assign them a role?" },
-              { label: "🗑 Delete User", query: "How do I deactivate or delete a user from Velocity?" },
-              { label: "👥 Edit Permissions", query: "How do I change a user's role or permissions in Velocity?" },
-            ].map(({ label, query }) => (
-              <button key={label} onClick={() => { setAiInput(query); setChatOpen(true); setPendingMessage({ text: query, key: Date.now() }); }} style={{
-                padding: "6px 14px", borderRadius: 20, border: "1.5px solid #0057a8",
-                background: "#fff", color: "#0057a8", fontSize: 12, fontWeight: 500,
-                cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#0057a8"; e.currentTarget.style.color = "#fff"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#0057a8"; }}
-              >{label}</button>
-            ))}
+          {/* Expandable suggestion chips */}
+          <div style={{ marginBottom: 24 }}>
+            <button onClick={() => setChipsOpen(v => !v)} style={{
+              background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
+              fontSize: 12, color: "#0057a8", fontWeight: 600, padding: 0,
+              display: "flex", alignItems: "center", gap: 5, marginBottom: chipsOpen ? 12 : 0,
+            }}>
+              <span style={{ fontSize: 10, transition: "transform 0.2s", display: "inline-block", transform: chipsOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+              {chipsOpen ? "Hide suggestions" : "Show suggestions"}
+            </button>
+            {chipsOpen && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {[
+                  { label: "➕ Add User", query: "How do I add a new user to Velocity and assign them a role?" },
+                  { label: "🗑 Delete User", query: "How do I deactivate or delete a user from Velocity?" },
+                  { label: "👥 Edit Permissions", query: "How do I change a user's role or permissions in Velocity?" },
+                ].map(({ label, query }) => (
+                  <button key={label} onClick={() => { setChatOpen(true); setPendingMessage({ text: query, key: Date.now() }); }} style={{
+                    padding: "6px 14px", borderRadius: 20, border: "1.5px solid #0057a8",
+                    background: "#fff", color: "#0057a8", fontSize: 12, fontWeight: 500,
+                    cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#0057a8"; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#0057a8"; }}
+                  >{label}</button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Sub-tab */}
