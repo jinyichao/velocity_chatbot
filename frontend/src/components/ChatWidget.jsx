@@ -168,6 +168,8 @@ export default function ChatWidget({
   onIntentsDetected,
   onIntentStarted,
   onIntentDismiss,
+  showIntentHint = true,
+  compactIntents = false,
 }) {
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -325,7 +327,7 @@ export default function ChatWidget({
 
         <div style={baseStyles.messages(dark)}>
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} onIntentDismiss={handleIntentDismiss} />
+            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} onIntentDismiss={handleIntentDismiss} showIntentHint={showIntentHint} compactIntents={compactIntents} />
           ))}
           {loading && <TypingIndicator color={color} dark={dark} />}
           {showRoleSelector && (

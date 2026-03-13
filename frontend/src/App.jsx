@@ -967,7 +967,8 @@ function MobileLayout({ username, onLogout, dark, onToggleDark }) {
       {WIDGETS.map((w, i) => (
         <div key={w.sessionId} style={{ display: activeTab === i ? "flex" : "none", flex: 1, minHeight: 0, flexDirection: "column" }}>
           <ChatWidget sessionId={w.sessionId} title={w.title} label={w.label} color={dark ? w.darkColor : w.color}
-            pendingMessage={pendingMessages[i]} version={w.version} mobile={true} dark={dark} />
+            pendingMessage={pendingMessages[i]} version={w.version} mobile={true} dark={dark}
+            showIntentHint={false} compactIntents={true} />
         </div>
       ))}
       <div style={{ background: t.panelBg, borderTop: `1px solid ${t.border}`, flexShrink: 0, transition: "background 0.2s" }}>
@@ -1046,6 +1047,8 @@ export default function App() {
                     mobile={true}
                     dark={dark}
                     showHeader={false}
+                    showIntentHint={false}
+                    compactIntents={true}
                   />
                 </PhoneFrame>
                 <InfoCard

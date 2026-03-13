@@ -107,49 +107,57 @@ function parseIntents(content) {
 
 const toTitleCase = s => s.replace(/\b\w/g, c => c.toUpperCase());
 
-function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDismiss }) {
+function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDismiss, showIntentHint = true, compactIntents = false }) {
   return (
     <div style={{
       background: dark ? "#252525" : "#fff",
       borderRadius: "18px 18px 18px 4px",
-      padding: "10px 14px",
+      padding: compactIntents ? "7px 10px" : "10px 14px",
       boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
       maxWidth: "72%",
     }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: dark ? "#888" : "#aaa", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: dark ? "#888" : "#aaa", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: compactIntents ? 5 : 8 }}>
         Intent identified
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: compactIntents ? 3 : 6 }}>
         {intents.map((intent) => {
           const isDone = intent.startsWith("✓ ");
           const label = isDone ? intent.slice(2) : intent;
+          const titleLabel = toTitleCase(label);
+          const compactFontSize = titleLabel.length > 20 ? 10 : 11;
           return (
-          <div key={intent} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div key={intent} style={{ display: "flex", alignItems: "center", gap: compactIntents ? 4 : 8 }}>
             {isDone ? (
-              <span style={{ color: "#00703c", fontSize: 13, fontWeight: 600, padding: "6px 14px", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 15 }}>✓</span> {toTitleCase(label)}
+              <span style={{ color: "#00703c", fontSize: compactIntents ? compactFontSize : 13, fontWeight: 600, padding: compactIntents ? "3px 8px" : "6px 14px", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: compactIntents ? compactFontSize + 1 : 15 }}>✓</span> {titleLabel}
               </span>
             ) : (
               <>
-                <span style={{ color: accentColor, fontSize: 16, lineHeight: 1 }}>•</span>
+                {!compactIntents && <span style={{ color: accentColor, fontSize: 16, lineHeight: 1 }}>•</span>}
                 <button style={{
                   display: "inline-flex", alignItems: "center",
-                  padding: "6px 14px",
+                  padding: compactIntents ? "3px 8px" : "6px 14px",
                   borderRadius: 20,
                   background: "transparent",
                   border: `1.5px solid ${accentColor}`,
                   color: accentColor,
-                  fontSize: 13, fontWeight: 600,
+                  fontSize: compactIntents ? compactFontSize : 13,
+                  fontWeight: 600,
                   letterSpacing: "0.01em",
                   cursor: onIntentClick ? "pointer" : "default",
                   fontFamily: "inherit",
                   transition: "background 0.15s, color 0.15s",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: compactIntents ? 160 : "none",
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
                 onClick={() => onIntentClick && onIntentClick(label)}
+                title={titleLabel}
                 >
-                  {toTitleCase(label)}
+                  {titleLabel}
                 </button>
                 {onIntentDismiss && (
                   <button
@@ -179,14 +187,16 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDism
           );
         })}
       </div>
-      <div style={{ fontSize: 11, color: dark ? "#666" : "#bbb", marginTop: 10, lineHeight: 1.5 }}>
-        If these don't look right, dismiss the unwanted ones or elaborate on your query.
-      </div>
+      {showIntentHint && (
+        <div style={{ fontSize: 11, color: dark ? "#666" : "#bbb", marginTop: 10, lineHeight: 1.5 }}>
+          If these don't look right, dismiss the unwanted ones or elaborate on your query.
+        </div>
+      )}
     </div>
   );
 }
 
-export default function MessageBubble({ message, accentColor = "#c8102e", dark = false, assistantBg, onIntentClick, onIntentDismiss }) {
+export default function MessageBubble({ message, accentColor = "#c8102e", dark = false, assistantBg, onIntentClick, onIntentDismiss, showIntentHint = true, compactIntents = false }) {
   const { role, content } = message;
   const intents = role === "assistant" ? parseIntents(content) : null;
   return (
@@ -195,7 +205,7 @@ export default function MessageBubble({ message, accentColor = "#c8102e", dark =
         <div style={{ ...styles.avatar, background: accentColor }}>V</div>
       )}
       {intents
-        ? <IntentBubbles intents={intents} accentColor={accentColor} dark={dark} onIntentClick={onIntentClick} onIntentDismiss={onIntentDismiss} />
+        ? <IntentBubbles intents={intents} accentColor={accentColor} dark={dark} onIntentClick={onIntentClick} onIntentDismiss={onIntentDismiss} showIntentHint={showIntentHint} compactIntents={compactIntents} />
         : <div style={styles.bubble(role, accentColor, dark, assistantBg)}>{renderContent(content)}</div>
       }
     </div>
