@@ -634,13 +634,11 @@ function JourneyPage({ dark }) {
                     >×</button>
                     <div style={{ fontWeight: 700, fontSize: 15, color: t.text, marginBottom: 2 }}>{u.name}</div>
                     {u.sub && <div style={{ fontSize: 12, color: t.muted, marginBottom: 8 }}>{u.sub.split("\n")[0]}</div>}
-                    {u.pending && (
-                      <span style={{
-                        display: "inline-flex", alignItems: "center", gap: 5,
-                        background: "linear-gradient(90deg,#a78bfa,#7dd3fc)", color: "#fff",
-                        borderRadius: 20, fontSize: 12, fontWeight: 600, padding: "3px 12px", marginBottom: 12,
-                      }}>✦ AI Suggested</span>
-                    )}
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      background: "linear-gradient(90deg,#a78bfa,#7dd3fc)", color: "#fff",
+                      borderRadius: 20, fontSize: 12, fontWeight: 600, padding: "3px 12px", marginBottom: 12,
+                    }}>✦ AI Suggested</span>
                     <ul style={{ margin: 0, padding: "0 0 0 16px", listStyle: "disc", fontSize: 13, color: t.text, lineHeight: 1.7 }}>
                       {perms.map(p => <li key={p}>{p}</li>)}
                     </ul>
