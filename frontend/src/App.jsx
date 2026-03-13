@@ -669,7 +669,7 @@ function JourneyPage({ dark }) {
       {chatOpen && (
         <div style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 2000,
-          width: 580, height: 580, borderRadius: 16,
+          width: 420, height: 560, borderRadius: 16,
           boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
           display: "flex", flexDirection: "column", overflow: "hidden",
           border: `1px solid ${t.border}`, background: t.panelBg,
