@@ -179,6 +179,9 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDism
           );
         })}
       </div>
+      <div style={{ fontSize: 11, color: dark ? "#666" : "#bbb", marginTop: 10, lineHeight: 1.5 }}>
+        If these don't look right, dismiss the unwanted ones or elaborate on your query.
+      </div>
     </div>
   );
 }
