@@ -148,7 +148,7 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
 
 const VELOCITY_NAV = ["Home", "Accounts", "Pay and transfer", "FX and treasury", "Invoices", "Trade finance", "Tools", "Administration"];
 
-function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm }) {
+function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm, dark = false }) {
   const hasSignatory = selectedRoles.some(r => r.toLowerCase().includes("signator"));
   const hasBanking   = selectedRoles.some(r => r.toLowerCase().includes("business online banking") && !r.toLowerCase().includes("administrator"));
   const hasFX        = selectedRoles.some(r => r.toLowerCase().includes("fx contract"));
@@ -180,28 +180,38 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
   };
   const hasErrors = Object.values(fieldErrors).some(Boolean);
 
+  const ft = {
+    bg:      dark ? "#1e1e1e" : "#fff",
+    text:    dark ? "#f0f0f0" : "#111",
+    subtext: dark ? "#aaa"    : "#555",
+    muted:   dark ? "#666"    : "#888",
+    border:  dark ? "#3a3a3a" : "#e8e8e8",
+    fieldBg: dark ? "#2a2a2a" : "#fafafa",
+    inputBorderBottom: dark ? "#555" : "#ddd",
+    checkBg: dark ? "#4a6580" : "#3d5166",
+  };
   const inputStyle = {
-    width: "100%", border: "none", borderBottom: "1px solid #ddd",
+    width: "100%", border: "none", borderBottom: `1px solid ${ft.inputBorderBottom}`,
     outline: "none", fontSize: 14, padding: "8px 0", fontFamily: "inherit",
-    background: "transparent", color: "#111", boxSizing: "border-box",
+    background: "transparent", color: ft.text, boxSizing: "border-box",
   };
   const fieldWrap = (field) => ({
-    background: "#fafafa",
-    border: `1px solid ${fieldErrors[field] ? "#e53e3e" : "#e8e8e8"}`,
+    background: ft.fieldBg,
+    border: `1px solid ${fieldErrors[field] ? "#e53e3e" : ft.border}`,
     borderRadius: 8, padding: "12px 16px", flex: 1,
   });
 
   if (confirmed) return (
-    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e0e0e0", padding: "48px 32px", maxWidth: 860, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" }}>
-      <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#e6f4ea", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>✓</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: "#111" }}>User Added Successfully</div>
-      <div style={{ fontSize: 15, color: "#555" }}>New user <strong>"{name || "Unknown"}"</strong> has been added.</div>
-      <button onClick={onClose} style={{ marginTop: 8, padding: "9px 28px", background: "#3d5166", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
+    <div style={{ background: ft.bg, borderRadius: 12, border: `1px solid ${ft.border}`, padding: "48px 32px", maxWidth: 860, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" }}>
+      <div style={{ width: 56, height: 56, borderRadius: "50%", background: dark ? "#1a3a1a" : "#e6f4ea", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>✓</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: ft.text }}>User Added Successfully</div>
+      <div style={{ fontSize: 15, color: ft.subtext }}>New user <strong>"{name || "Unknown"}"</strong> has been added.</div>
+      <button onClick={onClose} style={{ marginTop: 8, padding: "9px 28px", background: ft.checkBg, color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
     </div>
   );
 
   return (
-    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e0e0e0", padding: "28px 32px", maxWidth: 860, boxSizing: "border-box" }}>
+    <div style={{ background: ft.bg, borderRadius: 12, border: `1px solid ${ft.border}`, padding: "28px 32px", maxWidth: 860, boxSizing: "border-box", color: ft.text }}>
       {/* Title */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
         <div style={{ fontSize: 22, fontWeight: 700 }}>Add user</div>
@@ -212,7 +222,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
           display: "flex", alignItems: "center", gap: 5,
         }}>✦ AI Suggested</div>
         <div style={{ flex: 1 }} />
-        <button onClick={onClose} style={{ background: "#f0f0f0", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+        <button onClick={onClose} style={{ background: dark ? "#333" : "#f0f0f0", color: ft.text, border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
       </div>
 
       {/* Fields row 1 */}
@@ -227,8 +237,8 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
       <div style={{ display: "flex", gap: 16, marginBottom: 28 }}>
         <div style={{ flex: 1 }}>
           <div style={{ ...fieldWrap("mobile"), display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 13, color: "#555", whiteSpace: "nowrap" }}>Mobile no.</span>
-            <span style={{ fontSize: 13, color: "#333", borderRight: "1px solid #ddd", paddingRight: 8 }}>+65 ▾</span>
+            <span style={{ fontSize: 13, color: ft.subtext, whiteSpace: "nowrap" }}>Mobile no.</span>
+            <span style={{ fontSize: 13, color: ft.text, borderRight: `1px solid ${ft.inputBorderBottom}`, paddingRight: 8 }}>+65 ▾</span>
             <input value={mobile} onChange={e => setMobile(e.target.value)} onBlur={() => validateField("mobile", mobile)} style={{ ...inputStyle, flex: 1 }} />
           </div>
           {fieldErrors.mobile && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.mobile}</div>}
@@ -244,40 +254,40 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
 
       {/* Sign to authorise */}
       <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
-        <div style={{ width: 20, height: 20, borderRadius: 4, background: hasSignatory ? "#3d5166" : "#fff", border: `2px solid ${hasSignatory ? "#3d5166" : "#ccc"}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
+        <div style={{ width: 20, height: 20, borderRadius: 4, background: hasSignatory ? ft.checkBg : "transparent", border: `2px solid ${hasSignatory ? ft.checkBg : ft.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
           {hasSignatory && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
         </div>
         <div>
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Sign to authorise transactions</div>
-          <div style={{ fontSize: 13, color: "#666", lineHeight: 1.5 }}>Authorised Signatory who can sign or accept documents (e.g. payment instructions, bills of exchange) on behalf of the account holder. Automatically acts as entity's contact person.</div>
+          <div style={{ fontSize: 13, color: ft.subtext, lineHeight: 1.5 }}>Authorised Signatory who can sign or accept documents (e.g. payment instructions, bills of exchange) on behalf of the account holder. Automatically acts as entity's contact person.</div>
         </div>
       </div>
 
       {/* View create authorise */}
       <div style={{ display: "flex", gap: 14, marginBottom: hasBanking ? 12 : 20 }}>
-        <div style={{ width: 20, height: 20, borderRadius: 4, background: hasBanking ? "#3d5166" : "#fff", border: `2px solid ${hasBanking ? "#3d5166" : "#ccc"}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
+        <div style={{ width: 20, height: 20, borderRadius: 4, background: hasBanking ? ft.checkBg : "transparent", border: `2px solid ${hasBanking ? ft.checkBg : ft.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
           {hasBanking && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>View, create and authorise online transactions</div>
-          <div style={{ fontSize: 13, color: "#666", marginBottom: 10 }}>Business online banking user (Maker and Authoriser)</div>
+          <div style={{ fontSize: 13, color: ft.subtext, marginBottom: 10 }}>Business online banking user (Maker and Authoriser)</div>
           {hasBanking && (
             <>
-              <div style={{ background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: 8, padding: "10px 14px", maxWidth: 320, marginBottom: 6 }}>
+              <div style={{ background: ft.fieldBg, border: `1px solid ${ft.border}`, borderRadius: 8, padding: "10px 14px", maxWidth: 320, marginBottom: 6 }}>
                 <input value={userId} onChange={e => setUserId(e.target.value)} style={{ ...inputStyle, background: "transparent" }} placeholder="User ID" />
               </div>
-              <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.</div>
+              <div style={{ fontSize: 12, color: ft.muted, marginBottom: 12 }}>Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.</div>
               {/* Learn what user can do */}
-              <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", maxWidth: 480 }}>
+              <div style={{ border: `1px solid ${ft.border}`, borderRadius: 8, overflow: "hidden", maxWidth: 480, background: ft.bg }}>
                 <div onClick={() => setLearnOpen(v => !v)} style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
                   <span>Learn what the user can do</span>
-                  <span style={{ fontSize: 12, color: "#888" }}>{learnOpen ? "Hide ∧" : "Show ∨"}</span>
+                  <span style={{ fontSize: 12, color: ft.muted }}>{learnOpen ? "Hide ∧" : "Show ∨"}</span>
                 </div>
                 {learnOpen && (
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
-                      <tr style={{ background: "#fafafa", borderTop: "1px solid #e0e0e0" }}>
-                        <th style={{ padding: "8px 16px", textAlign: "left", fontWeight: 600, borderRight: "1px solid #e0e0e0" }}>Role</th>
+                      <tr style={{ background: ft.fieldBg, borderTop: `1px solid ${ft.border}`, color: ft.text }}>
+                        <th style={{ padding: "8px 16px", textAlign: "left", fontWeight: 600, borderRight: `1px solid ${ft.border}` }}>Role</th>
                         <th style={{ padding: "8px 16px", textAlign: "left", fontWeight: 600 }}>What the user can do</th>
                       </tr>
                     </thead>
@@ -289,9 +299,9 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
                         ["Administrator", "Manage users, roles, and permissions. Cannot initiate or authorise financial transactions."],
                       ].filter(([role]) => selectedRoles.some(r => r.toLowerCase().includes(role.toLowerCase())))
                        .map(([role, desc]) => (
-                        <tr key={role} style={{ borderTop: "1px solid #e0e0e0" }}>
-                          <td style={{ padding: "10px 16px", fontWeight: 600, borderRight: "1px solid #e0e0e0", verticalAlign: "top", whiteSpace: "nowrap" }}>{role}</td>
-                          <td style={{ padding: "10px 16px", color: "#555", lineHeight: 1.5 }}>{desc}</td>
+                        <tr key={role} style={{ borderTop: `1px solid ${ft.border}`, color: ft.text }}>
+                          <td style={{ padding: "10px 16px", fontWeight: 600, borderRight: `1px solid ${ft.border}`, verticalAlign: "top", whiteSpace: "nowrap" }}>{role}</td>
+                          <td style={{ padding: "10px 16px", color: ft.subtext, lineHeight: 1.5 }}>{desc}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -310,10 +320,10 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
         { label: "Act as entity's contact person", checked: hasContact },
       ].map(({ label, checked }) => (
         <div key={label} style={{ display: "flex", gap: 14, marginBottom: 14, alignItems: "flex-start" }}>
-          <div style={{ width: 20, height: 20, borderRadius: 4, background: checked ? "#3d5166" : "#fff", border: `2px solid ${checked ? "#3d5166" : "#ccc"}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+          <div style={{ width: 20, height: 20, borderRadius: 4, background: checked ? ft.checkBg : "transparent", border: `2px solid ${checked ? ft.checkBg : ft.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
             {checked && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
           </div>
-          <div style={{ fontSize: 14, color: "#333" }}>{label}</div>
+          <div style={{ fontSize: 14, color: ft.text }}>{label}</div>
         </div>
       ))}
 
@@ -321,7 +331,6 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 28 }}>
         <button
           onClick={() => {
-            // Validate all fields before confirming
             const errors = {};
             if (nric) { const { fn, msg } = VALIDATORS.nric; if (!fn(nric)) errors.nric = msg; }
             if (mobile) { const { fn, msg } = VALIDATORS.mobile; if (!fn(mobile)) errors.mobile = msg; }
@@ -330,7 +339,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
             setConfirmed(true);
             if (onConfirm) onConfirm(name || "Unknown");
           }}
-          style={{ padding: "10px 32px", background: "#3d5166", color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+          style={{ padding: "10px 32px", background: ft.checkBg, color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
         >Confirm</button>
       </div>
     </div>
@@ -391,8 +400,23 @@ function JourneyPage({ dark }) {
     setPendingMessage({ text, key: Date.now() });
   };
 
+  const t = {
+    bg:            dark ? "#141414" : "#fff",
+    text:          dark ? "#f0f0f0" : "#111",
+    subtext:       dark ? "#aaa"    : "#666",
+    muted:         dark ? "#666"    : "#888",
+    border:        dark ? "#2a2a2a" : "#e0e0e0",
+    border2:       dark ? "#333"    : "#e8e8e8",
+    panelBg:       dark ? "#1e1e1e" : "#fff",
+    tableHeaderBg: dark ? "#252525" : "#fafafa",
+    inputText:     dark ? "#ccc"    : "#333",
+    accentLink:    dark ? "#5ba3ff" : "#0057a8",
+    chipBorder:    dark ? "#3a6fa8" : "#0057a8",
+    chipText:      dark ? "#5ba3ff" : "#0057a8",
+  };
+
   return (
-    <div style={{ width: "100%", minHeight: "100vh", background: "#fff", fontFamily: "'Helvetica Neue', Arial, sans-serif", color: "#111" }}>
+    <div style={{ width: "100%", minHeight: "100vh", background: t.bg, fontFamily: "'Helvetica Neue', Arial, sans-serif", color: t.text, transition: "background 0.2s" }}>
 
       {/* Main content */}
       <div style={{ display: "flex", padding: "36px 32px", gap: 40, maxWidth: 1200 }}>
@@ -400,7 +424,7 @@ function JourneyPage({ dark }) {
         {/* Left label */}
         <div style={{ width: 280, flexShrink: 0, paddingTop: 4 }}>
           <div style={{ width: 40, height: 4, background: "#c8102e", marginBottom: 16 }} />
-          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.7, color: "#111" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.7, color: t.text }}>
             Manage Roles<br />and Authorisation
           </div>
         </div>
@@ -410,9 +434,9 @@ function JourneyPage({ dark }) {
 
           {/* AI input */}
           <div style={{
-            border: "1px solid #e0e0e0", borderRadius: 10, padding: "12px 14px 0 18px",
+            border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px 0 18px",
             marginBottom: 28, boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
-            background: "#fff",
+            background: t.panelBg,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <input
@@ -421,7 +445,7 @@ function JourneyPage({ dark }) {
                 onKeyDown={e => e.key === "Enter" && handleAiSubmit()}
                 placeholder="Simply describe what you want to do, and our AI will help you complete the task."
                 style={{
-                  flex: 1, border: "none", outline: "none", fontSize: 14, color: "#333",
+                  flex: 1, border: "none", outline: "none", fontSize: 14, color: t.inputText,
                   background: "transparent", fontFamily: "inherit", padding: "4px 0 12px",
                 }}
               />
@@ -442,7 +466,7 @@ function JourneyPage({ dark }) {
           <div style={{ marginBottom: 24 }}>
             <button onClick={() => setChipsOpen(v => !v)} style={{
               background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
-              fontSize: 12, color: "#0057a8", fontWeight: 600, padding: 0,
+              fontSize: 12, color: t.chipText, fontWeight: 600, padding: 0,
               display: "flex", alignItems: "center", gap: 5, marginBottom: chipsOpen ? 12 : 0,
             }}>
               <span style={{ fontSize: 10, transition: "transform 0.2s", display: "inline-block", transform: chipsOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
@@ -457,12 +481,12 @@ function JourneyPage({ dark }) {
                   { label: "👥 Edit Permissions", query: "How do I change a user's role or permissions in Velocity?" },
                 ].map(({ label, query }) => (
                   <button key={label} onClick={() => { setChatOpen(true); setPendingMessage({ text: query, key: Date.now() }); }} style={{
-                    padding: "6px 14px", borderRadius: 20, border: "1.5px solid #0057a8",
-                    background: "#fff", color: "#0057a8", fontSize: 12, fontWeight: 500,
+                    padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${t.chipBorder}`,
+                    background: t.panelBg, color: t.chipText, fontSize: 12, fontWeight: 500,
                     cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#0057a8"; e.currentTarget.style.color = "#fff"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#0057a8"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = t.chipBorder; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = t.panelBg; e.currentTarget.style.color = t.chipText; }}
                   >{label}</button>
                 ))}
               </div>
@@ -470,7 +494,7 @@ function JourneyPage({ dark }) {
           </div>
 
           {/* Sub-tabs */}
-          <div style={{ borderBottom: "1px solid #e8e8e8", marginBottom: 24, display: "flex" }}>
+          <div style={{ borderBottom: `1px solid ${t.border2}`, marginBottom: 24, display: "flex" }}>
             {[
               "Roles",
               ...(addUserRoles ? ["Add User"] : []),
@@ -481,7 +505,7 @@ function JourneyPage({ dark }) {
                 <button key={tab} onClick={() => setActiveSubTab(tab)} style={{
                   background: "none", border: "none", padding: "10px 20px 10px 0",
                   fontSize: 14, fontWeight: active ? 600 : 400,
-                  color: active ? "#c8102e" : "#888",
+                  color: active ? "#c8102e" : t.muted,
                   borderBottom: active ? "2px solid #c8102e" : "2px solid transparent",
                   cursor: "pointer", fontFamily: "inherit", marginBottom: -1,
                 }}>{tab}</button>
@@ -490,7 +514,7 @@ function JourneyPage({ dark }) {
           </div>
 
           {activeSubTab === "Add User" && addUserRoles ? (
-            <AddUserForm selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); }} formData={addUserData} onFormChange={setAddUserData} onConfirm={(userName) => {
+            <AddUserForm dark={dark} selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); }} formData={addUserData} onFormChange={setAddUserData} onConfirm={(userName) => {
               setJourneyUsers(prev => [...prev, buildUserEntry(userName, addUserRoles || [])]);
               setAssistantNotification({ text: `New user "${userName}" has been added successfully! ✓`, key: Date.now() });
               const remaining = lastIntents.filter(i => i.toLowerCase() !== (activeIntent || "").toLowerCase());
@@ -505,46 +529,46 @@ function JourneyPage({ dark }) {
             }} />
           ) : activeSubTab === "Delete Users" && deleteTabOpen ? (<>
           {/* Delete Users table */}
-          <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 100px", background: "#fafafa", borderBottom: "1px solid #e0e0e0" }}>
+          <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 100px", background: t.tableHeaderBg, borderBottom: `1px solid ${t.border}`, color: t.text }}>
               <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
-              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
-                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
+              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
                 <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Open and close accounts, and apply for banking facilities</div>
               </div>
-              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
-                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
+              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
                 <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Sign to authorise transactions</div>
               </div>
-              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
-                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
+              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
                 <div style={{ fontWeight: 700, lineHeight: 1.4 }}>View and/or manage online transactions</div>
               </div>
-              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", fontWeight: 600 }}>Action</div>
+              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, fontWeight: 600 }}>Action</div>
             </div>
             {journeyUsers.map((u, i) => (
-              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 100px", borderBottom: i < journeyUsers.length - 1 ? "1px solid #e0e0e0" : "none" }}>
+              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 100px", borderBottom: i < journeyUsers.length - 1 ? `1px solid ${t.border}` : "none", background: t.panelBg, color: t.text }}>
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ fontWeight: 600 }}>{u.name}</div>
-                  {u.sub && <div style={{ color: "#888", fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
+                  {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
                 </div>
-                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
                 </div>
-                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   {u.as && <span style={{ fontSize: 18 }}>✓</span>}
                 </div>
-                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   {u.role}
                 </div>
-                <div style={{ padding: "12px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                <div style={{ padding: "12px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   <button onClick={() => setJourneyUsers(prev => prev.filter((_, idx) => idx !== i))} style={{
                     padding: "5px 12px", borderRadius: 6, border: "1.5px solid #e53e3e",
-                    background: "#fff", color: "#e53e3e", fontSize: 12, fontWeight: 600,
+                    background: "transparent", color: "#e53e3e", fontSize: 12, fontWeight: 600,
                     cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
                   }}
                     onMouseEnter={e => { e.currentTarget.style.background = "#e53e3e"; e.currentTarget.style.color = "#fff"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#e53e3e"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#e53e3e"; }}
                   >Delete</button>
                 </div>
               </div>
@@ -554,54 +578,54 @@ function JourneyPage({ dark }) {
           {/* Account dropdown + Manage users */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid #ccc", borderRadius: 6, padding: "8px 14px", fontSize: 13, cursor: "pointer", minWidth: 280 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 14px", fontSize: 13, cursor: "pointer", minWidth: 280, background: t.panelBg, color: t.text }}>
                 <span>612873120012SGD - PURE DELIVERY P...</span>
                 <span style={{ fontSize: 11 }}>▾</span>
               </div>
-              <div style={{ fontSize: 11, color: "#888", marginTop: 6 }}>Last updated 24 Dec 2022</div>
+              <div style={{ fontSize: 11, color: t.muted, marginTop: 6 }}>Last updated 24 Dec 2022</div>
             </div>
             <button style={{
               display: "flex", alignItems: "center", gap: 8,
-              border: "1px solid #ccc", borderRadius: 6, padding: "8px 16px",
-              background: "#fff", fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+              border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 16px",
+              background: t.panelBg, color: t.text, fontSize: 13, cursor: "pointer", fontFamily: "inherit",
             }}>
               👤 Manage users
             </button>
           </div>
 
           {/* Table */}
-          <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", background: "#fafafa", borderBottom: "1px solid #e0e0e0" }}>
+          <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", background: t.tableHeaderBg, borderBottom: `1px solid ${t.border}`, color: t.text }}>
               <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
-              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
-                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
+              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
                 <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Open and close accounts, and apply for banking facilities</div>
-                <div style={{ color: "#0057a8", fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+                <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
               </div>
-              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
-                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
+              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
                 <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Sign to authorise transactions</div>
-                <div style={{ color: "#0057a8", fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+                <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
               </div>
-              <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0" }}>
-                <div style={{ color: "#888", fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
+              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
                 <div style={{ fontWeight: 700, lineHeight: 1.4 }}>View and/or manage online transactions</div>
-                <div style={{ color: "#0057a8", fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+                <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
               </div>
             </div>
             {journeyUsers.map((u, i) => (
-              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < journeyUsers.length - 1 ? "1px solid #e0e0e0" : "none" }}>
+              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < journeyUsers.length - 1 ? `1px solid ${t.border}` : "none", background: t.panelBg, color: t.text }}>
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ fontWeight: 600 }}>{u.name}</div>
-                  {u.sub && <div style={{ color: "#888", fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
+                  {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
                 </div>
-                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
                 </div>
-                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   {u.as && <span style={{ fontSize: 18 }}>✓</span>}
                 </div>
-                <div style={{ padding: "16px 20px", borderLeft: "1px solid #e0e0e0", display: "flex", alignItems: "center" }}>
+                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   {u.role}
                 </div>
               </div>
@@ -610,7 +634,7 @@ function JourneyPage({ dark }) {
           </>)}
 
           {/* Footer */}
-          <div style={{ marginTop: 60, paddingTop: 20, borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#888" }}>
+          <div style={{ marginTop: 60, paddingTop: 20, borderTop: `1px solid ${t.border2}`, display: "flex", justifyContent: "space-between", fontSize: 12, color: t.muted }}>
             <span>© OCBC. All Rights Reserved.</span>
             <span>Conditions of Access &nbsp;|&nbsp; Security &amp; Privacy</span>
           </div>
@@ -624,7 +648,7 @@ function JourneyPage({ dark }) {
           width: 580, height: 580, borderRadius: 16,
           boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
           display: "flex", flexDirection: "column", overflow: "hidden",
-          border: "1px solid #e0e0e0", background: "#fff",
+          border: `1px solid ${t.border}`, background: t.panelBg,
         }}>
           {/* Chat header */}
           <div style={{
@@ -651,9 +675,9 @@ function JourneyPage({ dark }) {
             pendingMessage={pendingMessage}
             version={2}
             mobile={true}
-            dark={false}
+            dark={dark}
             showHeader={false}
-            assistantBg="#ebebeb"
+            assistantBg={dark ? "#2a2a2a" : "#ebebeb"}
             intentResponses={{
               "add user": { type: "role_selector" },
               "add_user": { type: "role_selector" },
@@ -672,9 +696,9 @@ function JourneyPage({ dark }) {
           />
 
           {/* Input bar */}
-          <div style={{ flexShrink: 0, padding: "10px 16px 0", background: "#fff" }}>
+          <div style={{ flexShrink: 0, padding: "10px 16px 0", background: t.panelBg }}>
             <div style={{
-              border: "1px solid #e8e8e8", borderRadius: 10,
+              border: `1px solid ${t.border2}`, borderRadius: 10,
               display: "flex", alignItems: "center", padding: "10px 14px", gap: 10,
             }}>
               <input
@@ -684,7 +708,7 @@ function JourneyPage({ dark }) {
                 placeholder="Type your question"
                 style={{
                   flex: 1, border: "none", outline: "none",
-                  fontSize: 14, color: "#333", fontFamily: "inherit",
+                  fontSize: 14, color: t.inputText, fontFamily: "inherit",
                   background: "transparent",
                 }}
               />
