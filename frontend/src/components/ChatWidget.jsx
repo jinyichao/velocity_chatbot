@@ -210,6 +210,8 @@ export default function ChatWidget({
     const response = intentResponses[intentLabel] || intentResponses[key];
     if (response && typeof response === "object" && response.type === "role_selector") {
       setShowRoleSelector(true);
+    } else if (response && typeof response === "object" && response.type === "silent") {
+      return; // handled externally, no chat message
     } else if (response) {
       setMessages((prev) => [...prev, { role: "assistant", content: response }]);
     } else {

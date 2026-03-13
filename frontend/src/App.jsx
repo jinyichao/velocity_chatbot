@@ -720,8 +720,10 @@ function JourneyPage({ dark }) {
             showHeader={false}
             assistantBg={dark ? "#2a2a2a" : "#ebebeb"}
             intentResponses={{
-              "add user": { type: "role_selector" },
-              "add_user": { type: "role_selector" },
+              "add user":    { type: "role_selector" },
+              "add_user":    { type: "role_selector" },
+              "delete user": { type: "silent" },
+              "delete_user": { type: "silent" },
             }}
             onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setActiveSubTab("Add User"); }}
             onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
