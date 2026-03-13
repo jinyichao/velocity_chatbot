@@ -481,8 +481,7 @@ function JourneyPage({ dark }) {
                   { label: "➕ Add User", query: "How do I add a new user to Velocity and assign them a role?" },
                   { label: "🗑 Delete User", query: "How do I deactivate or delete a user from Velocity?" },
                   { label: "➕🗑 Add & Delete User", query: "How do I add a new user and also remove an existing user from Velocity?" },
-                  { label: "👥 Edit Permissions", query: "How do I change a user's role or permissions in Velocity?" },
-                  { label: "➕🗑👥 Add, Delete & Edit", query: "I need to add a new user, remove an existing user, and update another user's permissions in Velocity." },
+                  { label: "➕🗑🔔 Add, Delete & Alters Notification", query: "I need to add a new user, remove an existing user, and set up alerts and notifications in Velocity." },
                 ].map(({ label, query }) => (
                   <button key={label} onClick={() => { setChatOpen(true); setPendingMessage({ text: query, key: Date.now() }); }} style={{
                     padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${t.chipBorder}`,
