@@ -790,8 +790,8 @@ function JourneyPage({ dark }) {
             intentResponses={{
               "add user":    { type: "role_selector" },
               "add_user":    { type: "role_selector" },
-              "delete user": { type: "silent" },
-              "delete_user": { type: "silent" },
+              "delete user": "Sure! Please select the user(s) you'd like to remove from the **Delete Users** tab on the left. Once you've made your selection, click **Confirm** to proceed.",
+              "delete_user": "Sure! Please select the user(s) you'd like to remove from the **Delete Users** tab on the left. Once you've made your selection, click **Confirm** to proceed.",
             }}
             onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setActiveSubTab("Add User"); }}
             onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
