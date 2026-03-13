@@ -107,7 +107,7 @@ function parseIntents(content) {
 
 const toTitleCase = s => s.replace(/\b\w/g, c => c.toUpperCase());
 
-function IntentBubbles({ intents, accentColor, dark, onIntentClick }) {
+function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDismiss }) {
   return (
     <div style={{
       background: dark ? "#252525" : "#fff",
@@ -151,6 +151,28 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick }) {
                 >
                   {toTitleCase(label)}
                 </button>
+                {onIntentDismiss && (
+                  <button
+                    onClick={() => onIntentDismiss(label)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: dark ? "#888" : "#aaa",
+                      fontSize: 14,
+                      lineHeight: 1,
+                      padding: "2px 4px",
+                      borderRadius: "50%",
+                      display: "inline-flex",
+                      alignItems: "center",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = "#c8102e"}
+                    onMouseLeave={e => e.currentTarget.style.color = dark ? "#888" : "#aaa"}
+                    title="Dismiss"
+                  >
+                    ×
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -161,7 +183,7 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick }) {
   );
 }
 
-export default function MessageBubble({ message, accentColor = "#c8102e", dark = false, assistantBg, onIntentClick }) {
+export default function MessageBubble({ message, accentColor = "#c8102e", dark = false, assistantBg, onIntentClick, onIntentDismiss }) {
   const { role, content } = message;
   const intents = role === "assistant" ? parseIntents(content) : null;
   return (
@@ -170,7 +192,7 @@ export default function MessageBubble({ message, accentColor = "#c8102e", dark =
         <div style={{ ...styles.avatar, background: accentColor }}>V</div>
       )}
       {intents
-        ? <IntentBubbles intents={intents} accentColor={accentColor} dark={dark} onIntentClick={onIntentClick} />
+        ? <IntentBubbles intents={intents} accentColor={accentColor} dark={dark} onIntentClick={onIntentClick} onIntentDismiss={onIntentDismiss} />
         : <div style={styles.bubble(role, accentColor, dark, assistantBg)}>{renderContent(content)}</div>
       }
     </div>

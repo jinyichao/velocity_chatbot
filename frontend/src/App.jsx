@@ -388,6 +388,20 @@ function JourneyPage({ dark }) {
   const [deletedUsers, setDeletedUsers] = useState([]);
   const [completedIntents, setCompletedIntents] = useState([]);
 
+  const handleIntentDismiss = (label) => {
+    const updated = lastIntents.filter(i => i.toLowerCase() !== label.toLowerCase());
+    setLastIntents(updated);
+    if (updated.length === 0) {
+      setAssistantNotification(null);
+    } else {
+      const remaining = updated.filter(i => !completedIntents.includes(i.toLowerCase()));
+      setAssistantNotification({
+        text: `Intent identified:\n${updated.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
+        key: Date.now(),
+      });
+    }
+  };
+
   const handleChatSend = () => {
     const text = chatInput.trim();
     if (!text) return;
@@ -747,6 +761,7 @@ function JourneyPage({ dark }) {
             onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
             assistantMessage={assistantNotification}
             onIntentsDetected={(intents) => { setLastIntents(intents); setCompletedIntents([]); }}
+            onIntentDismiss={handleIntentDismiss}
             onIntentStarted={(label) => {
               setActiveIntent(label);
               if (label.toLowerCase().includes("delete")) {
