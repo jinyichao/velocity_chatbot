@@ -386,6 +386,7 @@ function JourneyPage({ dark }) {
   const [deleteTabOpen, setDeleteTabOpen] = useState(false);
   const [deleteConfirmIdx, setDeleteConfirmIdx] = useState(null);
   const [deletedUsers, setDeletedUsers] = useState([]);
+  const [completedIntents, setCompletedIntents] = useState([]);
 
   const handleChatSend = () => {
     const text = chatInput.trim();
@@ -522,15 +523,19 @@ function JourneyPage({ dark }) {
               setAddUserData({});
               setActiveSubTab("Roles");
               setAssistantNotification({ text: `New user "${userName}" has been added successfully! ✓`, key: Date.now() });
-              const remaining = lastIntents.filter(i => i.toLowerCase() !== (activeIntent || "").toLowerCase());
-              if (remaining.length > 0) {
-                setTimeout(() => {
+              const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
+              setCompletedIntents(nowCompleted);
+              const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
+              setTimeout(() => {
+                if (remaining.length === 0 && lastIntents.length > 0) {
+                  setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
+                } else if (remaining.length > 0) {
                   setAssistantNotification({
                     text: `Intent identified:\n${lastIntents.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
                     key: Date.now(),
                   });
-                }, 600);
-              }
+                }
+              }, 600);
             }} />
           ) : activeSubTab === "Delete Users" && deleteTabOpen ? (<>
           {/* Delete Users table */}
@@ -605,6 +610,19 @@ function JourneyPage({ dark }) {
                 ? `User${deletedUsers.length > 1 ? "s" : ""} ${deletedUsers.map(n => `"${n}"`).join(", ")} ${deletedUsers.length > 1 ? "have" : "has"} been successfully deleted. ✓`
                 : "Delete user task completed. ✓";
               setAssistantNotification({ text: msg, key: Date.now() });
+              const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
+              setCompletedIntents(nowCompleted);
+              const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
+              setTimeout(() => {
+                if (remaining.length === 0 && lastIntents.length > 0) {
+                  setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
+                } else if (remaining.length > 0) {
+                  setAssistantNotification({
+                    text: `Intent identified:\n${lastIntents.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
+                    key: Date.now(),
+                  });
+                }
+              }, 600);
               setDeleteTabOpen(false);
               setDeletedUsers([]);
               setDeleteConfirmIdx(null);
@@ -728,7 +746,7 @@ function JourneyPage({ dark }) {
             onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setActiveSubTab("Add User"); }}
             onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
             assistantMessage={assistantNotification}
-            onIntentsDetected={(intents) => setLastIntents(intents)}
+            onIntentsDetected={(intents) => { setLastIntents(intents); setCompletedIntents([]); }}
             onIntentStarted={(label) => {
               setActiveIntent(label);
               if (label.toLowerCase().includes("delete")) {
