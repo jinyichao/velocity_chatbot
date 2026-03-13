@@ -683,22 +683,13 @@ function JourneyPage({ dark }) {
             </div>
           </div>
           </>) : (<>
-          {/* Account dropdown + Manage users */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 14px", fontSize: 13, cursor: "pointer", minWidth: 280, background: t.panelBg, color: t.text }}>
-                <span>612873120012SGD - PURE DELIVERY P...</span>
-                <span style={{ fontSize: 11 }}>▾</span>
-              </div>
-              <div style={{ fontSize: 11, color: t.muted, marginTop: 6 }}>Last updated 24 Dec 2022</div>
+          {/* Account dropdown */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 14px", fontSize: 13, cursor: "pointer", minWidth: 280, background: t.panelBg, color: t.text, display: "inline-flex" }}>
+              <span>612873120012SGD - PURE DELIVERY P...</span>
+              <span style={{ fontSize: 11 }}>▾</span>
             </div>
-            <button style={{
-              display: "flex", alignItems: "center", gap: 8,
-              border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 16px",
-              background: t.panelBg, color: t.text, fontSize: 13, cursor: "pointer", fontFamily: "inherit",
-            }}>
-              👤 Manage users
-            </button>
+            <div style={{ fontSize: 11, color: t.muted, marginTop: 6 }}>Last updated 24 Dec 2022</div>
           </div>
 
           {/* Table */}
