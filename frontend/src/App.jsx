@@ -367,7 +367,7 @@ function buildUserEntry(name, roles) {
   const roleStr = bankingRoles.join(" and ");
   const ap = roles.some(r => r.toLowerCase() === "authorised person");
   const as_ = roles.some(r => r.toLowerCase().includes("signator"));
-  return { name, sub: "", ap, as: as_, role: roleStr };
+  return { name, sub: "", ap, as: as_, role: roleStr, pending: true };
 }
 
 function JourneyPage({ dark }) {
@@ -565,6 +565,7 @@ function JourneyPage({ dark }) {
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ fontWeight: 600 }}>{u.name}</div>
                   {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
+                  {u.pending && <div style={{ color: "#b07d00", fontSize: 11, marginTop: 4, fontStyle: "italic" }}>Pending authorization</div>}
                 </div>
                 <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
@@ -681,6 +682,7 @@ function JourneyPage({ dark }) {
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ fontWeight: 600 }}>{u.name}</div>
                   {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
+                  {u.pending && <div style={{ color: "#b07d00", fontSize: 11, marginTop: 4, fontStyle: "italic" }}>Pending authorization</div>}
                 </div>
                 <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
