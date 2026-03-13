@@ -27,7 +27,7 @@ const styles = {
     borderRadius: role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
     background: role === "user" ? color : (dark ? "#252525" : (assistantBg || "#fff")),
     color: role === "user" ? "#fff" : (dark ? "#f0f0f0" : "#1a1a1a"),
-    fontSize: 15,
+    fontSize: 14,
     lineHeight: 1.5,
     boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
     whiteSpace: "pre-wrap",
@@ -82,7 +82,7 @@ function renderContent(text) {
       flushList();
       if (labelMatch) {
         result.push(
-          <div key={i} style={{ fontSize: 12, fontWeight: 600, color: "#aaa", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6 }}>
+          <div key={i} style={{ fontSize: 11, fontWeight: 600, color: "#aaa", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6 }}>
             {labelMatch[1]}
           </div>
         );
@@ -116,7 +116,7 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDism
       boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
       maxWidth: "72%",
     }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: dark ? "#888" : "#aaa", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: dark ? "#888" : "#aaa", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
         Intent identified
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -126,12 +126,12 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDism
           return (
           <div key={intent} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {isDone ? (
-              <span style={{ color: "#00703c", fontSize: 14, fontWeight: 600, padding: "6px 14px", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 16 }}>✓</span> {toTitleCase(label)}
+              <span style={{ color: "#00703c", fontSize: 13, fontWeight: 600, padding: "6px 14px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 15 }}>✓</span> {toTitleCase(label)}
               </span>
             ) : (
               <>
-                <span style={{ color: accentColor, fontSize: 17, lineHeight: 1 }}>•</span>
+                <span style={{ color: accentColor, fontSize: 16, lineHeight: 1 }}>•</span>
                 <button style={{
                   display: "inline-flex", alignItems: "center",
                   padding: "6px 14px",
@@ -139,7 +139,7 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDism
                   background: "transparent",
                   border: `1.5px solid ${accentColor}`,
                   color: accentColor,
-                  fontSize: 14, fontWeight: 600,
+                  fontSize: 13, fontWeight: 600,
                   letterSpacing: "0.01em",
                   cursor: onIntentClick ? "pointer" : "default",
                   fontFamily: "inherit",
@@ -159,7 +159,7 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDism
                       border: "none",
                       cursor: "pointer",
                       color: dark ? "#888" : "#aaa",
-                      fontSize: 15,
+                      fontSize: 14,
                       lineHeight: 1,
                       padding: "2px 4px",
                       borderRadius: "50%",
@@ -179,7 +179,7 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDism
           );
         })}
       </div>
-      <div style={{ fontSize: 12, color: dark ? "#666" : "#bbb", marginTop: 10, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 11, color: dark ? "#666" : "#bbb", marginTop: 10, lineHeight: 1.5 }}>
         If these don't look right, dismiss the unwanted ones or elaborate on your query.
       </div>
     </div>

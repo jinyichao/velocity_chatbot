@@ -67,7 +67,7 @@ function ThemeToggle({ dark, onToggle }) {
         transform: dark ? "translateX(20px)" : "translateX(0)",
         transition: "transform 0.2s",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 12,
+        fontSize: 11,
       }}>
         {dark ? "☀" : "🌙"}
       </div>
@@ -88,7 +88,7 @@ function Chip({ label, onClick, dark }) {
         border: `1.5px solid ${dark ? "#555" : "#c8102e"}`,
         background: hovered ? (dark ? "#444" : "#c8102e") : (dark ? "#1e1e1e" : "#fff"),
         color: hovered ? "#fff" : (dark ? "#bbb" : "#c8102e"),
-        fontSize: 13, fontWeight: 500,
+        fontSize: 12, fontWeight: 500,
         cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
       }}
     >
@@ -123,7 +123,7 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
               background: "none", border: "none",
               borderBottom: active ? "2px solid #c8102e" : "2px solid transparent",
               height: 60, padding: "0 18px",
-              fontSize: 15, fontWeight: active ? 600 : 400,
+              fontSize: 14, fontWeight: active ? 600 : 400,
               color: active ? (dark ? "#f0f0f0" : "#111") : (dark ? "#666" : "#888"),
               cursor: "pointer", transition: "all 0.15s",
               letterSpacing: "-0.2px", whiteSpace: "nowrap",
@@ -138,7 +138,7 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
       <ThemeToggle dark={dark} onToggle={onToggleDark} />
       <button
         onClick={onLogout}
-        style={{ background: "none", border: "none", fontSize: 14, color: dark ? "#888" : "#555", cursor: "pointer", padding: "6px 0 6px 12px", fontFamily: "inherit" }}
+        style={{ background: "none", border: "none", fontSize: 13, color: dark ? "#888" : "#555", cursor: "pointer", padding: "6px 0 6px 12px", fontFamily: "inherit" }}
       >
         Sign Out
       </button>
@@ -192,7 +192,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
   };
   const inputStyle = {
     width: "100%", border: "none", borderBottom: `1px solid ${ft.inputBorderBottom}`,
-    outline: "none", fontSize: 15, padding: "8px 0", fontFamily: "inherit",
+    outline: "none", fontSize: 14, padding: "8px 0", fontFamily: "inherit",
     background: "transparent", color: ft.text, boxSizing: "border-box",
   };
   const fieldWrap = (field) => ({
@@ -203,10 +203,10 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
 
   if (confirmed) return (
     <div style={{ background: ft.bg, borderRadius: 12, border: `1px solid ${ft.border}`, padding: "48px 32px", maxWidth: 860, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" }}>
-      <div style={{ width: 56, height: 56, borderRadius: "50%", background: dark ? "#1a3a1a" : "#e6f4ea", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 29 }}>✓</div>
-      <div style={{ fontSize: 21, fontWeight: 700, color: ft.text }}>User Added Successfully</div>
-      <div style={{ fontSize: 16, color: ft.subtext }}>New user <strong>"{name || "Unknown"}"</strong> has been added.</div>
-      <button onClick={onClose} style={{ marginTop: 8, padding: "9px 28px", background: ft.checkBg, color: "#fff", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
+      <div style={{ width: 56, height: 56, borderRadius: "50%", background: dark ? "#1a3a1a" : "#e6f4ea", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>✓</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: ft.text }}>User Added Successfully</div>
+      <div style={{ fontSize: 15, color: ft.subtext }}>New user <strong>"{name || "Unknown"}"</strong> has been added.</div>
+      <button onClick={onClose} style={{ marginTop: 8, padding: "9px 28px", background: ft.checkBg, color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
     </div>
   );
 
@@ -214,15 +214,15 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
     <div style={{ background: ft.bg, borderRadius: 12, border: `1px solid ${ft.border}`, padding: "28px 32px", maxWidth: 860, boxSizing: "border-box", color: ft.text }}>
       {/* Title */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
-        <div style={{ fontSize: 23, fontWeight: 700 }}>Add user</div>
+        <div style={{ fontSize: 22, fontWeight: 700 }}>Add user</div>
         <div style={{
           background: "linear-gradient(90deg, #67e8f9, #818cf8)",
           borderRadius: 20, padding: "3px 12px",
-          fontSize: 13, fontWeight: 600, color: "#fff",
+          fontSize: 12, fontWeight: 600, color: "#fff",
           display: "flex", alignItems: "center", gap: 5,
         }}>✦ AI Suggested</div>
         <div style={{ flex: 1 }} />
-        <button onClick={onClose} style={{ background: dark ? "#333" : "#f0f0f0", color: ft.text, border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+        <button onClick={onClose} style={{ background: dark ? "#333" : "#f0f0f0", color: ft.text, border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
       </div>
 
       {/* Fields row 1 */}
@@ -230,61 +230,61 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
         <div style={fieldWrap("name")}><input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name (as shown in ID)" style={inputStyle} /></div>
         <div style={{ flex: 1 }}>
           <div style={fieldWrap("nric")}><input value={nric} onChange={e => setNric(e.target.value)} onBlur={() => validateField("nric", nric)} placeholder="NRIC no." style={inputStyle} /></div>
-          {fieldErrors.nric && <div style={{ fontSize: 12, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.nric}</div>}
+          {fieldErrors.nric && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.nric}</div>}
         </div>
       </div>
       {/* Fields row 2 */}
       <div style={{ display: "flex", gap: 16, marginBottom: 28 }}>
         <div style={{ flex: 1 }}>
           <div style={{ ...fieldWrap("mobile"), display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14, color: ft.subtext, whiteSpace: "nowrap" }}>Mobile no.</span>
-            <span style={{ fontSize: 14, color: ft.text, borderRight: `1px solid ${ft.inputBorderBottom}`, paddingRight: 8 }}>+65 ▾</span>
+            <span style={{ fontSize: 13, color: ft.subtext, whiteSpace: "nowrap" }}>Mobile no.</span>
+            <span style={{ fontSize: 13, color: ft.text, borderRight: `1px solid ${ft.inputBorderBottom}`, paddingRight: 8 }}>+65 ▾</span>
             <input value={mobile} onChange={e => setMobile(e.target.value)} onBlur={() => validateField("mobile", mobile)} style={{ ...inputStyle, flex: 1 }} />
           </div>
-          {fieldErrors.mobile && <div style={{ fontSize: 12, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.mobile}</div>}
+          {fieldErrors.mobile && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.mobile}</div>}
         </div>
         <div style={{ flex: 1 }}>
           <div style={fieldWrap("email")}><input value={email} onChange={e => setEmail(e.target.value)} onBlur={() => validateField("email", email)} placeholder="Email" style={inputStyle} /></div>
-          {fieldErrors.email && <div style={{ fontSize: 12, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.email}</div>}
+          {fieldErrors.email && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.email}</div>}
         </div>
       </div>
 
       {/* Roles */}
-      <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 16 }}>Roles</div>
+      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Roles</div>
 
       {/* Sign to authorise */}
       <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
         <div style={{ width: 20, height: 20, borderRadius: 4, background: hasSignatory ? ft.checkBg : "transparent", border: `2px solid ${hasSignatory ? ft.checkBg : ft.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
-          {hasSignatory && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>✓</span>}
+          {hasSignatory && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
         </div>
         <div>
-          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Sign to authorise transactions</div>
-          <div style={{ fontSize: 14, color: ft.subtext, lineHeight: 1.5 }}>Authorised Signatory who can sign or accept documents (e.g. payment instructions, bills of exchange) on behalf of the account holder. Automatically acts as entity's contact person.</div>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Sign to authorise transactions</div>
+          <div style={{ fontSize: 13, color: ft.subtext, lineHeight: 1.5 }}>Authorised Signatory who can sign or accept documents (e.g. payment instructions, bills of exchange) on behalf of the account holder. Automatically acts as entity's contact person.</div>
         </div>
       </div>
 
       {/* View create authorise */}
       <div style={{ display: "flex", gap: 14, marginBottom: hasBanking ? 12 : 20 }}>
         <div style={{ width: 20, height: 20, borderRadius: 4, background: hasBanking ? ft.checkBg : "transparent", border: `2px solid ${hasBanking ? ft.checkBg : ft.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
-          {hasBanking && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>✓</span>}
+          {hasBanking && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>View, create and authorise online transactions</div>
-          <div style={{ fontSize: 14, color: ft.subtext, marginBottom: 10 }}>Business online banking user (Maker and Authoriser)</div>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>View, create and authorise online transactions</div>
+          <div style={{ fontSize: 13, color: ft.subtext, marginBottom: 10 }}>Business online banking user (Maker and Authoriser)</div>
           {hasBanking && (
             <>
               <div style={{ background: ft.fieldBg, border: `1px solid ${ft.border}`, borderRadius: 8, padding: "10px 14px", maxWidth: 320, marginBottom: 6 }}>
                 <input value={userId} onChange={e => setUserId(e.target.value)} style={{ ...inputStyle, background: "transparent" }} placeholder="User ID" />
               </div>
-              <div style={{ fontSize: 13, color: ft.muted, marginBottom: 12 }}>Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.</div>
+              <div style={{ fontSize: 12, color: ft.muted, marginBottom: 12 }}>Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.</div>
               {/* Learn what user can do */}
               <div style={{ border: `1px solid ${ft.border}`, borderRadius: 8, overflow: "hidden", maxWidth: 480, background: ft.bg }}>
-                <div onClick={() => setLearnOpen(v => !v)} style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+                <div onClick={() => setLearnOpen(v => !v)} style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
                   <span>Learn what the user can do</span>
-                  <span style={{ fontSize: 13, color: ft.muted }}>{learnOpen ? "Hide ∧" : "Show ∨"}</span>
+                  <span style={{ fontSize: 12, color: ft.muted }}>{learnOpen ? "Hide ∧" : "Show ∨"}</span>
                 </div>
                 {learnOpen && (
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: ft.fieldBg, borderTop: `1px solid ${ft.border}`, color: ft.text }}>
                         <th style={{ padding: "8px 16px", textAlign: "left", fontWeight: 600, borderRight: `1px solid ${ft.border}` }}>Role</th>
@@ -314,16 +314,16 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
       </div>
 
       {/* Other roles */}
-      <div style={{ fontWeight: 700, fontSize: 17, margin: "24px 0 16px" }}>Other roles</div>
+      <div style={{ fontWeight: 700, fontSize: 16, margin: "24px 0 16px" }}>Other roles</div>
       {[
         { label: "Book FX Contract (only for business online banking users)", checked: hasFX },
         { label: "Act as entity's contact person", checked: hasContact },
       ].map(({ label, checked }) => (
         <div key={label} style={{ display: "flex", gap: 14, marginBottom: 14, alignItems: "flex-start" }}>
           <div style={{ width: 20, height: 20, borderRadius: 4, background: checked ? ft.checkBg : "transparent", border: `2px solid ${checked ? ft.checkBg : ft.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
-            {checked && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>✓</span>}
+            {checked && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
           </div>
-          <div style={{ fontSize: 15, color: ft.text }}>{label}</div>
+          <div style={{ fontSize: 14, color: ft.text }}>{label}</div>
         </div>
       ))}
 
@@ -339,7 +339,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
             setConfirmed(true);
             if (onConfirm) onConfirm(name || "Unknown");
           }}
-          style={{ padding: "10px 32px", background: ft.checkBg, color: "#fff", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+          style={{ padding: "10px 32px", background: ft.checkBg, color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
         >Confirm</button>
       </div>
     </div>
@@ -442,7 +442,7 @@ function JourneyPage({ dark }) {
         {/* Left label */}
         <div style={{ width: 280, flexShrink: 0, paddingTop: 4 }}>
           <div style={{ width: 40, height: 4, background: "#c8102e", marginBottom: 16 }} />
-          <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.7, color: t.text }}>
+          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.7, color: t.text }}>
             Manage Roles<br />and Authorisation
           </div>
         </div>
@@ -463,7 +463,7 @@ function JourneyPage({ dark }) {
                 onKeyDown={e => e.key === "Enter" && handleAiSubmit()}
                 placeholder="Simply describe what you want to do, and our AI will help you complete the task."
                 style={{
-                  flex: 1, border: "none", outline: "none", fontSize: 15, color: t.inputText,
+                  flex: 1, border: "none", outline: "none", fontSize: 14, color: t.inputText,
                   background: "transparent", fontFamily: "inherit", padding: "4px 0 12px",
                 }}
               />
@@ -473,7 +473,7 @@ function JourneyPage({ dark }) {
                 cursor: "pointer", flexShrink: 0, marginBottom: 10,
                 boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
               }}>
-                <span style={{ color: "#fff", fontSize: 19 }}>✦</span>
+                <span style={{ color: "#fff", fontSize: 18 }}>✦</span>
               </div>
             </div>
             {/* Gradient border bottom */}
@@ -484,10 +484,10 @@ function JourneyPage({ dark }) {
           <div style={{ marginBottom: 24 }}>
             <button onClick={() => setChipsOpen(v => !v)} style={{
               background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
-              fontSize: 13, color: t.chipText, fontWeight: 600, padding: 0,
+              fontSize: 12, color: t.chipText, fontWeight: 600, padding: 0,
               display: "flex", alignItems: "center", gap: 5, marginBottom: chipsOpen ? 12 : 0,
             }}>
-              <span style={{ fontSize: 11, transition: "transform 0.2s", display: "inline-block", transform: chipsOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+              <span style={{ fontSize: 10, transition: "transform 0.2s", display: "inline-block", transform: chipsOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
               {chipsOpen ? "Hide suggestions" : "Show suggestions"}
             </button>
             {chipsOpen && (
@@ -500,7 +500,7 @@ function JourneyPage({ dark }) {
                 ].map(({ label, query }) => (
                   <button key={label} onClick={() => { setChatOpen(true); setPendingMessage({ text: query, key: Date.now() }); }} style={{
                     padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${t.chipBorder}`,
-                    background: t.panelBg, color: t.chipText, fontSize: 13, fontWeight: 500,
+                    background: t.panelBg, color: t.chipText, fontSize: 12, fontWeight: 500,
                     cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
                   }}
                     onMouseEnter={e => { e.currentTarget.style.background = t.chipBorder; e.currentTarget.style.color = "#fff"; }}
@@ -522,7 +522,7 @@ function JourneyPage({ dark }) {
               return (
                 <button key={tab} onClick={() => setActiveSubTab(tab)} style={{
                   background: "none", border: "none", padding: "10px 20px 10px 0",
-                  fontSize: 15, fontWeight: active ? 600 : 400,
+                  fontSize: 14, fontWeight: active ? 600 : 400,
                   color: active ? "#c8102e" : t.muted,
                   borderBottom: active ? "2px solid #c8102e" : "2px solid transparent",
                   cursor: "pointer", fontFamily: "inherit", marginBottom: -1,
@@ -557,20 +557,20 @@ function JourneyPage({ dark }) {
           <div style={{ maxWidth: 640 }}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: t.text }}>Remove user(s)</span>
+              <span style={{ fontSize: 17, fontWeight: 700, color: t.text }}>Remove user(s)</span>
               {selectedDeleteUsers.length > 0 && (
                 <span style={{
                   background: "#3d5166", color: "#fff", borderRadius: 12,
-                  fontSize: 13, fontWeight: 700, padding: "1px 8px", minWidth: 20, textAlign: "center",
+                  fontSize: 12, fontWeight: 700, padding: "1px 8px", minWidth: 20, textAlign: "center",
                 }}>{selectedDeleteUsers.length}</span>
               )}
               <span style={{
                 background: "linear-gradient(90deg,#67e8f9,#818cf8)", color: "#fff",
-                borderRadius: 20, fontSize: 13, fontWeight: 600, padding: "3px 12px",
+                borderRadius: 20, fontSize: 12, fontWeight: 600, padding: "3px 12px",
                 display: "inline-flex", alignItems: "center", gap: 5,
               }}>✦ AI Suggested</span>
             </div>
-            <div style={{ fontSize: 14, color: t.muted, marginBottom: 24 }}>
+            <div style={{ fontSize: 13, color: t.muted, marginBottom: 24 }}>
               The user(s) will be removed from all roles.
             </div>
 
@@ -581,11 +581,11 @@ function JourneyPage({ dark }) {
                 style={{
                   border: `1px solid ${t.border}`, borderRadius: 6, padding: "12px 16px",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
-                  cursor: "pointer", background: dark ? "#1e1e1e" : "#f7f7f7", color: t.muted, fontSize: 15,
+                  cursor: "pointer", background: dark ? "#1e1e1e" : "#f7f7f7", color: t.muted, fontSize: 14,
                 }}
               >
                 <span>Select user(s)</span>
-                <span style={{ fontSize: 13, transform: deleteDropdownOpen ? "rotate(180deg)" : "none", display: "inline-block", transition: "transform 0.15s" }}>▾</span>
+                <span style={{ fontSize: 12, transform: deleteDropdownOpen ? "rotate(180deg)" : "none", display: "inline-block", transition: "transform 0.15s" }}>▾</span>
               </div>
               {deleteDropdownOpen && (
                 <div style={{
@@ -598,7 +598,7 @@ function JourneyPage({ dark }) {
                       key={u.name}
                       onClick={() => { setSelectedDeleteUsers(prev => [...prev, u.name]); setDeleteDropdownOpen(false); }}
                       style={{
-                        padding: "11px 16px", fontSize: 15, cursor: "pointer", color: t.text,
+                        padding: "11px 16px", fontSize: 14, cursor: "pointer", color: t.text,
                         borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : "none",
                         background: "transparent",
                       }}
@@ -609,7 +609,7 @@ function JourneyPage({ dark }) {
                     </div>
                   ))}
                   {journeyUsers.filter(u => !selectedDeleteUsers.includes(u.name)).length === 0 && (
-                    <div style={{ padding: "11px 16px", fontSize: 14, color: t.muted }}>No more users to select</div>
+                    <div style={{ padding: "11px 16px", fontSize: 13, color: t.muted }}>No more users to select</div>
                   )}
                 </div>
               )}
@@ -632,14 +632,14 @@ function JourneyPage({ dark }) {
                       style={{
                         position: "absolute", top: 14, right: 14,
                         background: "none", border: "none", cursor: "pointer",
-                        color: t.muted, fontSize: 19, lineHeight: 1, padding: 2,
+                        color: t.muted, fontSize: 18, lineHeight: 1, padding: 2,
                       }}
                       onMouseEnter={e => e.currentTarget.style.color = "#c8102e"}
                       onMouseLeave={e => e.currentTarget.style.color = t.muted}
                     >×</button>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: t.text, marginBottom: 2 }}>{u.name}</div>
-                    {u.sub && <div style={{ fontSize: 13, color: t.muted, marginBottom: 8 }}>{u.sub.split("\n")[0]}</div>}
-                    <ul style={{ margin: 0, padding: "0 0 0 16px", listStyle: "disc", fontSize: 14, color: t.text, lineHeight: 1.7 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: t.text, marginBottom: 2 }}>{u.name}</div>
+                    {u.sub && <div style={{ fontSize: 12, color: t.muted, marginBottom: 8 }}>{u.sub.split("\n")[0]}</div>}
+                    <ul style={{ margin: 0, padding: "0 0 0 16px", listStyle: "disc", fontSize: 13, color: t.text, lineHeight: 1.7 }}>
                       {perms.map(p => <li key={p}>{p}</li>)}
                     </ul>
                   </div>
@@ -676,7 +676,7 @@ function JourneyPage({ dark }) {
                 }}
                 style={{
                   padding: "10px 32px", background: selectedDeleteUsers.length > 0 ? "#3d5166" : (dark ? "#333" : "#ccc"),
-                  color: "#fff", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 600,
+                  color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600,
                   cursor: selectedDeleteUsers.length > 0 ? "pointer" : "default", fontFamily: "inherit",
                 }}
               >Confirm</button>
@@ -685,45 +685,45 @@ function JourneyPage({ dark }) {
           </>) : (<>
           {/* Account dropdown */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 14px", fontSize: 14, cursor: "pointer", minWidth: 280, background: t.panelBg, color: t.text, display: "inline-flex" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 14px", fontSize: 13, cursor: "pointer", minWidth: 280, background: t.panelBg, color: t.text, display: "inline-flex" }}>
               <span>612873120012SGD - PURE DELIVERY P...</span>
-              <span style={{ fontSize: 12 }}>▾</span>
+              <span style={{ fontSize: 11 }}>▾</span>
             </div>
-            <div style={{ fontSize: 12, color: t.muted, marginTop: 6 }}>Last updated 24 Dec 2022</div>
+            <div style={{ fontSize: 11, color: t.muted, marginTop: 6 }}>Last updated 24 Dec 2022</div>
           </div>
 
           {/* Table */}
-          <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 14 }}>
+          <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
             <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", background: t.tableHeaderBg, borderBottom: `1px solid ${t.border}`, color: t.text }}>
               <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
               <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                <div style={{ color: t.muted, fontSize: 13, marginBottom: 4 }}>Authorised Person</div>
+                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
                 <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Open and close accounts, and apply for banking facilities</div>
-                <div style={{ color: t.accentLink, fontSize: 13, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+                <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
               </div>
               <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                <div style={{ color: t.muted, fontSize: 13, marginBottom: 4 }}>Authorised Signatory</div>
+                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
                 <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Sign to authorise transactions</div>
-                <div style={{ color: t.accentLink, fontSize: 13, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+                <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
               </div>
               <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                <div style={{ color: t.muted, fontSize: 13, marginBottom: 4 }}>Business online banking user</div>
+                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
                 <div style={{ fontWeight: 700, lineHeight: 1.4 }}>View and/or manage online transactions</div>
-                <div style={{ color: t.accentLink, fontSize: 13, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+                <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
               </div>
             </div>
             {journeyUsers.map((u, i) => (
               <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < journeyUsers.length - 1 ? `1px solid ${t.border}` : "none", background: t.panelBg, color: t.text }}>
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ fontWeight: 600 }}>{u.name}</div>
-                  {u.sub && <div style={{ color: t.muted, fontSize: 13, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
-                  {u.pending && <div style={{ color: "#b07d00", fontSize: 12, marginTop: 4, fontStyle: "italic" }}>Pending authorization</div>}
+                  {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
+                  {u.pending && <div style={{ color: "#b07d00", fontSize: 11, marginTop: 4, fontStyle: "italic" }}>Pending authorization</div>}
                 </div>
                 <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  {u.ap && <span style={{ fontSize: 19 }}>✓</span>}
+                  {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
                 </div>
                 <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  {u.as && <span style={{ fontSize: 19 }}>✓</span>}
+                  {u.as && <span style={{ fontSize: 18 }}>✓</span>}
                 </div>
                 <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
                   {u.role}
@@ -734,7 +734,7 @@ function JourneyPage({ dark }) {
           </>)}
 
           {/* Footer */}
-          <div style={{ marginTop: 60, paddingTop: 20, borderTop: `1px solid ${t.border2}`, display: "flex", justifyContent: "space-between", fontSize: 13, color: t.muted }}>
+          <div style={{ marginTop: 60, paddingTop: 20, borderTop: `1px solid ${t.border2}`, display: "flex", justifyContent: "space-between", fontSize: 12, color: t.muted }}>
             <span>© OCBC. All Rights Reserved.</span>
             <span>Conditions of Access &nbsp;|&nbsp; Security &amp; Privacy</span>
           </div>
@@ -755,13 +755,13 @@ function JourneyPage({ dark }) {
             background: "#3d5166", color: "#fff",
             padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: 12, flexShrink: 0,
           }}>
-            <span style={{ fontSize: 21, lineHeight: 1, marginTop: 2 }}>✦</span>
+            <span style={{ fontSize: 20, lineHeight: 1, marginTop: 2 }}>✦</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>Manage with AI</div>
-              <div style={{ fontSize: 13, opacity: 0.8, marginTop: 2 }}>Our chatbot will assist with your enquiries.</div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>Manage with AI</div>
+              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>Our chatbot will assist with your enquiries.</div>
             </div>
             <button onClick={() => setChatOpen(false)} style={{
-              background: "none", border: "none", color: "#fff", fontSize: 21,
+              background: "none", border: "none", color: "#fff", fontSize: 20,
               cursor: "pointer", lineHeight: 1, padding: 0, opacity: 0.7, marginTop: 2,
             }}>×</button>
           </div>
@@ -811,13 +811,13 @@ function JourneyPage({ dark }) {
                 placeholder="Type your question"
                 style={{
                   flex: 1, border: "none", outline: "none",
-                  fontSize: 15, color: t.inputText, fontFamily: "inherit",
+                  fontSize: 14, color: t.inputText, fontFamily: "inherit",
                   background: "transparent",
                 }}
               />
               <button onClick={handleChatSend} style={{
                 background: "none", border: "none", cursor: "pointer",
-                color: "#999", fontSize: 19, padding: 0, lineHeight: 1,
+                color: "#999", fontSize: 18, padding: 0, lineHeight: 1,
                 display: "flex", alignItems: "center",
               }}>➤</button>
             </div>
@@ -837,13 +837,13 @@ function WarningBanner({ onDismiss, dark }) {
       background: dark ? "#1c1500" : "#fffbeb",
       borderBottom: `1px solid ${dark ? "#4a3800" : "#fde68a"}`,
       padding: "9px 28px", display: "flex", alignItems: "center", gap: 10,
-      fontSize: 14, color: dark ? "#c8a000" : "#92400e",
+      fontSize: 13, color: dark ? "#c8a000" : "#92400e",
     }}>
       <span>⚠</span>
       <span style={{ flex: 1 }}>
         This application is hosted outside of OCBC's environment and is intended for demonstration purposes only.
       </span>
-      <button onClick={onDismiss} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 19, color: "inherit", padding: "0 4px", lineHeight: 1, opacity: 0.6 }}>×</button>
+      <button onClick={onDismiss} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "inherit", padding: "0 4px", lineHeight: 1, opacity: 0.6 }}>×</button>
     </div>
   );
 }
@@ -902,28 +902,28 @@ function InfoCard({ widget, info, dark, visible, onToggle }) {
       padding: 16, boxSizing: "border-box", transition: "background 0.2s", flex: 1,
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, color: t.title }}>{widget.title}</div>
+        <div style={{ fontWeight: 700, fontSize: 14, color: t.title }}>{widget.title}</div>
         <button onClick={onToggle} style={{
           background: visible ? color : "transparent",
           border: `1.5px solid ${color}`,
           borderRadius: 8, padding: "2px 9px",
-          fontSize: 11, fontWeight: 700,
+          fontSize: 10, fontWeight: 700,
           color: visible ? "#fff" : color,
           cursor: "pointer", transition: "all 0.15s", fontFamily: "inherit",
         }}>{visible ? "Hide" : "Show"}</button>
       </div>
-      <div style={{ fontSize: 13, color: t.desc, marginBottom: 12, lineHeight: 1.6, whiteSpace: "pre-line" }}>{info.description}</div>
+      <div style={{ fontSize: 12, color: t.desc, marginBottom: 12, lineHeight: 1.6, whiteSpace: "pre-line" }}>{info.description}</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
         {info.tags.map(tag => (
           <span key={tag.label} style={{
-            fontSize: 12, fontWeight: 600, padding: "2px 9px",
+            fontSize: 11, fontWeight: 600, padding: "2px 9px",
             borderRadius: 10, border: `1.5px solid ${tag.color}`, color: tag.color,
           }}>{tag.label}</span>
         ))}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        {info.pros.map(p => <div key={p} style={{ fontSize: 13, color: t.pros }}>+ {p}</div>)}
-        {info.cons.map(c => <div key={c} style={{ fontSize: 13, color: t.cons }}>− {c}</div>)}
+        {info.pros.map(p => <div key={p} style={{ fontSize: 12, color: t.pros }}>+ {p}</div>)}
+        {info.cons.map(c => <div key={c} style={{ fontSize: 12, color: t.cons }}>− {c}</div>)}
       </div>
     </div>
   );
@@ -958,7 +958,7 @@ function MobileLayout({ username, onLogout, dark, onToggleDark }) {
             background: "none",
             color: activeTab === i ? w.color : (dark ? "#666" : "#888"),
             fontWeight: activeTab === i ? 700 : 500,
-            fontSize: 15, cursor: "pointer", transition: "all 0.15s",
+            fontSize: 14, cursor: "pointer", transition: "all 0.15s",
           }}>
             {w.label}
           </button>
@@ -971,9 +971,9 @@ function MobileLayout({ username, onLogout, dark, onToggleDark }) {
         </div>
       ))}
       <div style={{ background: t.panelBg, borderTop: `1px solid ${t.border}`, flexShrink: 0, transition: "background 0.2s" }}>
-        <div style={{ padding: "6px 12px 6px 16px", fontSize: 12, color: t.labelColor, borderBottom: `1px solid ${t.border}`, letterSpacing: "0.05em", textTransform: "uppercase", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ padding: "6px 12px 6px 16px", fontSize: 11, color: t.labelColor, borderBottom: `1px solid ${t.border}`, letterSpacing: "0.05em", textTransform: "uppercase", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>Sends to all · {username}</span>
-          <button style={{ background: "none", border: "none", fontSize: 12, color: "#c8102e", cursor: "pointer", padding: 0, fontWeight: 600, letterSpacing: "0.05em" }} onClick={onLogout}>Sign Out</button>
+          <button style={{ background: "none", border: "none", fontSize: 11, color: "#c8102e", cursor: "pointer", padding: 0, fontWeight: 600, letterSpacing: "0.05em" }} onClick={onLogout}>Sign Out</button>
         </div>
         <InputBar onSend={handleSend} dark={dark} />
         <div style={{ overflowX: "auto", padding: "6px 14px 12px", borderTop: `1px solid ${t.border}` }}>
@@ -1071,8 +1071,8 @@ export default function App() {
       }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           <div style={{ padding: "6px 16px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: t.labelColor, letterSpacing: "0.05em", textTransform: "uppercase" }}>{username}</span>
-            <button onClick={() => setShowChips(v => !v)} style={{ background: "none", border: "none", fontSize: 12, color: t.labelColor, cursor: "pointer", padding: 0, letterSpacing: "0.05em" }}>
+            <span style={{ fontSize: 11, color: t.labelColor, letterSpacing: "0.05em", textTransform: "uppercase" }}>{username}</span>
+            <button onClick={() => setShowChips(v => !v)} style={{ background: "none", border: "none", fontSize: 11, color: t.labelColor, cursor: "pointer", padding: 0, letterSpacing: "0.05em" }}>
               {showChips ? "▲ Hide chips" : "▼ Show chips"}
             </button>
           </div>
@@ -1086,7 +1086,7 @@ export default function App() {
                 { groupLabel: "Multilingual",  items: MULTILINGUAL_REPLIES },
               ].map(({ groupLabel, items }) => (
                 <div key={groupLabel} style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: t.chipGroupLabelColor, letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 2, whiteSpace: "nowrap" }}>{groupLabel}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: t.chipGroupLabelColor, letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 2, whiteSpace: "nowrap" }}>{groupLabel}</span>
                   {items.map(({ label, query }) => (
                     <Chip key={label} label={label} onClick={() => handleSharedSend(query)} dark={dark} />
                   ))}
