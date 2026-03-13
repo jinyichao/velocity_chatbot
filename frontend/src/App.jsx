@@ -375,7 +375,7 @@ function JourneyPage({ dark }) {
   const [aiInput, setAiInput] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
-  const [chipsOpen, setChipsOpen] = useState(false);
+  const [chipsOpen, setChipsOpen] = useState(true);
   const [chatInput, setChatInput] = useState("");
   const [addUserRoles, setAddUserRoles] = useState(null);
   const [addUserData, setAddUserData] = useState({});
