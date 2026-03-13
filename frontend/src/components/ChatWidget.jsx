@@ -327,7 +327,7 @@ export default function ChatWidget({
 
         <div style={baseStyles.messages(dark)}>
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} onIntentDismiss={handleIntentDismiss} showIntentHint={showIntentHint} compactIntents={compactIntents} />
+            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} onIntentDismiss={compactIntents ? null : handleIntentDismiss} showIntentHint={showIntentHint} compactIntents={compactIntents} />
           ))}
           {loading && <TypingIndicator color={color} dark={dark} />}
           {showRoleSelector && (
