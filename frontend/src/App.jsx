@@ -385,6 +385,7 @@ function JourneyPage({ dark }) {
   const [activeIntent, setActiveIntent] = useState(null);
   const [deleteTabOpen, setDeleteTabOpen] = useState(false);
   const [deleteConfirmIdx, setDeleteConfirmIdx] = useState(null);
+  const [deletedUsers, setDeletedUsers] = useState([]);
 
   const handleChatSend = () => {
     const text = chatInput.trim();
@@ -572,7 +573,7 @@ function JourneyPage({ dark }) {
                         You are going to delete user <strong>{u.name}</strong>
                       </div>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => { setJourneyUsers(prev => prev.filter((_, idx) => idx !== i)); setDeleteConfirmIdx(null); }} style={{
+                        <button onClick={() => { setDeletedUsers(prev => [...prev, u.name]); setJourneyUsers(prev => prev.filter((_, idx) => idx !== i)); setDeleteConfirmIdx(null); }} style={{
                           padding: "4px 10px", borderRadius: 5, border: "none",
                           background: "#e53e3e", color: "#fff", fontSize: 12, fontWeight: 600,
                           cursor: "pointer", fontFamily: "inherit",
@@ -597,6 +598,22 @@ function JourneyPage({ dark }) {
                 </div>
               </div>
             ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
+            <button onClick={() => {
+              const msg = deletedUsers.length > 0
+                ? `User${deletedUsers.length > 1 ? "s" : ""} ${deletedUsers.map(n => `"${n}"`).join(", ")} ${deletedUsers.length > 1 ? "have" : "has"} been successfully deleted. ✓`
+                : "Delete user task completed. ✓";
+              setAssistantNotification({ text: msg, key: Date.now() });
+              setDeleteTabOpen(false);
+              setDeletedUsers([]);
+              setDeleteConfirmIdx(null);
+              setActiveSubTab("Roles");
+            }} style={{
+              padding: "10px 32px", background: "#3d5166", color: "#fff",
+              border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit",
+            }}>Confirm</button>
           </div>
           </>) : (<>
           {/* Account dropdown + Manage users */}
