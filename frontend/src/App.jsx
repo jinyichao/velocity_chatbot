@@ -523,7 +523,7 @@ function JourneyPage({ dark }) {
               setAddUserRoles(null);
               setAddUserData({});
               setActiveSubTab("Roles");
-              setAssistantNotification({ text: `New user "${userName}" has been added successfully! ✓`, key: Date.now() });
+              setAssistantNotification({ text: `Your request to add "${userName}" as a user has been submitted. You will receive an email and push notification after the request has been authorised.`, key: Date.now() });
               const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
               setCompletedIntents(nowCompleted);
               const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
