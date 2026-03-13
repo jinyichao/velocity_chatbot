@@ -516,6 +516,9 @@ function JourneyPage({ dark }) {
           {activeSubTab === "Add User" && addUserRoles ? (
             <AddUserForm dark={dark} selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); }} formData={addUserData} onFormChange={setAddUserData} onConfirm={(userName) => {
               setJourneyUsers(prev => [...prev, buildUserEntry(userName, addUserRoles || [])]);
+              setAddUserRoles(null);
+              setAddUserData({});
+              setActiveSubTab("Roles");
               setAssistantNotification({ text: `New user "${userName}" has been added successfully! ✓`, key: Date.now() });
               const remaining = lastIntents.filter(i => i.toLowerCase() !== (activeIntent || "").toLowerCase());
               if (remaining.length > 0) {
