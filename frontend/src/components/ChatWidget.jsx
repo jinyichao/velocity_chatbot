@@ -205,6 +205,25 @@ export default function ChatWidget({
     setMessages(prev => [...prev, { role: "assistant", content: assistantMessage.text }]);
   }, [assistantMessage]);
 
+  const handleIntentDismiss = (label) => {
+    setMessages(prev => {
+      for (let i = prev.length - 1; i >= 0; i--) {
+        const m = prev[i];
+        if (m.role === "assistant" && m.content.startsWith("Intent identified:")) {
+          const lines = m.content.split("\n").slice(1);
+          const filtered = lines.filter(l => {
+            const match = l.match(/^[•\-]\s*\*?\*?(.+?)\*?\*?$/);
+            return !match || match[1].trim().toLowerCase() !== label.toLowerCase();
+          });
+          if (filtered.length === 0) return prev.filter((_, j) => j !== i);
+          return prev.map((m2, j) => j === i ? { ...m2, content: "Intent identified:\n" + filtered.join("\n") } : m2);
+        }
+      }
+      return prev;
+    });
+    if (onIntentDismiss) onIntentDismiss(label);
+  };
+
   const handleIntentClick = (intentLabel) => {
     if (onIntentStarted) onIntentStarted(intentLabel);
     const key = intentLabel.toLowerCase().replace(/\s+/g, "_");
@@ -306,7 +325,7 @@ export default function ChatWidget({
 
         <div style={baseStyles.messages(dark)}>
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} onIntentDismiss={onIntentDismiss} />
+            <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} onIntentDismiss={handleIntentDismiss} />
           ))}
           {loading && <TypingIndicator color={color} dark={dark} />}
           {showRoleSelector && (

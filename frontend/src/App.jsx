@@ -389,17 +389,7 @@ function JourneyPage({ dark }) {
   const [completedIntents, setCompletedIntents] = useState([]);
 
   const handleIntentDismiss = (label) => {
-    const updated = lastIntents.filter(i => i.toLowerCase() !== label.toLowerCase());
-    setLastIntents(updated);
-    if (updated.length === 0) {
-      setAssistantNotification(null);
-    } else {
-      const remaining = updated.filter(i => !completedIntents.includes(i.toLowerCase()));
-      setAssistantNotification({
-        text: `Intent identified:\n${updated.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
-        key: Date.now(),
-      });
-    }
+    setLastIntents(prev => prev.filter(i => i.toLowerCase() !== label.toLowerCase()));
   };
 
   const handleChatSend = () => {
