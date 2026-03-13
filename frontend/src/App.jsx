@@ -384,6 +384,7 @@ function JourneyPage({ dark }) {
   const [lastIntents, setLastIntents] = useState([]);
   const [activeIntent, setActiveIntent] = useState(null);
   const [deleteTabOpen, setDeleteTabOpen] = useState(false);
+  const [deleteConfirmIdx, setDeleteConfirmIdx] = useState(null);
 
   const handleChatSend = () => {
     const text = chatInput.trim();
@@ -533,7 +534,7 @@ function JourneyPage({ dark }) {
           ) : activeSubTab === "Delete Users" && deleteTabOpen ? (<>
           {/* Delete Users table */}
           <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 100px", background: t.tableHeaderBg, borderBottom: `1px solid ${t.border}`, color: t.text }}>
+            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 200px", background: t.tableHeaderBg, borderBottom: `1px solid ${t.border}`, color: t.text }}>
               <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
               <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
                 <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
@@ -550,7 +551,7 @@ function JourneyPage({ dark }) {
               <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, fontWeight: 600 }}>Action</div>
             </div>
             {journeyUsers.map((u, i) => (
-              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 100px", borderBottom: i < journeyUsers.length - 1 ? `1px solid ${t.border}` : "none", background: t.panelBg, color: t.text }}>
+              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 200px", borderBottom: i < journeyUsers.length - 1 ? `1px solid ${t.border}` : "none", background: t.panelBg, color: t.text }}>
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ fontWeight: 600 }}>{u.name}</div>
                   {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
@@ -565,14 +566,34 @@ function JourneyPage({ dark }) {
                   {u.role}
                 </div>
                 <div style={{ padding: "12px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  <button onClick={() => setJourneyUsers(prev => prev.filter((_, idx) => idx !== i))} style={{
-                    padding: "5px 12px", borderRadius: 6, border: "1.5px solid #e53e3e",
-                    background: "transparent", color: "#e53e3e", fontSize: 12, fontWeight: 600,
-                    cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#e53e3e"; e.currentTarget.style.color = "#fff"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#e53e3e"; }}
-                  >Delete</button>
+                  {deleteConfirmIdx === i ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div style={{ fontSize: 12, color: "#e53e3e", fontWeight: 600, lineHeight: 1.4 }}>
+                        You are going to delete user <strong>{u.name}</strong>
+                      </div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => { setJourneyUsers(prev => prev.filter((_, idx) => idx !== i)); setDeleteConfirmIdx(null); }} style={{
+                          padding: "4px 10px", borderRadius: 5, border: "none",
+                          background: "#e53e3e", color: "#fff", fontSize: 12, fontWeight: 600,
+                          cursor: "pointer", fontFamily: "inherit",
+                        }}>Confirm</button>
+                        <button onClick={() => setDeleteConfirmIdx(null)} style={{
+                          padding: "4px 10px", borderRadius: 5, border: `1px solid ${t.border}`,
+                          background: "transparent", color: t.text, fontSize: 12,
+                          cursor: "pointer", fontFamily: "inherit",
+                        }}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => setDeleteConfirmIdx(i)} style={{
+                      padding: "5px 12px", borderRadius: 6, border: "1.5px solid #e53e3e",
+                      background: "transparent", color: "#e53e3e", fontSize: 12, fontWeight: 600,
+                      cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#e53e3e"; e.currentTarget.style.color = "#fff"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#e53e3e"; }}
+                    >Delete</button>
+                  )}
                 </div>
               </div>
             ))}
