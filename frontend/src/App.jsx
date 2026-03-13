@@ -557,7 +557,6 @@ function JourneyPage({ dark }) {
           <div style={{ maxWidth: 640 }}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <span style={{ fontSize: 20 }}>☑</span>
               <span style={{ fontSize: 17, fontWeight: 700, color: t.text }}>Remove user(s)</span>
               {selectedDeleteUsers.length > 0 && (
                 <span style={{
