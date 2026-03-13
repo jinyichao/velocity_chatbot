@@ -370,6 +370,15 @@ function buildUserEntry(name, roles) {
   return { name, sub: "", ap, as: as_, role: roleStr, pending: true };
 }
 
+function getUserPermissions(u) {
+  const perms = [];
+  if (u.as) perms.push("Sign to authorise transactions");
+  if (u.role) perms.push("View, and/or manage online transactions");
+  if (u.ap) perms.push("Open and close accounts, apply for banking facilities");
+  if (u.sub && u.sub.toLowerCase().includes("contact")) perms.push("Act as entity's contact person");
+  return perms;
+}
+
 function JourneyPage({ dark }) {
   const [activeSubTab, setActiveSubTab] = useState("Roles");
   const [aiInput, setAiInput] = useState("");
@@ -386,6 +395,8 @@ function JourneyPage({ dark }) {
   const [deleteTabOpen, setDeleteTabOpen] = useState(false);
   const [deleteConfirmIdx, setDeleteConfirmIdx] = useState(null);
   const [deletedUsers, setDeletedUsers] = useState([]);
+  const [selectedDeleteUsers, setSelectedDeleteUsers] = useState([]);
+  const [deleteDropdownOpen, setDeleteDropdownOpen] = useState(false);
   const [completedIntents, setCompletedIntents] = useState([]);
 
   const handleIntentDismiss = (label) => {
@@ -542,101 +553,137 @@ function JourneyPage({ dark }) {
               }, 600);
             }} />
           ) : activeSubTab === "Delete Users" && deleteTabOpen ? (<>
-          {/* Delete Users table */}
-          <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 200px", background: t.tableHeaderBg, borderBottom: `1px solid ${t.border}`, color: t.text }}>
-              <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
-              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
-                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Open and close accounts, and apply for banking facilities</div>
-              </div>
-              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
-                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Sign to authorise transactions</div>
-              </div>
-              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
-                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>View and/or manage online transactions</div>
-              </div>
-              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, fontWeight: 600 }}>Action</div>
+          {/* Remove Users — new design */}
+          <div style={{ maxWidth: 640 }}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <span style={{ fontSize: 20 }}>☑</span>
+              <span style={{ fontSize: 17, fontWeight: 700, color: t.text }}>Remove user(s)</span>
+              {selectedDeleteUsers.length > 0 && (
+                <span style={{
+                  background: "#3d5166", color: "#fff", borderRadius: 12,
+                  fontSize: 12, fontWeight: 700, padding: "1px 8px", minWidth: 20, textAlign: "center",
+                }}>{selectedDeleteUsers.length}</span>
+              )}
             </div>
-            {journeyUsers.map((u, i) => (
-              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 200px", borderBottom: i < journeyUsers.length - 1 ? `1px solid ${t.border}` : "none", background: t.panelBg, color: t.text }}>
-                <div style={{ padding: "16px 20px" }}>
-                  <div style={{ fontWeight: 600 }}>{u.name}</div>
-                  {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
-                  {u.pending && <div style={{ color: "#b07d00", fontSize: 11, marginTop: 4, fontStyle: "italic" }}>Pending authorization</div>}
-                </div>
-                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
-                </div>
-                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  {u.as && <span style={{ fontSize: 18 }}>✓</span>}
-                </div>
-                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  {u.role}
-                </div>
-                <div style={{ padding: "12px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  {deleteConfirmIdx === i ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <div style={{ fontSize: 12, color: "#e53e3e", fontWeight: 600, lineHeight: 1.4 }}>
-                        You are going to delete user <strong>{u.name}</strong>
-                      </div>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => { setDeletedUsers(prev => [...prev, u.name]); setJourneyUsers(prev => prev.filter((_, idx) => idx !== i)); setDeleteConfirmIdx(null); }} style={{
-                          padding: "4px 10px", borderRadius: 5, border: "none",
-                          background: "#e53e3e", color: "#fff", fontSize: 12, fontWeight: 600,
-                          cursor: "pointer", fontFamily: "inherit",
-                        }}>Confirm</button>
-                        <button onClick={() => setDeleteConfirmIdx(null)} style={{
-                          padding: "4px 10px", borderRadius: 5, border: `1px solid ${t.border}`,
-                          background: "transparent", color: t.text, fontSize: 12,
-                          cursor: "pointer", fontFamily: "inherit",
-                        }}>Cancel</button>
-                      </div>
+            <div style={{ fontSize: 13, color: t.muted, marginBottom: 24 }}>
+              The user(s) will be removed from all roles.
+            </div>
+
+            {/* Dropdown */}
+            <div style={{ position: "relative", marginBottom: 28 }}>
+              <div
+                onClick={() => setDeleteDropdownOpen(o => !o)}
+                style={{
+                  border: `1px solid ${t.border}`, borderRadius: 6, padding: "12px 16px",
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  cursor: "pointer", background: dark ? "#1e1e1e" : "#f7f7f7", color: t.muted, fontSize: 14,
+                }}
+              >
+                <span>Select user(s)</span>
+                <span style={{ fontSize: 12, transform: deleteDropdownOpen ? "rotate(180deg)" : "none", display: "inline-block", transition: "transform 0.15s" }}>▾</span>
+              </div>
+              {deleteDropdownOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 20,
+                  background: dark ? "#252525" : "#fff", border: `1px solid ${t.border}`,
+                  borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", overflow: "hidden",
+                }}>
+                  {journeyUsers.filter(u => !selectedDeleteUsers.includes(u.name)).map((u, i, arr) => (
+                    <div
+                      key={u.name}
+                      onClick={() => { setSelectedDeleteUsers(prev => [...prev, u.name]); setDeleteDropdownOpen(false); }}
+                      style={{
+                        padding: "11px 16px", fontSize: 14, cursor: "pointer", color: t.text,
+                        borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : "none",
+                        background: "transparent",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = dark ? "#333" : "#f0f0f0"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                    >
+                      {u.name}
                     </div>
-                  ) : (
-                    <button onClick={() => setDeleteConfirmIdx(i)} style={{
-                      padding: "5px 12px", borderRadius: 6, border: "1.5px solid #e53e3e",
-                      background: "transparent", color: "#e53e3e", fontSize: 12, fontWeight: 600,
-                      cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "#e53e3e"; e.currentTarget.style.color = "#fff"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#e53e3e"; }}
-                    >Delete</button>
+                  ))}
+                  {journeyUsers.filter(u => !selectedDeleteUsers.includes(u.name)).length === 0 && (
+                    <div style={{ padding: "11px 16px", fontSize: 13, color: t.muted }}>No more users to select</div>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
-            <button onClick={() => {
-              const msg = deletedUsers.length > 0
-                ? `User${deletedUsers.length > 1 ? "s" : ""} ${deletedUsers.map(n => `"${n}"`).join(", ")} ${deletedUsers.length > 1 ? "have" : "has"} been successfully deleted. ✓`
-                : "Delete user task completed. ✓";
-              setAssistantNotification({ text: msg, key: Date.now() });
-              const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
-              setCompletedIntents(nowCompleted);
-              const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
-              setTimeout(() => {
-                if (remaining.length === 0 && lastIntents.length > 0) {
-                  setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
-                } else if (remaining.length > 0) {
-                  setAssistantNotification({
-                    text: `Intent identified:\n${lastIntents.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
-                    key: Date.now(),
-                  });
-                }
-              }, 600);
-              setDeleteTabOpen(false);
-              setDeletedUsers([]);
-              setDeleteConfirmIdx(null);
-              setActiveSubTab("Roles");
-            }} style={{
-              padding: "10px 32px", background: "#3d5166", color: "#fff",
-              border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600,
-              cursor: "pointer", fontFamily: "inherit",
-            }}>Confirm</button>
+              )}
+            </div>
+
+            {/* Selected user cards */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {selectedDeleteUsers.map(name => {
+                const u = journeyUsers.find(x => x.name === name);
+                if (!u) return null;
+                const perms = getUserPermissions(u);
+                return (
+                  <div key={name} style={{
+                    border: `1px solid ${t.border}`, borderRadius: 10,
+                    padding: "18px 20px", background: dark ? "#1e1e1e" : "#fff",
+                    position: "relative", maxWidth: 360,
+                  }}>
+                    <button
+                      onClick={() => setSelectedDeleteUsers(prev => prev.filter(n => n !== name))}
+                      style={{
+                        position: "absolute", top: 14, right: 14,
+                        background: "none", border: "none", cursor: "pointer",
+                        color: t.muted, fontSize: 18, lineHeight: 1, padding: 2,
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.color = "#c8102e"}
+                      onMouseLeave={e => e.currentTarget.style.color = t.muted}
+                    >×</button>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: t.text, marginBottom: 2 }}>{u.name}</div>
+                    {u.sub && <div style={{ fontSize: 12, color: t.muted, marginBottom: 8 }}>{u.sub.split("\n")[0]}</div>}
+                    {u.pending && (
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        background: "linear-gradient(90deg,#a78bfa,#7dd3fc)", color: "#fff",
+                        borderRadius: 20, fontSize: 12, fontWeight: 600, padding: "3px 12px", marginBottom: 12,
+                      }}>✦ AI Suggested</span>
+                    )}
+                    <ul style={{ margin: 0, padding: "0 0 0 16px", listStyle: "disc", fontSize: 13, color: t.text, lineHeight: 1.7 }}>
+                      {perms.map(p => <li key={p}>{p}</li>)}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Confirm button */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 32 }}>
+              <button
+                disabled={selectedDeleteUsers.length === 0}
+                onClick={() => {
+                  const names = selectedDeleteUsers;
+                  setJourneyUsers(prev => prev.filter(u => !names.includes(u.name)));
+                  const msg = `User${names.length > 1 ? "s" : ""} ${names.map(n => `"${n}"`).join(", ")} ${names.length > 1 ? "have" : "has"} been successfully removed. ✓`;
+                  setAssistantNotification({ text: msg, key: Date.now() });
+                  const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
+                  setCompletedIntents(nowCompleted);
+                  const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
+                  setTimeout(() => {
+                    if (remaining.length === 0 && lastIntents.length > 0) {
+                      setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
+                    } else if (remaining.length > 0) {
+                      setAssistantNotification({
+                        text: `Intent identified:\n${lastIntents.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
+                        key: Date.now(),
+                      });
+                    }
+                  }, 600);
+                  setDeleteTabOpen(false);
+                  setSelectedDeleteUsers([]);
+                  setDeleteConfirmIdx(null);
+                  setActiveSubTab("Roles");
+                }}
+                style={{
+                  padding: "10px 32px", background: selectedDeleteUsers.length > 0 ? "#3d5166" : (dark ? "#333" : "#ccc"),
+                  color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600,
+                  cursor: selectedDeleteUsers.length > 0 ? "pointer" : "default", fontFamily: "inherit",
+                }}
+              >Confirm</button>
+            </div>
           </div>
           </>) : (<>
           {/* Account dropdown + Manage users */}
