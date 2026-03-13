@@ -124,7 +124,7 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDism
           const isDone = intent.startsWith("✓ ");
           const label = isDone ? intent.slice(2) : intent;
           const titleLabel = toTitleCase(label);
-          const compactFontSize = titleLabel.length > 20 ? 10 : 11;
+          const compactFontSize = titleLabel.length > 20 ? 12 : 13;
           return (
           <div key={intent} style={{ display: "flex", alignItems: "center", gap: compactIntents ? 4 : 8 }}>
             {isDone ? (
