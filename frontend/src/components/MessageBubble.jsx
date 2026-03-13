@@ -105,6 +105,8 @@ function parseIntents(content) {
   return intents.length > 0 ? intents : null;
 }
 
+const toTitleCase = s => s.replace(/\b\w/g, c => c.toUpperCase());
+
 function IntentBubbles({ intents, accentColor, dark, onIntentClick }) {
   return (
     <div style={{
@@ -125,7 +127,7 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick }) {
           <div key={intent} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {isDone ? (
               <span style={{ color: "#00703c", fontSize: 13, fontWeight: 600, padding: "6px 14px", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 15 }}>✓</span> {label}
+                <span style={{ fontSize: 15 }}>✓</span> {toTitleCase(label)}
               </span>
             ) : (
               <>
@@ -147,7 +149,7 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick }) {
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
                 onClick={() => onIntentClick && onIntentClick(label)}
                 >
-                  {label}
+                  {toTitleCase(label)}
                 </button>
               </>
             )}
