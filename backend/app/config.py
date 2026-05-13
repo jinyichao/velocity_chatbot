@@ -8,7 +8,6 @@ class Settings(BaseSettings):
     QWEN_MODEL: str = "qwen3.6-plus"
     DASHSCOPE_BASE_URL: str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
 
-    CHROMA_PERSIST_DIR: str = "./data/chroma"
     AUDIT_DB_PATH: str = "./data/audit.db"
 
     # Comma-separated origins, e.g. "http://localhost:5173,http://localhost:3000"

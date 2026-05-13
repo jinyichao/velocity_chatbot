@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Intent classification chatbot for OCBC Velocity (business banking). Classifies user queries into 12 predefined categories, retrieves answers via RAG, validates output through a guardrail, and logs all turns with PII masked.
 
-**Stack:** FastAPI + ChromaDB + Qwen (DashScope) backend · React + Vite frontend
+**Stack:** FastAPI + Qwen (DashScope) backend · React + Vite frontend
 
 ## Commands
 
@@ -16,7 +16,6 @@ cd backend
 cp .env.example .env          # then fill in DASHSCOPE_API_KEY
 pip install -r requirements.txt
 python3 -m spacy download en_core_web_lg   # for PII detection
-python3 scripts/ingest_knowledge.py        # populate ChromaDB (run once, and after KB edits)
 uvicorn app.main:app --reload              # starts on :8000
 ```
 
@@ -32,7 +31,6 @@ npm run build
 ```bash
 # From repo root, with backend venv active:
 python3 scripts/evaluate_prompts.py    # intent classifier regression tests
-python3 scripts/validate_vectors.py   # verify ChromaDB retrieval per intent
 ```
 
 ## Architecture
@@ -44,9 +42,6 @@ User message
 Intent Classifier (LLM)          ← app/services/intent_classifier.py
     │
     ├── out_of_scope → fixed message
-    │
-    ▼
-RAG Retrieve (ChromaDB)          ← app/services/rag.py
     │
     ▼
 Response Generator (LLM)         ← app/services/rag.py::generate_response
@@ -86,10 +81,8 @@ ChatResponse → frontend
 - `backend/app/services/intent_classifier.py` — system prompt + intent list; edit here to tune classification
 - `backend/app/services/guardrail.py` — guardrail rules; edit here to change compliance checks
 - `backend/app/config.py` — all env-backed settings, including `OUT_OF_SCOPE_MESSAGE`
-- `backend/data/knowledge_base/*.md` — one file per intent; edit/add KB content here, then re-run ingest
-- `backend/scripts/ingest_knowledge.py` — chunks and embeds KB into ChromaDB
+- `backend/data/knowledge_base/*.md` — one file per intent; KB content read directly at runtime
 - `scripts/evaluate_prompts.py` — golden test set for intent classification
-- `scripts/validate_vectors.py` — verifies ChromaDB retrieval coverage
 
 ## Maker-Checker Workflow
 

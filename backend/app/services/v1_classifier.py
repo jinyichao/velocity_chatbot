@@ -1,5 +1,5 @@
 """
-V1: TF-IDF + vector (ChromaDB) hybrid intent classifier.
+V1: TF-IDF intent classifier.
 Always returns one of the predefined intents — no out_of_scope.
 """
 
