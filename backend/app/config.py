@@ -5,8 +5,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     DASHSCOPE_API_KEY: str
-    QWEN_MODEL: str = "qwen-plus"
-    DASHSCOPE_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    QWEN_MODEL: str = "qwen3.6-plus"
+    DASHSCOPE_BASE_URL: str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
 
     CHROMA_PERSIST_DIR: str = "./data/chroma"
     AUDIT_DB_PATH: str = "./data/audit.db"

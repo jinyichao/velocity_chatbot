@@ -156,10 +156,7 @@ export default function LoginPage({ onLogin }) {
 
   const footnote = (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center" }}>
-      <span style={{ color: "#e30513", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", fontSize: 10 }}>
-        Internal Demo Only · Not for Production Use
-      </span>
-      <span style={{ fontSize: 11, color: t.encryptTxt }}>© 2026 OCBC Bank. All rights reserved.</span>
+      <span style={{ fontSize: 11, color: t.encryptTxt }}>© 2026 Velocity. All rights reserved.</span>
     </div>
   );
 
@@ -175,12 +172,11 @@ export default function LoginPage({ onLogin }) {
     return (
       <div style={{ minHeight: "100vh", background: t.bg, display: "flex", flexDirection: "column", fontFamily: "'Helvetica Neue', Arial, sans-serif", transition: "background 0.2s" }}>
         <div style={{ position: "relative", height: 180, overflow: "hidden", flexShrink: 0 }}>
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/ocbc-building.jpg')", backgroundSize: "cover", backgroundPosition: "center top" }} />
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/singapore-skyline.jpg')", backgroundSize: "cover", backgroundPosition: "center top" }} />
           <div style={{ position: "absolute", inset: 0, background: dark
             ? "linear-gradient(to top, rgba(20,20,20,0.92) 0%, rgba(0,0,0,0.5) 100%)"
             : "linear-gradient(to top, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.15) 100%)" }} />
           <div style={{ position: "relative", padding: "24px 28px", display: "flex", flexDirection: "column", height: "100%", boxSizing: "border-box" }}>
-            <img src="/ocbc-logo-color.svg" alt="OCBC" style={{ height: 24, marginBottom: "auto" }} />
             <div style={{ fontSize: 26, fontWeight: 800, color: leftTextColor, lineHeight: 1.2, letterSpacing: "-0.5px" }}>
               Banking made <span style={{ color: "#e30513" }}>smarter</span> for you.
             </div>
@@ -190,7 +186,7 @@ export default function LoginPage({ onLogin }) {
         <div style={{ flex: 1, padding: "32px 28px 24px", display: "flex", flexDirection: "column", position: "relative" }}>
           <ThemeToggle />
           <div style={{ fontSize: 24, fontWeight: 700, color: t.heading, marginBottom: 6, letterSpacing: "-0.5px" }}>Welcome back</div>
-          <div style={{ fontSize: 14, color: t.sub, marginBottom: 28 }}>Sign in to your OCBC Velocity account.</div>
+          <div style={{ fontSize: 14, color: t.sub, marginBottom: 28 }}>Sign in to your Velocity account.</div>
           <form onSubmit={handleSubmit} style={{ flex: 1 }}>{form}</form>
           <div style={{ textAlign: "center", fontSize: 12, color: t.encryptTxt, marginBottom: 16 }}>🔒 Secured with 256-bit encryption</div>
           {footnote}
@@ -203,18 +199,15 @@ export default function LoginPage({ onLogin }) {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
       {/* Left panel */}
       <div style={{ width: "45%", position: "relative", display: "flex", flexDirection: "column", minHeight: "100vh", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/ocbc-building.jpg')", backgroundSize: "cover", backgroundPosition: "center top" }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/singapore-skyline.jpg')", backgroundSize: "cover", backgroundPosition: "center top" }} />
         <div style={{ position: "absolute", inset: 0, background: leftOverlay, transition: "background 0.3s" }} />
         <div style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%", padding: "36px 52px" }}>
-          <div>
-            <img src="/ocbc-logo-color.svg" alt="OCBC" style={{ height: 32 }} />
-          </div>
           <div style={{ marginTop: "auto", marginBottom: "auto", paddingTop: 40 }}>
             <div style={{ fontSize: 52, fontWeight: 800, color: leftTextColor, lineHeight: 1.15, marginBottom: 20, letterSpacing: "-1px", transition: "color 0.2s" }}>
               Banking made<br /><span style={{ color: "#e30513" }}>smarter</span> for you.
             </div>
             <div style={{ fontSize: 17, color: leftSubColor, lineHeight: 1.7, marginBottom: 40, maxWidth: 320, transition: "color 0.2s" }}>
-              Your AI-powered OCBC assistant is ready to help you with all your banking needs, anytime, anywhere.
+              Your AI-powered assistant is ready to help you with all your banking needs, anytime, anywhere.
             </div>
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 14 }}>
               {["Instant account inquiries", "Secure, end-to-end encrypted sessions", "24/7 AI-powered support", "Seamless personalized guidances"].map((item) => (
@@ -239,7 +232,7 @@ export default function LoginPage({ onLogin }) {
         <div style={{ flex: 1, display: "flex", alignItems: "center", width: "100%", maxWidth: 380 }}>
           <div style={{ width: "100%" }}>
             <div style={{ fontSize: 30, fontWeight: 700, color: t.heading, marginBottom: 8, letterSpacing: "-0.5px", transition: "color 0.2s" }}>Welcome back</div>
-            <div style={{ fontSize: 14, color: t.sub, marginBottom: 36, transition: "color 0.2s" }}>Sign in to your OCBC Velocity account to continue.</div>
+            <div style={{ fontSize: 14, color: t.sub, marginBottom: 36, transition: "color 0.2s" }}>Sign in to your Velocity account to continue.</div>
             <form onSubmit={handleSubmit}>{form}</form>
             <div style={{ textAlign: "center", fontSize: 12, color: t.encryptTxt, transition: "color 0.2s" }}>🔒 Secured with 256-bit encryption</div>
           </div>
