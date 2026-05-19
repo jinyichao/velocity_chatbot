@@ -101,34 +101,42 @@ const ID_CHECKSUMS = {
 
 // ---- Public detection API --------------------------------------------------
 
+// TODO(prod): flip this to `true` before deploying to production so we reject
+// regex-valid but checksum-invalid IDs (e.g. `310113199912121212` — a valid CN
+// 18-digit shape with the wrong final check digit). Set to `false` for demos so
+// fabricated test data is accepted.
+const STRICT_ID_CHECKSUM = false;
+
 /**
  * Detect which country an ID value matches.
  *
- * Two-tier result:
- *   - `country`     — the country whose REGEX shape matches (or null)
- *   - `isValid`     — country regex matched AND checksum verified
- *   - `regexOnly`   — country regex matched but checksum failed
- *
- * Country identification uses regex only (so we can still flag MY/CN/HK
- * format even when the check digit is wrong). Acceptance uses checksum.
+ * When STRICT_ID_CHECKSUM is true, both the regex shape AND the country's
+ * check-digit algorithm must pass. When false (demo mode), regex shape alone
+ * is sufficient. The checksum implementations
+ * (sgNricChecksumValid / myIcDateValid / cnIdChecksumValid / hkIdChecksumValid)
+ * remain in this file and are wired up via ID_CHECKSUMS.
  */
 export function detectId(value, currentCountry) {
   const normalized = normalizeId(value);
   if (!normalized) return { country: null, isValid: false, regexOnly: false, matchesCurrent: false };
 
-  // Strong: regex AND checksum
-  const strongHits = COUNTRIES.filter(c => ID_PATTERNS[c].test(normalized) && ID_CHECKSUMS[c](normalized));
+  // Strong = regex + (in strict mode) checksum
+  const strongHits = COUNTRIES.filter(c =>
+    ID_PATTERNS[c].test(normalized) && (!STRICT_ID_CHECKSUM || ID_CHECKSUMS[c](normalized))
+  );
   if (strongHits.length > 0) {
     const chosen = strongHits.includes(currentCountry) ? currentCountry : strongHits[0];
     return { country: chosen, isValid: true, regexOnly: false, matchesCurrent: chosen === currentCountry };
   }
 
-  // Weak: regex only (lets us still identify the country to ask for clarification,
-  // even if the user typoed the check digit)
-  const weakHits = COUNTRIES.filter(c => ID_PATTERNS[c].test(normalized));
-  if (weakHits.length > 0) {
-    const chosen = weakHits.includes(currentCountry) ? currentCountry : weakHits[0];
-    return { country: chosen, isValid: false, regexOnly: true, matchesCurrent: chosen === currentCountry };
+  // In strict mode only: regex matches but checksum failed — still identify
+  // the country so the chat can flag "looks like X but check digit fails".
+  if (STRICT_ID_CHECKSUM) {
+    const weakHits = COUNTRIES.filter(c => ID_PATTERNS[c].test(normalized));
+    if (weakHits.length > 0) {
+      const chosen = weakHits.includes(currentCountry) ? currentCountry : weakHits[0];
+      return { country: chosen, isValid: false, regexOnly: true, matchesCurrent: chosen === currentCountry };
+    }
   }
 
   return { country: null, isValid: false, regexOnly: false, matchesCurrent: false };

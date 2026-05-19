@@ -10,14 +10,28 @@ Intent classification chatbot for OCBC Velocity (business banking). Classifies u
 
 ## Commands
 
-### Backend
+### Backend — first-time setup
 ```bash
 cd backend
-cp .env.example .env          # then fill in DASHSCOPE_API_KEY
-pip install -r requirements.txt
-python3 -m spacy download en_core_web_lg   # for PII detection
-uvicorn app.main:app --reload              # starts on :8000
+uv venv                                    # create .venv (or python3 -m venv .venv)
+source .venv/bin/activate
+uv pip install -r requirements.txt          # or: pip install -r requirements.txt
+cp .env.example .env                        # then fill in DASHSCOPE_API_KEY
+                                            # for international key, also set
+                                            # DASHSCOPE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
 ```
+
+### Backend — run
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --port 8000           # serves on :8000
+
+# Dev with auto-reload — exclude .venv to avoid a watchfiles loop
+# that prevents the worker from starting:
+uvicorn app.main:app --reload --reload-exclude '.venv/*' --port 8000
+```
+> Plain `uvicorn --reload` (no exclude) hangs at "Started reloader process" because watchfiles enumerates `.venv` first. Either omit `--reload` or include the exclude.
 
 ### Frontend
 ```bash
@@ -26,6 +40,9 @@ npm install
 npm run dev      # starts on :5173 with /api proxy to :8000
 npm run build
 ```
+
+### Login
+Default user: `admin` / `admin123` (see `USERS` in `backend/.env`).
 
 ### Testing & Validation
 ```bash
@@ -70,7 +87,8 @@ ChatResponse → frontend
 | `forex` | FX rates, conversion, forwards |
 | `payroll` | Salary disbursement, CPF, GIRO payroll |
 | `trade_finance` | LC, TR, shipping guarantee, bank guarantee |
-| `user_management` | Users, roles, Maker-Checker, DST |
+| `add_user` | Onboard a new user, assign roles |
+| `delete_user` | Deactivate / revoke a user |
 | `alerts_notifications` | Balance/transaction/login alerts |
 | `report_generation` | Cash flow, payroll, transaction reports |
 | `cheque_services` | Stop cheques, order books, enquiry |
@@ -88,6 +106,8 @@ ChatResponse → frontend
 
 Velocity enforces a two-person rule for sensitive operations (transfers, user changes). The chatbot is aware of this pattern and references it in answers for relevant intents.
 
-## PII Masking
+## PII Masking & Multi-Country Detection
 
-`audit.py` regex-masks NRIC/FIN, Singapore phone numbers, email addresses, bank account numbers (7–12 digits), and card numbers before writing to `audit.db`.
+`audit.py` calls `pii_detector.detect_pii()` and replaces each match with a country-aware label: `[SG_NRIC]`, `[MY_IC]`, `[CN_ID]`, `[HK_ID]`, `[SG_PHONE]`, `[MY_PHONE]`, `[CN_PHONE]`, `[HK_PHONE]`, plus `[EMAIL]`, `[CARD]`, `[ACCOUNT]`.
+
+For the `add_user` / `delete_user` flows, the frontend (`frontend/src/utils/piiDetection.js` + `ChatWidget.jsx` + `AddUserForm`) runs **interactive country clarification**: when the user types an ID or phone that matches a non-current-country format, the bot pauses with a button-based clarification ("That looks like a Malaysian IC — register under 🇸🇬 SG or 🇲🇾 MY?"). ID country and phone country are tracked independently so a CN ID with an SG phone is permitted. Phone parsing uses `libphonenumber-js/max` so all standard input formats (with or without `+`, country code, spaces, hyphens) are handled.
