@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import { sendMessage } from "../api/chat";
+import { detectId, detectPhone, parseCountryChoice, COUNTRY_META, COUNTRIES } from "../utils/piiDetection";
 
 const ROLES = [
   "Business Online Banking - Viewer",
@@ -57,6 +58,48 @@ function RoleSelectorBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
           background: "#3d5166", color: "#fff", fontSize: 13, fontWeight: 600,
           cursor: "pointer", fontFamily: "inherit",
         }}>Confirm</button>
+      </div>
+    </div>
+  );
+}
+
+function CountryClarificationBubble({
+  detectedCountry,
+  currentCountry,
+  fieldType,
+  value,
+  accentColor,
+  assistantBg,
+  onPick,
+}) {
+  const detected = COUNTRY_META[detectedCountry];
+  const current = COUNTRY_META[currentCountry];
+  const fieldLabel = fieldType === "nric" ? "ID" : "mobile number";
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{
+        background: assistantBg || "#fff",
+        borderRadius: 12, padding: "14px 16px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        marginBottom: 10, fontSize: 14, lineHeight: 1.5, color: "#1a1a1a",
+      }}>
+        {detected.flag} That looks like a <strong>{detected.name} {fieldType === "nric" ? detected.idLabel.replace(/\s*no\.\s*$/, "") : "mobile"}</strong> ({value}).
+        <div style={{ marginTop: 8 }}>
+          Are you registering this user under your <strong>{current.name}</strong> or <strong>{detected.name}</strong> entity?
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={() => onPick(currentCountry)} style={{
+          padding: "8px 16px", borderRadius: 20, border: "1.5px solid #ccc",
+          background: "#fff", color: "#333", fontSize: 13, cursor: "pointer",
+          fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6,
+        }}>{current.flag} {current.name}</button>
+        <button onClick={() => onPick(detectedCountry)} style={{
+          padding: "8px 16px", borderRadius: 20, border: "none",
+          background: accentColor, color: "#fff", fontSize: 13, fontWeight: 600,
+          cursor: "pointer", fontFamily: "inherit",
+          display: "flex", alignItems: "center", gap: 6,
+        }}>{detected.flag} {detected.name}</button>
       </div>
     </div>
   );
@@ -170,23 +213,30 @@ export default function ChatWidget({
   onIntentDismiss,
   showIntentHint = true,
   compactIntents = false,
+  idCountry = "SG",
+  onIdCountryChange,
+  phoneCountry = "SG",
+  onPhoneCountryChange,
 }) {
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
 
-  const FIELD_QUESTIONS = [
+  const FIELD_KEYS = ["name", "nric", "mobile", "email", "userId"];
+  const buildFieldQuestions = (idC, phoneC) => [
     "Please provide the **Full Name** (as shown in ID).",
-    "What is the **NRIC no.**?",
-    "What is the **Mobile no.**? (e.g. 91234567)",
+    `What is the **${COUNTRY_META[idC].idLabel}**? (e.g. ${COUNTRY_META[idC].idExample})`,
+    `What is the **Mobile no.**? (e.g. ${COUNTRY_META[phoneC].phoneExample})`,
     "What is the **Email** address?",
     "Create a **UserID** for this user. Only numbers or letters can be used.",
   ];
-  const FIELD_KEYS = ["name", "nric", "mobile", "email", "userId"];
+  const FIELD_QUESTIONS = buildFieldQuestions(idCountry, phoneCountry);
 
   const [messages, setMessages] = useState([{ role: "assistant", content: welcome }]);
   const [loading, setLoading] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [fieldIndex, setFieldIndex] = useState(-1);
+  // { field: 'nric'|'mobile', value: string, suggestedCountry: 'MY'|'CN'|'HK' } | null
+  const [pendingClarification, setPendingClarification] = useState(null);
   const bottomRef = useRef(null);
   const prevKeyRef = useRef(null);
   const prevAssistantKeyRef = useRef(null);
@@ -255,32 +305,155 @@ export default function ChatWidget({
 
   const handleRoleCancel = () => setShowRoleSelector(false);
 
-  const FIELD_VALIDATORS = {
-    nric:   { fn: v => /^[STFGM]\d{7}[A-Z]$/i.test(v.trim()), msg: "That doesn't look like a valid NRIC/FIN (e.g. S1234567A). Please try again." },
-    mobile: { fn: v => /^[89]\d{7}$/.test(v.trim()), msg: "That doesn't look like a valid Singapore mobile number (8 digits starting with 8 or 9). Please try again." },
-    email:  { fn: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()), msg: "That doesn't look like a valid email address. Please try again." },
+  const EMAIL_VALIDATOR = {
+    fn: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()),
+    msg: "That doesn't look like a valid email address. Please try again.",
+  };
+
+  // Advance the field collector to the next question (or finish).
+  // The country overrides let the caller use freshly-chosen countries whose
+  // state updates have not yet flushed into props (right after a switch).
+  const advanceField = (key, value, idOverride = null, phoneOverride = null) => {
+    if (onFieldCollected) onFieldCollected(key, value);
+    const next = fieldIndex + 1;
+    const questions = (idOverride || phoneOverride)
+      ? buildFieldQuestions(idOverride || idCountry, phoneOverride || phoneCountry)
+      : FIELD_QUESTIONS;
+    if (next < questions.length) {
+      setMessages(prev => [...prev, { role: "assistant", content: questions[next] }]);
+      setFieldIndex(next);
+    } else {
+      setMessages(prev => [...prev, { role: "assistant", content: "Thank you! All details have been captured. Please review and confirm on the form." }]);
+      setFieldIndex(-1);
+    }
+  };
+
+  // Handle the user's pick from the country clarification bubble.
+  // Updates only the relevant country state (idCountry for nric, phoneCountry
+  // for mobile) — keeping ID country and phone country independent.
+  const handleCountryPick = (chosenCountry) => {
+    if (!pendingClarification) return;
+    const { field, value, suggestedCountry } = pendingClarification;
+    setMessages(prev => [...prev, {
+      role: "user",
+      content: `${COUNTRY_META[chosenCountry].flag} ${COUNTRY_META[chosenCountry].name}`,
+    }]);
+    setPendingClarification(null);
+
+    const currentForField = field === "nric" ? idCountry : phoneCountry;
+
+    if (chosenCountry === suggestedCountry) {
+      // Switch the relevant country state
+      if (field === "nric" && onIdCountryChange) onIdCountryChange(chosenCountry);
+      if (field === "mobile" && onPhoneCountryChange) onPhoneCountryChange(chosenCountry);
+
+      // For ID, re-check checksum under the chosen country before accepting.
+      if (field === "nric") {
+        const r = detectId(value, chosenCountry);
+        if (!r.isValid) {
+          setMessages(prev => [...prev, {
+            role: "assistant",
+            content: `Got it — using ${COUNTRY_META[chosenCountry].name} for this ID. However "${value}" doesn't pass the ${COUNTRY_META[chosenCountry].idLabel} check digit. Please re-enter (e.g. ${COUNTRY_META[chosenCountry].idExample}).`,
+          }]);
+          // Stay on the same field — country has been switched, user can retry
+          return;
+        }
+      }
+
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `Got it — using ${COUNTRY_META[chosenCountry].name} for this ${field === "nric" ? "ID" : "mobile number"}. Continuing...`,
+      }]);
+      let storedValue = value;
+      if (field === "mobile") {
+        const r = detectPhone(value, chosenCountry);
+        if (r.isValid && r.nationalNumber) storedValue = r.nationalNumber;
+      }
+      const idOverride = field === "nric" ? chosenCountry : null;
+      const phoneOverride = field === "mobile" ? chosenCountry : null;
+      advanceField(field, storedValue, idOverride, phoneOverride);
+    } else {
+      // User stuck with current country — reject the value, re-ask same field
+      const meta = COUNTRY_META[chosenCountry];
+      const example = field === "nric" ? meta.idExample : meta.phoneExample;
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `OK, sticking with ${meta.name}. Please enter a ${meta.name} ${field === "nric" ? meta.idLabel : "mobile number"} (e.g. ${example}).`,
+      }]);
+      // Stay on the same fieldIndex
+    }
   };
 
   const handleSend = async (text) => {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
+    // Country clarification mode takes precedence — user reply is a country choice.
+    if (pendingClarification) {
+      const { field, suggestedCountry } = pendingClarification;
+      const activeForField = field === "nric" ? idCountry : phoneCountry;
+      const choice = parseCountryChoice(text);
+      if (choice && (choice === activeForField || choice === suggestedCountry)) {
+        handleCountryPick(choice);
+      } else {
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: `Please tap one of the buttons above, or reply with **${COUNTRY_META[activeForField].name}** or **${COUNTRY_META[suggestedCountry].name}**.`,
+        }]);
+      }
+      return;
+    }
+
     // Sequential field collection mode
     if (fieldIndex >= 0 && fieldIndex < FIELD_KEYS.length) {
       const currentKey = FIELD_KEYS[fieldIndex];
-      const validator = FIELD_VALIDATORS[currentKey];
-      if (validator && !validator.fn(text)) {
-        setMessages((prev) => [...prev, { role: "assistant", content: validator.msg }]);
+
+      if (currentKey === "nric") {
+        const idMeta = COUNTRY_META[idCountry];
+        const result = detectId(text, idCountry);
+        if (!result.country) {
+          setMessages(prev => [...prev, { role: "assistant", content: `That doesn't look like a valid ${idMeta.idLabel} (e.g. ${idMeta.idExample}). Please try again.` }]);
+          return;
+        }
+        if (result.country === idCountry) {
+          if (result.isValid) {
+            advanceField(currentKey, text);
+          } else {
+            setMessages(prev => [...prev, { role: "assistant", content: `That looks like a ${idMeta.idLabel} but the check digit doesn't match (e.g. ${idMeta.idExample}). Please double-check the last character.` }]);
+          }
+          return;
+        }
+        // Foreign country detected — clarification gate (ID side). We open
+        // the gate even when checksum fails so user can confirm country first,
+        // then we report the checksum problem post-switch if needed.
+        setPendingClarification({ field: currentKey, value: text, suggestedCountry: result.country });
         return;
       }
-      if (onFieldCollected) onFieldCollected(currentKey, text);
-      const next = fieldIndex + 1;
-      if (next < FIELD_QUESTIONS.length) {
-        setMessages((prev) => [...prev, { role: "assistant", content: FIELD_QUESTIONS[next] }]);
-        setFieldIndex(next);
-      } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: "Thank you! All details have been captured. Please review and confirm on the form." }]);
-        setFieldIndex(-1);
+
+      if (currentKey === "mobile") {
+        const phoneMeta = COUNTRY_META[phoneCountry];
+        const result = detectPhone(text, phoneCountry);
+        if (!result.country || !result.isValid) {
+          setMessages(prev => [...prev, { role: "assistant", content: `That doesn't look like a valid ${phoneMeta.name} mobile (e.g. ${phoneMeta.phoneExample}). Please try again.` }]);
+          return;
+        }
+        if (result.country === phoneCountry) {
+          advanceField(currentKey, result.nationalNumber || text);
+          return;
+        }
+        // Foreign country match — clarification gate (phone side, independent of ID)
+        setPendingClarification({ field: currentKey, value: text, suggestedCountry: result.country });
+        return;
       }
+
+      if (currentKey === "email") {
+        if (!EMAIL_VALIDATOR.fn(text)) {
+          setMessages(prev => [...prev, { role: "assistant", content: EMAIL_VALIDATOR.msg }]);
+          return;
+        }
+      }
+
+      // name and userId have no validation
+      advanceField(currentKey, text);
       return;
     }
 
@@ -336,6 +509,17 @@ export default function ChatWidget({
               onCancel={handleRoleCancel}
               accentColor={color}
               assistantBg={assistantBg}
+            />
+          )}
+          {pendingClarification && (
+            <CountryClarificationBubble
+              detectedCountry={pendingClarification.suggestedCountry}
+              currentCountry={pendingClarification.field === "nric" ? idCountry : phoneCountry}
+              fieldType={pendingClarification.field}
+              value={pendingClarification.value}
+              accentColor={color}
+              assistantBg={assistantBg}
+              onPick={handleCountryPick}
             />
           )}
           <div ref={bottomRef} />
