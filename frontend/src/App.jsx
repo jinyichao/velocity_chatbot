@@ -5,6 +5,7 @@ import InputBar from "./components/InputBar";
 import LoginPage from "./pages/LoginPage";
 import { getToken, getUsername, clearSession } from "./api/auth";
 import { QUICK_REPLIES, MULTI_INTENT_3_REPLIES, HALLUCINATION_REPLIES, OUT_OF_SCOPE_REPLIES, MULTILINGUAL_REPLIES } from "./data/quickReplies";
+import { detectId, detectPhone, COUNTRY_META, COUNTRIES } from "./utils/piiDetection";
 
 const SESSION_A = uuidv4();
 const SESSION_B = uuidv4();
@@ -148,7 +149,7 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
 
 const VELOCITY_NAV = ["Home", "Accounts", "Pay and transfer", "FX and treasury", "Invoices", "Trade finance", "Tools", "Administration"];
 
-function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm, dark = false }) {
+function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm, dark = false, idCountry = "SG", onIdCountryChange, phoneCountry = "SG", onPhoneCountryChange }) {
   const hasSignatory = selectedRoles.some(r => r.toLowerCase().includes("signator"));
   const hasBanking   = selectedRoles.some(r => r.toLowerCase().includes("business online banking") && !r.toLowerCase().includes("administrator"));
   const hasFX        = selectedRoles.some(r => r.toLowerCase().includes("fx contract"));
@@ -157,6 +158,11 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
   const [learnOpen, setLearnOpen] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
+  const [idGlow, setIdGlow] = useState(false);
+  const [phoneGlow, setPhoneGlow] = useState(false);
+  const prevIdCountryRef = React.useRef(idCountry);
+  const prevPhoneCountryRef = React.useRef(phoneCountry);
   const name   = formData?.name   ?? "";
   const nric   = formData?.nric   ?? "";
   const mobile = formData?.mobile ?? "";
@@ -168,16 +174,75 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
   const setEmail  = v => onFormChange({ ...formData, email: v });
   const setUserId = v => onFormChange({ ...formData, userId: v });
 
-  const VALIDATORS = {
-    nric:   { fn: v => /^[STFGM]\d{7}[A-Z]$/i.test(v.trim()), msg: "Invalid NRIC/FIN format (e.g. S1234567A)" },
-    mobile: { fn: v => /^[89]\d{7}$/.test(v.trim()), msg: "Invalid mobile number (must be 8 digits starting with 8 or 9)" },
-    email:  { fn: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()), msg: "Invalid email address" },
+  const idMeta    = COUNTRY_META[idCountry];
+  const phoneMeta = COUNTRY_META[phoneCountry];
+
+  const nricValidator = {
+    fn: v => {
+      const r = detectId(v, idCountry);
+      return r.country === idCountry && r.isValid;
+    },
+    msg: `Invalid ${idMeta.idLabel} (e.g. ${idMeta.idExample})`,
   };
+  const mobileValidator = {
+    fn: v => {
+      const r = detectPhone(v, phoneCountry);
+      return r.isValid && r.country === phoneCountry;
+    },
+    msg: `Invalid ${phoneMeta.name} mobile (e.g. ${phoneMeta.phoneExample})`,
+  };
+  const emailValidator = {
+    fn: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()),
+    msg: "Invalid email address",
+  };
+  const VALIDATORS = { nric: nricValidator, mobile: mobileValidator, email: emailValidator };
+
   const validateField = (field, value) => {
     if (!VALIDATORS[field] || !value) return;
     const { fn, msg } = VALIDATORS[field];
     setFieldErrors(prev => ({ ...prev, [field]: fn(value) ? null : msg }));
   };
+
+  // When user types in the ID field and blurs, auto-detect the country and update idCountry
+  // so the label switches accordingly (e.g., "NRIC no." → "MyKad no.").
+  const onNricBlur = () => {
+    if (nric && onIdCountryChange) {
+      const r = detectId(nric, idCountry);
+      if (r.country && r.country !== idCountry) {
+        onIdCountryChange(r.country);
+        // The country change useEffect will re-validate.
+        return;
+      }
+    }
+    validateField("nric", nric);
+  };
+
+  // Re-validate nric when ID country changes; trigger glow
+  useEffect(() => {
+    if (prevIdCountryRef.current !== idCountry) {
+      prevIdCountryRef.current = idCountry;
+      setIdGlow(true);
+      const tid = setTimeout(() => setIdGlow(false), 1500);
+      if (nric) {
+        setFieldErrors(prev => ({ ...prev, nric: nricValidator.fn(nric) ? null : nricValidator.msg }));
+      }
+      return () => clearTimeout(tid);
+    }
+  }, [idCountry]);
+
+  // Re-validate mobile when phone country changes; trigger glow
+  useEffect(() => {
+    if (prevPhoneCountryRef.current !== phoneCountry) {
+      prevPhoneCountryRef.current = phoneCountry;
+      setPhoneGlow(true);
+      const tid = setTimeout(() => setPhoneGlow(false), 1500);
+      if (mobile) {
+        setFieldErrors(prev => ({ ...prev, mobile: mobileValidator.fn(mobile) ? null : mobileValidator.msg }));
+      }
+      return () => clearTimeout(tid);
+    }
+  }, [phoneCountry]);
+
   const hasErrors = Object.values(fieldErrors).some(Boolean);
 
   const ft = {
@@ -229,17 +294,66 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
       <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
         <div style={fieldWrap("name")}><input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name (as shown in ID)" style={inputStyle} /></div>
         <div style={{ flex: 1 }}>
-          <div style={fieldWrap("nric")}><input value={nric} onChange={e => setNric(e.target.value)} onBlur={() => validateField("nric", nric)} placeholder="NRIC no." style={inputStyle} /></div>
+          <div style={{
+            ...fieldWrap("nric"),
+            boxShadow: idGlow ? "0 0 0 3px rgba(99, 102, 241, 0.4)" : "none",
+            transition: "box-shadow 0.3s",
+          }}><input value={nric} onChange={e => setNric(e.target.value)} onBlur={onNricBlur} placeholder={`${idMeta.idLabel} (e.g. ${idMeta.idExample})`} style={inputStyle} /></div>
           {fieldErrors.nric && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.nric}</div>}
         </div>
       </div>
       {/* Fields row 2 */}
       <div style={{ display: "flex", gap: 16, marginBottom: 28 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ ...fieldWrap("mobile"), display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            ...fieldWrap("mobile"),
+            display: "flex", alignItems: "center", gap: 8,
+            boxShadow: phoneGlow ? "0 0 0 3px rgba(99, 102, 241, 0.4)" : "none",
+            transition: "box-shadow 0.3s",
+          }}>
             <span style={{ fontSize: 13, color: ft.subtext, whiteSpace: "nowrap" }}>Mobile no.</span>
-            <span style={{ fontSize: 13, color: ft.text, borderRight: `1px solid ${ft.inputBorderBottom}`, paddingRight: 8 }}>+65 ▾</span>
-            <input value={mobile} onChange={e => setMobile(e.target.value)} onBlur={() => validateField("mobile", mobile)} style={{ ...inputStyle, flex: 1 }} />
+            <div
+              onClick={() => setCountryDropdownOpen(o => !o)}
+              style={{ position: "relative", fontSize: 13, color: ft.text, borderRight: `1px solid ${ft.inputBorderBottom}`, paddingRight: 8, cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: 4 }}
+            >
+              <span>{phoneMeta.flag} {phoneMeta.code}</span>
+              <span style={{ fontSize: 10 }}>▾</span>
+              {countryDropdownOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 30,
+                  background: ft.bg, border: `1px solid ${ft.border}`, borderRadius: 8,
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.12)", overflow: "hidden", minWidth: 180,
+                }}>
+                  {COUNTRIES.map((c, i) => {
+                    const m = COUNTRY_META[c];
+                    const active = c === phoneCountry;
+                    return (
+                      <div
+                        key={c}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCountryDropdownOpen(false);
+                          if (c !== phoneCountry && onPhoneCountryChange) onPhoneCountryChange(c);
+                        }}
+                        style={{
+                          padding: "10px 14px", fontSize: 13, color: ft.text,
+                          borderBottom: i < COUNTRIES.length - 1 ? `1px solid ${ft.border}` : "none",
+                          background: active ? (dark ? "#2a2a2a" : "#f0f0f0") : "transparent",
+                          display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+                        }}
+                        onMouseEnter={e => { if (!active) e.currentTarget.style.background = dark ? "#333" : "#f6f6f6"; }}
+                        onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <span>{m.flag}</span>
+                        <span style={{ flex: 1 }}>{m.name}</span>
+                        <span style={{ color: ft.muted, fontSize: 12 }}>{m.code}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <input value={mobile} onChange={e => setMobile(e.target.value)} onBlur={() => validateField("mobile", mobile)} placeholder={phoneMeta.phoneExample} style={{ ...inputStyle, flex: 1 }} />
           </div>
           {fieldErrors.mobile && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.mobile}</div>}
         </div>
@@ -388,6 +502,8 @@ function JourneyPage({ dark }) {
   const [chatInput, setChatInput] = useState("");
   const [addUserRoles, setAddUserRoles] = useState(null);
   const [addUserData, setAddUserData] = useState({});
+  const [addUserIdCountry, setAddUserIdCountry] = useState("SG");
+  const [addUserPhoneCountry, setAddUserPhoneCountry] = useState("SG");
   const [journeyUsers, setJourneyUsers] = useState(INITIAL_JOURNEY_USERS);
   const [assistantNotification, setAssistantNotification] = useState(null);
   const [lastIntents, setLastIntents] = useState([]);
@@ -532,10 +648,12 @@ function JourneyPage({ dark }) {
           </div>
 
           {activeSubTab === "Add User" && addUserRoles ? (
-            <AddUserForm dark={dark} selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); }} formData={addUserData} onFormChange={setAddUserData} onConfirm={(userName) => {
+            <AddUserForm dark={dark} selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); }} formData={addUserData} onFormChange={setAddUserData} idCountry={addUserIdCountry} onIdCountryChange={setAddUserIdCountry} phoneCountry={addUserPhoneCountry} onPhoneCountryChange={setAddUserPhoneCountry} onConfirm={(userName) => {
               setJourneyUsers(prev => [...prev, buildUserEntry(userName, addUserRoles || [])]);
               setAddUserRoles(null);
               setAddUserData({});
+              setAddUserIdCountry("SG");
+              setAddUserPhoneCountry("SG");
               setActiveSubTab("Roles");
               setAssistantNotification({ text: `Your request to add "${userName}" as a user has been submitted. You will receive an email and push notification after the request has been authorised.`, key: Date.now() });
               const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
@@ -784,6 +902,10 @@ function JourneyPage({ dark }) {
               "delete user": "Sure! Please select the user(s) you'd like to remove from the **Delete Users** tab on the left. Once you've made your selection, click **Confirm** to proceed.",
               "delete_user": "Sure! Please select the user(s) you'd like to remove from the **Delete Users** tab on the left. Once you've made your selection, click **Confirm** to proceed.",
             }}
+            idCountry={addUserIdCountry}
+            onIdCountryChange={setAddUserIdCountry}
+            phoneCountry={addUserPhoneCountry}
+            onPhoneCountryChange={setAddUserPhoneCountry}
             onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setActiveSubTab("Add User"); }}
             onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
             assistantMessage={assistantNotification}

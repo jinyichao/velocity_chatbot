@@ -3,23 +3,22 @@ Audit service: logs all chat interactions to stdout with PII masking.
 Stdout logging is compatible with serverless platforms (Vercel, Railway, etc.).
 """
 
-import re
 import json
 from datetime import datetime, timezone
 
-# PII masking patterns (Singapore context)
-PII_PATTERNS = [
-    (re.compile(r"\b[STFGM]\d{7}[A-Z]\b"), "[NRIC/FIN]"),
-    (re.compile(r"(\+65[\s-]?)?\b[689]\d{3}[\s-]?\d{4}\b"), "[PHONE]"),
-    (re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"), "[EMAIL]"),
-    (re.compile(r"\b\d{7,12}\b"), "[ACCOUNT]"),
-    (re.compile(r"\b(?:\d{4}[\s\-]?){3}\d{4}\b"), "[CARD]"),
-]
+from app.services.pii_detector import detect_pii
 
 
 def mask_pii(text: str) -> str:
-    for pattern, replacement in PII_PATTERNS:
-        text = pattern.sub(replacement, text)
+    """Replace each detected PII span with a country-aware label.
+
+    Uses pii_detector.detect_pii for non-overlapping matches, then walks
+    the matches in reverse so earlier span indices stay valid as we splice.
+    """
+    matches = detect_pii(text)
+    for m in sorted(matches, key=lambda r: -r["span"][0]):
+        start, end = m["span"]
+        text = text[:start] + f"[{m['type']}]" + text[end:]
     return text
 
 

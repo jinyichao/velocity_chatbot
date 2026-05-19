@@ -4,7 +4,23 @@ from fastapi.responses import JSONResponse
 from app.models.schemas import ChatRequest, ChatResponse
 from app.services import intent_classifier, rag, guardrail, audit, v3_direct
 from app.services import v1_classifier
+from app.services.pii_detector import first_foreign_match, COUNTRY_FLAG, TYPE_LABEL
 from app.config import settings
+
+USER_INTENTS = {"add_user", "delete_user"}
+
+
+def _foreign_heads_up(message: str) -> str | None:
+    """If the message contains a non-SG ID/phone, return a prepend note."""
+    match = first_foreign_match(message)
+    if not match:
+        return None
+    flag = COUNTRY_FLAG.get(match["country"], "")
+    label = TYPE_LABEL.get(match["type"], match["type"])
+    return (
+        f"{flag} Heads up — that looks like a **{label}**. "
+        "You'll be asked to confirm country in the next step."
+    )
 
 router = APIRouter()
 
@@ -44,6 +60,11 @@ async def chat(req: ChatRequest):
         scoped = [i for i in intents if i not in SKIP]
         lines = "\n".join(f"• **{i.replace('_', ' ')}**" for i in scoped)
         reply = f"Intent identified:\n{lines}"
+
+        if USER_INTENTS.intersection(scoped):
+            note = _foreign_heads_up(req.message)
+            if note:
+                reply = f"{note}\n\n{reply}"
 
         await audit.log_turn(req.session_id, req.message, reply, ", ".join(intents), True)
         return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
