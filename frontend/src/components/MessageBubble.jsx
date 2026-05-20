@@ -196,9 +196,44 @@ function IntentBubbles({ intents, accentColor, dark, onIntentClick, onIntentDism
   );
 }
 
+function renderIntentIntro(text, accentColor, onIntentClick, keyPrefix) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      const label = part.slice(2, -2);
+      return (
+        <button
+          key={`${keyPrefix}-${i}`}
+          onClick={onIntentClick ? () => onIntentClick(label) : undefined}
+          title={`Resume: ${label}`}
+          style={{
+            display: "inline-flex", alignItems: "center",
+            padding: "2px 10px", margin: "0 2px",
+            borderRadius: 14,
+            border: `1.5px solid ${accentColor}`,
+            background: "transparent",
+            color: accentColor,
+            fontSize: "inherit", fontWeight: 600,
+            fontFamily: "inherit",
+            cursor: onIntentClick ? "pointer" : "default",
+            transition: "background 0.15s, color 0.15s",
+            verticalAlign: "baseline",
+          }}
+          onMouseEnter={(e) => { if (onIntentClick) { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; } }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
+        >
+          {label}
+        </button>
+      );
+    }
+    return <span key={`${keyPrefix}-${i}`}>{part}</span>;
+  });
+}
+
 export default function MessageBubble({ message, accentColor = "#c8102e", dark = false, assistantBg, onIntentClick, onIntentDismiss, showIntentHint = true, compactIntents = false }) {
-  const { role, content } = message;
+  const { role, content, meta } = message;
   const intents = role === "assistant" ? parseIntents(content) : null;
+  const isIntentIntro = role === "assistant" && meta === "intent_intro";
   return (
     <div style={styles.row(role)}>
       {role === "assistant" && (
@@ -206,7 +241,9 @@ export default function MessageBubble({ message, accentColor = "#c8102e", dark =
       )}
       {intents
         ? <IntentBubbles intents={intents} accentColor={accentColor} dark={dark} onIntentClick={onIntentClick} onIntentDismiss={onIntentDismiss} showIntentHint={showIntentHint} compactIntents={compactIntents} />
-        : <div style={styles.bubble(role, accentColor, dark, assistantBg)}>{renderContent(content)}</div>
+        : isIntentIntro
+          ? <div style={styles.bubble(role, accentColor, dark, assistantBg)}>{renderIntentIntro(content, accentColor, onIntentClick, "intro")}</div>
+          : <div style={styles.bubble(role, accentColor, dark, assistantBg)}>{renderContent(content)}</div>
       }
     </div>
   );
