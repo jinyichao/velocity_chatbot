@@ -1,9 +1,15 @@
 import traceback
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from app.models.schemas import ChatRequest, ChatResponse
-from app.services import intent_classifier, rag, guardrail, audit, v3_direct
-from app.services import v1_classifier
+from app.models.schemas import (
+    ChatRequest,
+    ChatResponse,
+    DismissTaskRequest,
+    NameValidationRequest,
+    NameValidationResponse,
+)
+from app.services import intent_classifier, rag, guardrail, audit, v3_direct, task_tracker
+from app.services import v1_classifier, name_validator
 from app.services.pii_detector import first_foreign_match, COUNTRY_FLAG, TYPE_LABEL
 from app.config import settings
 
@@ -35,7 +41,13 @@ async def chat(req: ChatRequest):
             intent, confidence = v1_classifier.classify(req.message)
             reply = f"Intent identified:\n• **{intent.replace('_', ' ')}**"
             await audit.log_turn(req.session_id, req.message, reply, intent, True)
-            return ChatResponse(reply=reply, intents=[intent], session_id=req.session_id)
+            task_tracker.add(req.session_id, [intent])
+            return ChatResponse(
+                reply=reply,
+                intents=[intent],
+                session_id=req.session_id,
+                open_tasks=task_tracker.list_open(req.session_id),
+            )
 
         # ── V3: Direct LLM, no classification, no guardrail ────────────────
         if req.version == 3:
@@ -44,17 +56,42 @@ async def chat(req: ChatRequest):
             return ChatResponse(reply=reply, intents=[], session_id=req.session_id)
 
         # ── V2: LLM classification + guardrail + out-of-scope control ──────
-        intents, confidence = await intent_classifier.classify_intent(req.message, history)
+        current_open = task_tracker.list_open(req.session_id)
+        intents, to_close, confidence = await intent_classifier.classify_intent(
+            req.message, history, current_open
+        )
+
+        # Close before add so a "X instead of Y" turn doesn't drop Y from the
+        # newly-added X due to ordering.
+        for intent in to_close:
+            task_tracker.close(req.session_id, intent)
+        task_tracker.add(req.session_id, intents)
+        open_tasks = task_tracker.list_open(req.session_id)
+
+        if to_close and not intents:
+            closed_labels = ", ".join(c.replace("_", " ") for c in to_close)
+            reply = f"Got it — closed: **{closed_labels}**."
+            await audit.log_turn(req.session_id, req.message, reply, f"close:{','.join(to_close)}", True)
+            return ChatResponse(reply=reply, intents=[], session_id=req.session_id, open_tasks=open_tasks, closed_tasks=to_close)
+
+        # intents=[] with no close = acknowledgment. Guide rather than fall
+        # through to the out-of-scope canned reply.
+        if not intents:
+            if open_tasks:
+                reply = "Please click the **Confirm** button on the form to finalize."
+                await audit.log_turn(req.session_id, req.message, reply, "ack", True)
+                return ChatResponse(reply=reply, intents=[], session_id=req.session_id, open_tasks=open_tasks, closed_tasks=[])
+            intents = ["out_of_scope"]
 
         if intents == ["out_of_scope"]:
             reply = settings.OUT_OF_SCOPE_MESSAGE
             await audit.log_turn(req.session_id, req.message, reply, "out_of_scope", True)
-            return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
+            return ChatResponse(reply=reply, intents=intents, session_id=req.session_id, open_tasks=open_tasks, closed_tasks=to_close)
 
         if intents == ["greeting"]:
             reply = await rag.generate_greeting(req.message, history)
             await audit.log_turn(req.session_id, req.message, reply, "greeting", True)
-            return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
+            return ChatResponse(reply=reply, intents=intents, session_id=req.session_id, open_tasks=open_tasks, closed_tasks=to_close)
 
         SKIP = {"greeting", "out_of_scope"}
         scoped = [i for i in intents if i not in SKIP]
@@ -67,9 +104,36 @@ async def chat(req: ChatRequest):
                 reply = f"{note}\n\n{reply}"
 
         await audit.log_turn(req.session_id, req.message, reply, ", ".join(intents), True)
-        return ChatResponse(reply=reply, intents=intents, session_id=req.session_id)
+        return ChatResponse(reply=reply, intents=intents, session_id=req.session_id, open_tasks=open_tasks, closed_tasks=to_close)
 
     except Exception as e:
         tb = traceback.format_exc()
         print(f"ERROR: {e}\n{tb}")
         return JSONResponse(status_code=500, content={"error": str(e), "detail": tb})
+
+
+@router.post("/tasks/dismiss")
+async def dismiss_task(req: DismissTaskRequest):
+    """Close an open task. Idempotent — silently no-ops if already closed."""
+    closed = task_tracker.close(req.session_id, req.intent)
+    return {
+        "closed": closed,
+        "open_tasks": task_tracker.list_open(req.session_id),
+    }
+
+
+@router.get("/tasks/{session_id}")
+async def get_open_tasks(session_id: str):
+    return {"open_tasks": task_tracker.list_open(session_id)}
+
+
+@router.post("/validate/name", response_model=NameValidationResponse)
+async def validate_name_endpoint(req: NameValidationRequest):
+    """LLM sanity check for the 'Full Name' field in the add-user flow."""
+    try:
+        valid, reason = await name_validator.validate_name(req.name)
+        return NameValidationResponse(valid=valid, reason=reason)
+    except Exception as e:
+        # On LLM failure, fall back to accepting so the user isn't blocked.
+        print(f"name validation failed: {e}")
+        return NameValidationResponse(valid=True, reason="")

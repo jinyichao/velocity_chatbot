@@ -44,7 +44,7 @@ async def run_evaluation():
     failed = []
 
     for message, expected in GOLDEN_CASES:
-        intent, confidence = await classify_intent(message, [])
+        intent, _close, confidence = await classify_intent(message, [])
         ok = intent == expected
         status = "PASS" if ok else "FAIL"
         print(f"[{status}] '{message}'")
