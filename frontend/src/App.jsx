@@ -253,7 +253,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
     border:  dark ? "#3a3a3a" : "#e8e8e8",
     fieldBg: dark ? "#2a2a2a" : "#fafafa",
     inputBorderBottom: dark ? "#555" : "#ddd",
-    checkBg: dark ? "#4a6580" : "#3d5166",
+    checkBg: dark ? "#ED1C24" : "#ED1C24",
   };
   const inputStyle = {
     width: "100%", border: "none", borderBottom: `1px solid ${ft.inputBorderBottom}`,
@@ -281,7 +281,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
         <div style={{ fontSize: 22, fontWeight: 700 }}>Add user</div>
         <div style={{
-          background: "linear-gradient(90deg, #67e8f9, #818cf8)",
+          background: "linear-gradient(90deg, #FB5C39, #ED1C24)",
           borderRadius: 20, padding: "3px 12px",
           fontSize: 12, fontWeight: 600, color: "#fff",
           display: "flex", alignItems: "center", gap: 5,
@@ -493,7 +493,7 @@ function getUserPermissions(u) {
   return perms;
 }
 
-function JourneyPage({ dark }) {
+function JourneyPage({ dark, navbarOffset = 60 }) {
   const [activeSubTab, setActiveSubTab] = useState("Roles");
   const [aiInput, setAiInput] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
@@ -515,6 +515,57 @@ function JourneyPage({ dark }) {
   const [deleteDropdownOpen, setDeleteDropdownOpen] = useState(false);
   const [completedIntents, setCompletedIntents] = useState([]);
   const [closeTaskSignal, setCloseTaskSignal] = useState(null);
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1280);
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const chatWidth = viewportWidth < 1024 ? 360 : 420;
+
+  // Derive per-task progress for the open-tasks strip. Keyed by raw intent
+  // string (e.g. "add_user") and also by title-case label (e.g. "Add User")
+  // so the strip can look up either form.
+  const taskProgress = React.useMemo(() => {
+    const map = {};
+    const ADD_BASE_FIELDS = ["name", "nric", "mobile", "email"];
+    const hasBankingRole = (addUserRoles || []).some(r => /business online banking/i.test(r));
+    const addTotal = 1 /* roles step */ + ADD_BASE_FIELDS.length + (hasBankingRole ? 1 : 0);
+    const requiredFields = hasBankingRole ? [...ADD_BASE_FIELDS, "userId"] : ADD_BASE_FIELDS;
+    const addCompletedFields = requiredFields.filter(f => (addUserData?.[f] ?? "").toString().trim().length > 0).length;
+    const addCompleted = (addUserRoles ? 1 : 0) + addCompletedFields;
+    const deleteTotal = 2;
+    const deleteSelectStep = selectedDeleteUsers.length > 0 ? 1 : 0;
+    const deleteCompleted = deleteSelectStep + (deleteConfirmed ? 1 : 0);
+
+    const completedLower = completedIntents.map(s => s.toLowerCase());
+    const statusFor = (intentKey, completed, total) => {
+      const isCompleted = completedLower.includes(intentKey.toLowerCase()) || (total > 0 && completed >= total);
+      if (isCompleted) return "done";
+      if (activeIntent && activeIntent.toLowerCase().replace(/\s+/g, "_") === intentKey) return "in_progress";
+      if (completed > 0) return "in_progress";
+      return "pending";
+    };
+
+    const writeBoth = (intentKey, label, entry) => {
+      map[intentKey] = entry;
+      map[label] = entry;
+    };
+
+    writeBoth("add_user", "Add User", {
+      completed: Math.min(addCompleted, addTotal),
+      total: addTotal,
+      status: statusFor("add_user", addCompleted, addTotal),
+    });
+    writeBoth("delete_user", "Delete User", {
+      completed: Math.min(deleteCompleted, deleteTotal),
+      total: deleteTotal,
+      status: statusFor("delete_user", deleteCompleted, deleteTotal),
+    });
+    return map;
+  }, [addUserRoles, addUserData, selectedDeleteUsers, deleteConfirmed, completedIntents, activeIntent]);
 
   const handleIntentDismiss = (label) => {
     setLastIntents(prev => prev.filter(i => i.toLowerCase() !== label.toLowerCase()));
@@ -531,6 +582,7 @@ function JourneyPage({ dark }) {
       setDeleteTabOpen(false);
       setSelectedDeleteUsers([]);
       setDeleteConfirmIdx(null);
+      setDeleteConfirmed(false);
       setActiveSubTab(prev => (prev === "Delete Users" ? "Roles" : prev));
     }
   };
@@ -556,8 +608,9 @@ function JourneyPage({ dark }) {
         setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
       } else if (remaining.length > 0) {
         setAssistantNotification({
-          text: `Intent identified:\n${lastIntents.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
+          text: `Next up: **${remaining[0]}**.`,
           key: Date.now(),
+          meta: "intent_intro",
         });
       }
     }, 600);
@@ -592,26 +645,46 @@ function JourneyPage({ dark }) {
     panelBg:       dark ? "#1e1e1e" : "#fff",
     tableHeaderBg: dark ? "#252525" : "#fafafa",
     inputText:     dark ? "#ccc"    : "#333",
-    accentLink:    dark ? "#5ba3ff" : "#0057a8",
-    chipBorder:    dark ? "#3a6fa8" : "#0057a8",
-    chipText:      dark ? "#5ba3ff" : "#0057a8",
+    accentLink:    dark ? "#FB5C39" : "#ED1C24",
+    chipBorder:    dark ? "#FB5C39" : "#ED1C24",
+    chipText:      dark ? "#FB5C39" : "#ED1C24",
   };
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", background: t.bg, fontFamily: "'Helvetica Neue', Arial, sans-serif", color: t.text, transition: "background 0.2s" }}>
+    <div style={{
+      width: "100%", minHeight: "100vh", background: t.bg,
+      fontFamily: "'Helvetica Neue', Arial, sans-serif", color: t.text,
+      transition: "background 0.2s, padding-right 0.2s ease",
+      paddingRight: chatOpen ? chatWidth + 32 : 0,
+      boxSizing: "border-box",
+    }}>
 
       {/* Main content */}
-      <div style={{ display: "flex", padding: "36px 32px", gap: 40, maxWidth: 1200 }}>
+      <div style={{
+        display: "flex", padding: "36px 32px",
+        gap: chatOpen ? 0 : 40,
+        maxWidth: 1200, margin: "0 auto",
+        flexDirection: chatOpen ? "column" : "row",
+      }}>
 
-        {/* Left label */}
-        <div style={{ width: 280, flexShrink: 0, paddingTop: 4 }}>
-          <div style={{ width: 40, height: 4, background: "#c8102e", marginBottom: 16 }} />
-          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.7, color: t.text }}>
-            Manage Roles<br />and Authorisation
+        {/* Heading — left sidebar when chat closed, top header when chat open */}
+        {chatOpen ? (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ width: 40, height: 4, background: "#c8102e", marginBottom: 12 }} />
+            <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.4, color: t.text }}>
+              Manage Roles and Authorisation
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{ width: 280, flexShrink: 0, paddingTop: 4 }}>
+            <div style={{ width: 40, height: 4, background: "#c8102e", marginBottom: 16 }} />
+            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.7, color: t.text }}>
+              Manage Roles<br />and Authorisation
+            </div>
+          </div>
+        )}
 
-        {/* Right content */}
+        {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
 
           {/* AI input */}
@@ -632,7 +705,7 @@ function JourneyPage({ dark }) {
                 }}
               />
               <div onClick={handleAiSubmit} style={{
-                width: 42, height: 42, borderRadius: "50%", background: "#1a1a2e",
+                width: 42, height: 42, borderRadius: "50%", background: "#ED1C24",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer", flexShrink: 0, marginBottom: 10,
                 boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
@@ -641,7 +714,7 @@ function JourneyPage({ dark }) {
               </div>
             </div>
             {/* Gradient border bottom */}
-            <div style={{ height: 3, borderRadius: "0 0 10px 10px", background: "linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4)", margin: "0 -14px" }} />
+            <div style={{ height: 3, borderRadius: "0 0 10px 10px", background: "linear-gradient(90deg, #FB5C39, #ED1C24, #D6271C)", margin: "0 -14px" }} />
           </div>
 
           {/* Expandable suggestion chips */}
@@ -705,12 +778,12 @@ function JourneyPage({ dark }) {
               <span style={{ fontSize: 17, fontWeight: 700, color: t.text }}>Remove user(s)</span>
               {selectedDeleteUsers.length > 0 && (
                 <span style={{
-                  background: "#3d5166", color: "#fff", borderRadius: 12,
+                  background: "#ED1C24", color: "#fff", borderRadius: 12,
                   fontSize: 12, fontWeight: 700, padding: "1px 8px", minWidth: 20, textAlign: "center",
                 }}>{selectedDeleteUsers.length}</span>
               )}
               <span style={{
-                background: "linear-gradient(90deg,#67e8f9,#818cf8)", color: "#fff",
+                background: "linear-gradient(90deg,#FB5C39,#ED1C24)", color: "#fff",
                 borderRadius: 20, fontSize: 12, fontWeight: 600, padding: "3px 12px",
                 display: "inline-flex", alignItems: "center", gap: 5,
               }}>✦ AI Suggested</span>
@@ -799,6 +872,7 @@ function JourneyPage({ dark }) {
                 onClick={() => {
                   const names = selectedDeleteUsers;
                   setJourneyUsers(prev => prev.filter(u => !names.includes(u.name)));
+                  setDeleteConfirmed(true);
                   const msg = `User${names.length > 1 ? "s" : ""} ${names.map(n => `"${n}"`).join(", ")} ${names.length > 1 ? "have" : "has"} been successfully removed. ✓`;
                   setAssistantNotification({ text: msg, key: Date.now() });
                   setCloseTaskSignal({ intent: "delete_user", key: Date.now() });
@@ -810,7 +884,7 @@ function JourneyPage({ dark }) {
                       setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
                     } else if (remaining.length > 0) {
                       setAssistantNotification({
-                        text: `Intent identified:\n${lastIntents.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
+                        text: `Next up: **${remaining[0]}**.`,
                         key: Date.now(),
                       });
                     }
@@ -821,7 +895,7 @@ function JourneyPage({ dark }) {
                   setActiveSubTab("Roles");
                 }}
                 style={{
-                  padding: "10px 32px", background: selectedDeleteUsers.length > 0 ? "#3d5166" : (dark ? "#333" : "#ccc"),
+                  padding: "10px 32px", background: selectedDeleteUsers.length > 0 ? "#ED1C24" : (dark ? "#333" : "#ccc"),
                   color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600,
                   cursor: selectedDeleteUsers.length > 0 ? "pointer" : "default", fontFamily: "inherit",
                 }}
@@ -887,18 +961,20 @@ function JourneyPage({ dark }) {
         </div>
       </div>
 
-      {/* Floating V2 chat panel */}
+      {/* Docked V2 chat panel — floating overlay style, content reflows around it */}
       {chatOpen && (
         <div style={{
-          position: "fixed", bottom: 24, right: 24, zIndex: 2000,
-          width: 420, height: 560, borderRadius: 16,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
+          position: "fixed",
+          top: navbarOffset + 16, bottom: 16, right: 16, zIndex: 2000,
+          width: chatWidth, borderRadius: 16,
           display: "flex", flexDirection: "column", overflow: "hidden",
-          border: `1px solid ${t.border}`, background: t.panelBg,
+          border: `1px solid ${t.border}`,
+          boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
+          background: t.panelBg,
         }}>
           {/* Chat header */}
           <div style={{
-            background: "#3d5166", color: "#fff",
+            background: "#D6271C", color: "#fff",
             padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: 12, flexShrink: 0,
           }}>
             <span style={{ fontSize: 20, lineHeight: 1, marginTop: 2 }}>✦</span>
@@ -917,12 +993,14 @@ function JourneyPage({ dark }) {
             sessionId={SESSION_JOURNEY}
             title="Gen-AI Powered Engine"
             label="V2"
-            color="#3d5166"
+            color="#ED1C24"
             pendingMessage={pendingMessage}
             version={2}
             mobile={true}
             dark={dark}
             showHeader={false}
+            taskProgress={taskProgress}
+            naturalIntentCopy={true}
             assistantBg={dark ? "#2a2a2a" : "#ebebeb"}
             intentResponses={{
               "add user":    { type: "role_selector" },
@@ -947,6 +1025,7 @@ function JourneyPage({ dark }) {
               if (label.toLowerCase().includes("delete")) {
                 setDeleteTabOpen(true);
                 setActiveSubTab("Delete Users");
+                setDeleteConfirmed(false);
               }
             }}
           />
@@ -970,12 +1049,12 @@ function JourneyPage({ dark }) {
               />
               <button onClick={handleChatSend} style={{
                 background: "none", border: "none", cursor: "pointer",
-                color: "#999", fontSize: 18, padding: 0, lineHeight: 1,
+                color: "#ED1C24", fontSize: 18, padding: 0, lineHeight: 1,
                 display: "flex", alignItems: "center",
               }}>➤</button>
             </div>
             {/* Gradient bottom bar */}
-            <div style={{ height: 3, borderRadius: "0 0 4px 4px", background: "linear-gradient(90deg, #67e8f9, #818cf8, #c084fc)", margin: "0 0 10px" }} />
+            <div style={{ height: 3, borderRadius: "0 0 4px 4px", background: "linear-gradient(90deg, #FB5C39, #ED1C24, #D6271C)", margin: "0 0 10px" }} />
           </div>
         </div>
       )}
@@ -1215,7 +1294,7 @@ export default function App() {
             ))}
           </div>
         ) : (
-          <JourneyPage dark={dark} />
+          <JourneyPage dark={dark} navbarOffset={topOffset} />
         )}
       </div>
 

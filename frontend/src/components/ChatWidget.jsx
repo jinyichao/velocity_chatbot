@@ -3,6 +3,16 @@ import MessageBubble from "./MessageBubble";
 import { sendMessage, dismissTask, validateName } from "../api/chat";
 import { detectId, detectPhone, parseCountryChoice, COUNTRY_META, COUNTRIES } from "../utils/piiDetection";
 
+function naturalIntentSentence(intents) {
+  const toTitle = (s) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const labels = intents.map(i => `**${toTitle(i)}**`);
+  let list;
+  if (labels.length === 1) list = labels[0];
+  else if (labels.length === 2) list = `${labels[0]} and ${labels[1]}`;
+  else list = `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
+  return `Got it — I've added ${list} to your open tasks. Let's start with ${labels[0]}.`;
+}
+
 const ROLES = [
   "Business Online Banking - Viewer",
   "Business Online Banking - Maker",
@@ -55,7 +65,7 @@ function RoleSelectorBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
         }}>Cancel</button>
         <button onClick={() => onConfirm(selected)} style={{
           padding: "8px 20px", borderRadius: 6, border: "none",
-          background: "#3d5166", color: "#fff", fontSize: 13, fontWeight: 600,
+          background: "#ED1C24", color: "#fff", fontSize: 13, fontWeight: 600,
           cursor: "pointer", fontFamily: "inherit",
         }}>Confirm</button>
       </div>
@@ -248,6 +258,8 @@ export default function ChatWidget({
   onIdCountryChange,
   phoneCountry = "SG",
   onPhoneCountryChange,
+  taskProgress = null,
+  naturalIntentCopy = false,
 }) {
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -287,7 +299,11 @@ export default function ChatWidget({
   useEffect(() => {
     if (!assistantMessage || assistantMessage.key === prevAssistantKeyRef.current) return;
     prevAssistantKeyRef.current = assistantMessage.key;
-    setMessages(prev => [...prev, { role: "assistant", content: assistantMessage.text }]);
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: assistantMessage.text,
+      ...(assistantMessage.meta ? { meta: assistantMessage.meta } : {}),
+    }]);
   }, [assistantMessage]);
 
   const prevCloseKeyRef = useRef(null);
@@ -552,7 +568,21 @@ export default function ChatWidget({
     setLoading(true);
     try {
       const data = await sendMessage({ message: text, sessionId, history: messages, version });
-      setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+      let reply = data.reply;
+      let detectedIntents = null;
+      let isNaturalIntro = false;
+      if (reply.startsWith("Intent identified:")) {
+        const lines = reply.split("\n").slice(1);
+        detectedIntents = lines.map(l => l.match(/^[•\-]\s*\*?\*?(.+?)\*?\*?$/)).filter(Boolean).map(m => m[1].trim());
+        if (naturalIntentCopy && detectedIntents.length > 0) {
+          reply = naturalIntentSentence(detectedIntents);
+          isNaturalIntro = true;
+        }
+      }
+      setMessages((prev) => [...prev, isNaturalIntro
+        ? { role: "assistant", content: reply, meta: "intent_intro" }
+        : { role: "assistant", content: reply }
+      ]);
       if (Array.isArray(data.open_tasks)) setOpenTasks(data.open_tasks);
       if (Array.isArray(data.closed_tasks)) {
         for (const closed of data.closed_tasks) {
@@ -563,10 +593,8 @@ export default function ChatWidget({
           notifyTaskClosed(closed);
         }
       }
-      if (onIntentsDetected && data.reply.startsWith("Intent identified:")) {
-        const lines = data.reply.split("\n").slice(1);
-        const intents = lines.map(l => l.match(/^[•\-]\s*\*?\*?(.+?)\*?\*?$/)).filter(Boolean).map(m => m[1].trim());
-        if (intents.length > 0) onIntentsDetected(intents);
+      if (onIntentsDetected && detectedIntents && detectedIntents.length > 0) {
+        onIntentsDetected(detectedIntents);
       }
     } catch {
       setMessages((prev) => [
@@ -598,6 +626,17 @@ export default function ChatWidget({
               </div>
             </div>
           </div>
+        )}
+
+        {openTasks.length > 0 && (
+          <OpenTasksStrip
+            tasks={openTasks}
+            onDismiss={handleOpenTaskDismiss}
+            onClick={handleIntentClick}
+            accentColor={color}
+            dark={dark}
+            taskProgress={taskProgress}
+          />
         )}
 
         <div style={baseStyles.messages(dark)}>
@@ -635,73 +674,146 @@ export default function ChatWidget({
           <div ref={bottomRef} />
         </div>
 
-        {openTasks.length > 0 && (
-          <OpenTasksStrip
-            tasks={openTasks}
-            onDismiss={handleOpenTaskDismiss}
-            onClick={handleIntentClick}
-            accentColor={color}
-            dark={dark}
-          />
-        )}
-
       </div>
     </>
   );
 }
 
-function OpenTasksStrip({ tasks, onDismiss, onClick, accentColor, dark }) {
+function OpenTasksStrip({ tasks, onDismiss, onClick, accentColor, dark, taskProgress = null }) {
   const bg = dark ? "#1f1f1f" : "#f5f7fb";
   const border = dark ? "#333" : "#dde3ee";
+  const mutedText = dark ? "#9ca3af" : "#6b7280";
+  const barEmpty = dark ? "#3a3a3a" : "#e3e8f0";
   const toTitleCase = (s) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const statusGlyph = (status) => {
+    if (status === "done") return "✓";
+    if (status === "in_progress") return "●";
+    return "○";
+  };
+
+  const enriched = !!taskProgress;
 
   return (
     <div style={{
-      flexShrink: 0, padding: "8px 12px",
-      background: bg, borderTop: `1px solid ${border}`,
-      display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+      flexShrink: 0, padding: enriched ? "10px 12px" : "8px 12px",
+      background: bg, borderBottom: `1px solid ${border}`,
+      display: "flex", alignItems: enriched ? "stretch" : "center",
+      gap: enriched ? 6 : 8, flexWrap: "wrap",
+      flexDirection: enriched ? "column" : "row",
     }}>
       <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
-        color: dark ? "#9ca3af" : "#6b7280", textTransform: "uppercase" }}>
-        Open Tasks
+        color: mutedText, textTransform: "uppercase" }}>
+        Open Tasks {enriched ? `(${tasks.length})` : ""}
       </span>
-      {tasks.map((t) => {
-        const label = toTitleCase(t);
-        return (
-          <div key={t} style={{
-            display: "inline-flex", alignItems: "center", gap: 4,
-            border: `1px solid ${accentColor}`, borderRadius: 999,
-            padding: "2px 4px 2px 2px", fontSize: 12, fontWeight: 600,
-          }}>
-            <button
-              onClick={() => onClick && onClick(label)}
-              title={`Resume: ${label}`}
-              style={{
-                background: "transparent", border: "none", cursor: "pointer",
-                color: accentColor, font: "inherit", fontWeight: 600,
-                padding: "3px 10px", borderRadius: 999,
-                transition: "background 0.15s, color 0.15s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
-            >
-              {label}
-            </button>
-            <button
-              onClick={() => onDismiss(t)}
-              aria-label={`Dismiss ${label}`}
-              title="Dismiss"
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: dark ? "#9ca3af" : "#6b7280", fontSize: 14, lineHeight: 1,
-                padding: "0 6px",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#c8102e")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = dark ? "#9ca3af" : "#6b7280")}
-            >×</button>
-          </div>
-        );
-      })}
+      {enriched ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
+          {tasks.map((t) => {
+            const label = toTitleCase(t);
+            const prog = taskProgress[t] || taskProgress[label] || { completed: 0, total: 0, status: "pending" };
+            const completed = Math.min(prog.completed || 0, prog.total || 0);
+            const total = prog.total || 0;
+            const segments = 10;
+            const filledSegments = total > 0 ? Math.round((completed / total) * segments) : 0;
+            return (
+              <div key={t} style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "6px 10px", borderRadius: 8,
+                border: `1px solid ${border}`,
+                background: dark ? "#181818" : "#fff",
+              }}>
+                <span style={{
+                  fontSize: 13, color: accentColor, width: 14, textAlign: "center",
+                  lineHeight: 1, flexShrink: 0,
+                }}>{statusGlyph(prog.status)}</span>
+                <button
+                  onClick={() => onClick && onClick(label)}
+                  title={`Resume: ${label}`}
+                  style={{
+                    background: "transparent", border: "none", cursor: "pointer",
+                    color: dark ? "#f0f0f0" : "#1a1a1a", font: "inherit",
+                    fontWeight: 600, fontSize: 12.5, padding: 0,
+                    flexShrink: 0, whiteSpace: "nowrap",
+                  }}
+                >{label}</button>
+                {total > 0 ? (
+                  <>
+                    <div style={{
+                      flex: 1, height: 6, borderRadius: 3,
+                      background: barEmpty, overflow: "hidden",
+                      display: "flex", gap: 1, minWidth: 60,
+                    }}>
+                      {Array.from({ length: segments }).map((_, idx) => (
+                        <div key={idx} style={{
+                          flex: 1, height: "100%",
+                          background: idx < filledSegments ? accentColor : "transparent",
+                          transition: "background 0.2s",
+                        }} />
+                      ))}
+                    </div>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, color: mutedText,
+                      minWidth: 28, textAlign: "right", flexShrink: 0,
+                    }}>{completed}/{total}</span>
+                  </>
+                ) : (
+                  <div style={{ flex: 1 }} />
+                )}
+                <button
+                  onClick={() => onDismiss(t)}
+                  aria-label={`Dismiss ${label}`}
+                  title="Dismiss"
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    color: mutedText, fontSize: 16, lineHeight: 1,
+                    padding: "0 4px", flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#c8102e")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = mutedText)}
+                >×</button>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        tasks.map((t) => {
+          const label = toTitleCase(t);
+          return (
+            <div key={t} style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              border: `1px solid ${accentColor}`, borderRadius: 999,
+              padding: "2px 4px 2px 2px", fontSize: 12, fontWeight: 600,
+            }}>
+              <button
+                onClick={() => onClick && onClick(label)}
+                title={`Resume: ${label}`}
+                style={{
+                  background: "transparent", border: "none", cursor: "pointer",
+                  color: accentColor, font: "inherit", fontWeight: 600,
+                  padding: "3px 10px", borderRadius: 999,
+                  transition: "background 0.15s, color 0.15s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
+              >
+                {label}
+              </button>
+              <button
+                onClick={() => onDismiss(t)}
+                aria-label={`Dismiss ${label}`}
+                title="Dismiss"
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: mutedText, fontSize: 14, lineHeight: 1,
+                  padding: "0 6px",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#c8102e")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = mutedText)}
+              >×</button>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
