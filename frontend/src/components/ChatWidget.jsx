@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
-import { sendMessage } from "../api/chat";
+import { sendMessage, dismissTask, validateName } from "../api/chat";
 import { detectId, detectPhone, parseCountryChoice, COUNTRY_META, COUNTRIES } from "../utils/piiDetection";
 
 const ROLES = [
@@ -100,6 +100,33 @@ function CountryClarificationBubble({
           cursor: "pointer", fontFamily: "inherit",
           display: "flex", alignItems: "center", gap: 6,
         }}>{detected.flag} {detected.name}</button>
+      </div>
+    </div>
+  );
+}
+
+function FormConfirmBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{
+        background: assistantBg || "#fff",
+        borderRadius: 12, padding: "14px 16px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        marginBottom: 10, fontSize: 14, lineHeight: 1.5, color: "#1a1a1a",
+      }}>
+        All details have been captured. You can confirm here or review on the form first.
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onCancel} style={{
+          padding: "8px 16px", borderRadius: 20, border: "1.5px solid #ccc",
+          background: "#fff", color: "#333", fontSize: 13, cursor: "pointer",
+          fontFamily: "inherit",
+        }}>Review on form</button>
+        <button onClick={onConfirm} style={{
+          padding: "8px 18px", borderRadius: 20, border: "none",
+          background: accentColor, color: "#fff", fontSize: 13, fontWeight: 600,
+          cursor: "pointer", fontFamily: "inherit",
+        }}>Confirm</button>
       </div>
     </div>
   );
@@ -208,6 +235,10 @@ export default function ChatWidget({
   onRoleConfirm,
   onFieldCollected,
   assistantMessage = null,
+  // { intent, key } — bump key to fire a one-shot close from the parent.
+  closeTaskSignal = null,
+  onTaskClosed,
+  onChatConfirm,
   onIntentsDetected,
   onIntentStarted,
   onIntentDismiss,
@@ -235,6 +266,8 @@ export default function ChatWidget({
   const [loading, setLoading] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [fieldIndex, setFieldIndex] = useState(-1);
+  const [openTasks, setOpenTasks] = useState([]);
+  const [showChatConfirm, setShowChatConfirm] = useState(false);
   // { field: 'nric'|'mobile', value: string, suggestedCountry: 'MY'|'CN'|'HK' } | null
   const [pendingClarification, setPendingClarification] = useState(null);
   const bottomRef = useRef(null);
@@ -256,6 +289,33 @@ export default function ChatWidget({
     prevAssistantKeyRef.current = assistantMessage.key;
     setMessages(prev => [...prev, { role: "assistant", content: assistantMessage.text }]);
   }, [assistantMessage]);
+
+  const prevCloseKeyRef = useRef(null);
+  useEffect(() => {
+    if (!closeTaskSignal || closeTaskSignal.key === prevCloseKeyRef.current) return;
+    prevCloseKeyRef.current = closeTaskSignal.key;
+    handleOpenTaskDismiss(closeTaskSignal.intent);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [closeTaskSignal]);
+
+  const handleOpenTaskDismiss = async (intent) => {
+    setOpenTasks(prev => prev.filter(t => t !== intent));
+    if (intent === "add_user") {
+      setFieldIndex(-1);
+      setShowChatConfirm(false);
+    }
+    notifyTaskClosed(intent);
+    try {
+      const data = await dismissTask({ sessionId, intent });
+      if (Array.isArray(data.open_tasks)) setOpenTasks(data.open_tasks);
+    } catch {
+      // Keep optimistic state on network failure; next /chat call resyncs.
+    }
+  };
+
+  const notifyTaskClosed = (intent) => {
+    if (onTaskClosed) onTaskClosed(intent);
+  };
 
   const handleIntentDismiss = (label) => {
     setMessages(prev => {
@@ -323,9 +383,23 @@ export default function ChatWidget({
       setMessages(prev => [...prev, { role: "assistant", content: questions[next] }]);
       setFieldIndex(next);
     } else {
-      setMessages(prev => [...prev, { role: "assistant", content: "Thank you! All details have been captured. Please review and confirm on the form." }]);
+      setMessages(prev => [...prev, { role: "assistant", content: "Thank you! All details have been captured." }]);
       setFieldIndex(-1);
+      setShowChatConfirm(true);
     }
+  };
+
+  const handleChatConfirm = () => {
+    setShowChatConfirm(false);
+    if (onChatConfirm) onChatConfirm();
+  };
+
+  const handleChatConfirmCancel = () => {
+    setShowChatConfirm(false);
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: "Sure — review on the form and click **Confirm** when ready.",
+    }]);
   };
 
   // Handle the user's pick from the country clarification bubble.
@@ -452,7 +526,25 @@ export default function ChatWidget({
         }
       }
 
-      // name and userId have no validation
+      if (currentKey === "name") {
+        setLoading(true);
+        try {
+          const result = await validateName(text);
+          if (!result.valid) {
+            setMessages(prev => [...prev, {
+              role: "assistant",
+              content: `${result.reason || "That doesn't look like a real name."} Please try again.`,
+            }]);
+            return;
+          }
+        } catch {
+          // Validator down — fall through and accept rather than block the user.
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      // userId still has no validation
       advanceField(currentKey, text);
       return;
     }
@@ -461,6 +553,16 @@ export default function ChatWidget({
     try {
       const data = await sendMessage({ message: text, sessionId, history: messages, version });
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+      if (Array.isArray(data.open_tasks)) setOpenTasks(data.open_tasks);
+      if (Array.isArray(data.closed_tasks)) {
+        for (const closed of data.closed_tasks) {
+          if (closed === "add_user") {
+            setFieldIndex(-1);
+            setShowChatConfirm(false);
+          }
+          notifyTaskClosed(closed);
+        }
+      }
       if (onIntentsDetected && data.reply.startsWith("Intent identified:")) {
         const lines = data.reply.split("\n").slice(1);
         const intents = lines.map(l => l.match(/^[•\-]\s*\*?\*?(.+?)\*?\*?$/)).filter(Boolean).map(m => m[1].trim());
@@ -522,10 +624,84 @@ export default function ChatWidget({
               onPick={handleCountryPick}
             />
           )}
+          {showChatConfirm && (
+            <FormConfirmBubble
+              onConfirm={handleChatConfirm}
+              onCancel={handleChatConfirmCancel}
+              accentColor={color}
+              assistantBg={assistantBg}
+            />
+          )}
           <div ref={bottomRef} />
         </div>
 
+        {openTasks.length > 0 && (
+          <OpenTasksStrip
+            tasks={openTasks}
+            onDismiss={handleOpenTaskDismiss}
+            onClick={handleIntentClick}
+            accentColor={color}
+            dark={dark}
+          />
+        )}
+
       </div>
     </>
+  );
+}
+
+function OpenTasksStrip({ tasks, onDismiss, onClick, accentColor, dark }) {
+  const bg = dark ? "#1f1f1f" : "#f5f7fb";
+  const border = dark ? "#333" : "#dde3ee";
+  const toTitleCase = (s) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  return (
+    <div style={{
+      flexShrink: 0, padding: "8px 12px",
+      background: bg, borderTop: `1px solid ${border}`,
+      display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+    }}>
+      <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
+        color: dark ? "#9ca3af" : "#6b7280", textTransform: "uppercase" }}>
+        Open Tasks
+      </span>
+      {tasks.map((t) => {
+        const label = toTitleCase(t);
+        return (
+          <div key={t} style={{
+            display: "inline-flex", alignItems: "center", gap: 4,
+            border: `1px solid ${accentColor}`, borderRadius: 999,
+            padding: "2px 4px 2px 2px", fontSize: 12, fontWeight: 600,
+          }}>
+            <button
+              onClick={() => onClick && onClick(label)}
+              title={`Resume: ${label}`}
+              style={{
+                background: "transparent", border: "none", cursor: "pointer",
+                color: accentColor, font: "inherit", fontWeight: 600,
+                padding: "3px 10px", borderRadius: 999,
+                transition: "background 0.15s, color 0.15s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
+            >
+              {label}
+            </button>
+            <button
+              onClick={() => onDismiss(t)}
+              aria-label={`Dismiss ${label}`}
+              title="Dismiss"
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: dark ? "#9ca3af" : "#6b7280", fontSize: 14, lineHeight: 1,
+                padding: "0 6px",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#c8102e")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = dark ? "#9ca3af" : "#6b7280")}
+            >×</button>
+          </div>
+        );
+      })}
+    </div>
   );
 }

@@ -18,3 +18,20 @@ class ChatResponse(BaseModel):
     reply: str
     intents: list[str]
     session_id: str
+    open_tasks: list[str] = []
+    # Tasks that were closed THIS turn (cancellation, replacement, completion).
+    closed_tasks: list[str] = []
+
+
+class DismissTaskRequest(BaseModel):
+    session_id: str
+    intent: str
+
+
+class NameValidationRequest(BaseModel):
+    name: str
+
+
+class NameValidationResponse(BaseModel):
+    valid: bool
+    reason: str = ""

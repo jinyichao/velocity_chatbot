@@ -514,9 +514,57 @@ function JourneyPage({ dark }) {
   const [selectedDeleteUsers, setSelectedDeleteUsers] = useState([]);
   const [deleteDropdownOpen, setDeleteDropdownOpen] = useState(false);
   const [completedIntents, setCompletedIntents] = useState([]);
+  const [closeTaskSignal, setCloseTaskSignal] = useState(null);
 
   const handleIntentDismiss = (label) => {
     setLastIntents(prev => prev.filter(i => i.toLowerCase() !== label.toLowerCase()));
+  };
+
+  const handleTaskClosed = (intent) => {
+    if (intent === "add_user") {
+      setAddUserRoles(null);
+      setAddUserData({});
+      setAddUserIdCountry("SG");
+      setAddUserPhoneCountry("SG");
+      setActiveSubTab(prev => (prev === "Add User" ? "Roles" : prev));
+    } else if (intent === "delete_user") {
+      setDeleteTabOpen(false);
+      setSelectedDeleteUsers([]);
+      setDeleteConfirmIdx(null);
+      setActiveSubTab(prev => (prev === "Delete Users" ? "Roles" : prev));
+    }
+  };
+
+  // Shared by the side-panel Confirm button and the in-chat Confirm bubble.
+  const submitAddUser = (userName) => {
+    setJourneyUsers(prev => [...prev, buildUserEntry(userName, addUserRoles || [])]);
+    setAddUserRoles(null);
+    setAddUserData({});
+    setAddUserIdCountry("SG");
+    setAddUserPhoneCountry("SG");
+    setActiveSubTab("Roles");
+    setAssistantNotification({
+      text: `Your request to add "${userName}" as a user has been submitted. You will receive an email and push notification after the request has been authorised.`,
+      key: Date.now(),
+    });
+    setCloseTaskSignal({ intent: "add_user", key: Date.now() });
+    const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
+    setCompletedIntents(nowCompleted);
+    const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
+    setTimeout(() => {
+      if (remaining.length === 0 && lastIntents.length > 0) {
+        setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
+      } else if (remaining.length > 0) {
+        setAssistantNotification({
+          text: `Intent identified:\n${lastIntents.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
+          key: Date.now(),
+        });
+      }
+    }, 600);
+  };
+
+  const handleInChatConfirm = () => {
+    submitAddUser(addUserData.name || "Unknown");
   };
 
   const handleChatSend = () => {
@@ -648,28 +696,7 @@ function JourneyPage({ dark }) {
           </div>
 
           {activeSubTab === "Add User" && addUserRoles ? (
-            <AddUserForm dark={dark} selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); }} formData={addUserData} onFormChange={setAddUserData} idCountry={addUserIdCountry} onIdCountryChange={setAddUserIdCountry} phoneCountry={addUserPhoneCountry} onPhoneCountryChange={setAddUserPhoneCountry} onConfirm={(userName) => {
-              setJourneyUsers(prev => [...prev, buildUserEntry(userName, addUserRoles || [])]);
-              setAddUserRoles(null);
-              setAddUserData({});
-              setAddUserIdCountry("SG");
-              setAddUserPhoneCountry("SG");
-              setActiveSubTab("Roles");
-              setAssistantNotification({ text: `Your request to add "${userName}" as a user has been submitted. You will receive an email and push notification after the request has been authorised.`, key: Date.now() });
-              const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
-              setCompletedIntents(nowCompleted);
-              const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
-              setTimeout(() => {
-                if (remaining.length === 0 && lastIntents.length > 0) {
-                  setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
-                } else if (remaining.length > 0) {
-                  setAssistantNotification({
-                    text: `Intent identified:\n${lastIntents.map(i => remaining.includes(i) ? `- **${i}**` : `- ✓ ${i}`).join("\n")}`,
-                    key: Date.now(),
-                  });
-                }
-              }, 600);
-            }} />
+            <AddUserForm dark={dark} selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); }} formData={addUserData} onFormChange={setAddUserData} idCountry={addUserIdCountry} onIdCountryChange={setAddUserIdCountry} phoneCountry={addUserPhoneCountry} onPhoneCountryChange={setAddUserPhoneCountry} onConfirm={submitAddUser} />
           ) : activeSubTab === "Delete Users" && deleteTabOpen ? (<>
           {/* Remove Users — new design */}
           <div style={{ maxWidth: 640 }}>
@@ -774,6 +801,7 @@ function JourneyPage({ dark }) {
                   setJourneyUsers(prev => prev.filter(u => !names.includes(u.name)));
                   const msg = `User${names.length > 1 ? "s" : ""} ${names.map(n => `"${n}"`).join(", ")} ${names.length > 1 ? "have" : "has"} been successfully removed. ✓`;
                   setAssistantNotification({ text: msg, key: Date.now() });
+                  setCloseTaskSignal({ intent: "delete_user", key: Date.now() });
                   const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
                   setCompletedIntents(nowCompleted);
                   const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
@@ -909,6 +937,9 @@ function JourneyPage({ dark }) {
             onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setActiveSubTab("Add User"); }}
             onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
             assistantMessage={assistantNotification}
+            closeTaskSignal={closeTaskSignal}
+            onTaskClosed={handleTaskClosed}
+            onChatConfirm={handleInChatConfirm}
             onIntentsDetected={(intents) => { setLastIntents(intents); setCompletedIntents([]); }}
             onIntentDismiss={handleIntentDismiss}
             onIntentStarted={(label) => {
