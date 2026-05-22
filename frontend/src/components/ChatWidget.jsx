@@ -10,7 +10,7 @@ function naturalIntentSentence(intents) {
   if (labels.length === 1) list = labels[0];
   else if (labels.length === 2) list = `${labels[0]} and ${labels[1]}`;
   else list = `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
-  return `Got it — I've added ${list} to your open tasks. Let's start with ${labels[0]}.`;
+  return `Got it — I've added ${list} to your open tasks.`;
 }
 
 const ROLES = [

@@ -113,7 +113,6 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
       height: 60, display: "flex", alignItems: "center", padding: "0 28px", gap: 0,
       transition: "background 0.2s",
     }}>
-      <img src="/ocbc-logo-color.svg" alt="OCBC" style={{ height: 28, marginRight: 20 }} />
       {NAV_TABS.map((tab) => {
         const active = activeTab === tab.id;
         return (
@@ -733,7 +732,7 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
                   { label: "➕ Add User", query: "How do I add a new user to Velocity and assign them a role?" },
                   { label: "🗑 Delete User", query: "How do I deactivate or delete a user from Velocity?" },
                   { label: "➕🗑 Add & Delete User", query: "How do I add a new user and also remove an existing user from Velocity?" },
-                  { label: "➕🗑🔔 Add, Delete & Alters Notification", query: "I need to add a new user, remove an existing user, and set up alerts and notifications in Velocity." },
+                  { label: "🌐 Add & Delete User (multi-lingual)", query: "個同事走咗喇，佢account同加個新人頂喺Velocity點整㗎？" },
                 ].map(({ label, query }) => (
                   <button key={label} onClick={() => { setChatOpen(true); setPendingMessage({ text: query, key: Date.now() }); }} style={{
                     padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${t.chipBorder}`,
