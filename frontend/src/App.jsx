@@ -599,15 +599,17 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
       key: Date.now(),
     });
     setCloseTaskSignal({ intent: "add_user", key: Date.now() });
-    const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
+    const norm = (s) => s.toLowerCase().replace(/\s+/g, "_");
+    const toTitle = (s) => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(norm);
     setCompletedIntents(nowCompleted);
-    const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
+    const remaining = lastIntents.filter(i => !nowCompleted.includes(norm(i)));
     setTimeout(() => {
       if (remaining.length === 0 && lastIntents.length > 0) {
         setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
       } else if (remaining.length > 0) {
         setAssistantNotification({
-          text: `Next up: **${remaining[0]}**.`,
+          text: `Next up: **${toTitle(remaining[0])}**.`,
           key: Date.now(),
           meta: "intent_intro",
         });
@@ -875,16 +877,19 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
                   const msg = `User${names.length > 1 ? "s" : ""} ${names.map(n => `"${n}"`).join(", ")} ${names.length > 1 ? "have" : "has"} been successfully removed. ✓`;
                   setAssistantNotification({ text: msg, key: Date.now() });
                   setCloseTaskSignal({ intent: "delete_user", key: Date.now() });
-                  const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(s => s.toLowerCase());
+                  const norm = (s) => s.toLowerCase().replace(/\s+/g, "_");
+                  const toTitle = (s) => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                  const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(norm);
                   setCompletedIntents(nowCompleted);
-                  const remaining = lastIntents.filter(i => !nowCompleted.includes(i.toLowerCase()));
+                  const remaining = lastIntents.filter(i => !nowCompleted.includes(norm(i)));
                   setTimeout(() => {
                     if (remaining.length === 0 && lastIntents.length > 0) {
                       setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
                     } else if (remaining.length > 0) {
                       setAssistantNotification({
-                        text: `Next up: **${remaining[0]}**.`,
+                        text: `Next up: **${toTitle(remaining[0])}**.`,
                         key: Date.now(),
+                        meta: "intent_intro",
                       });
                     }
                   }, 600);
