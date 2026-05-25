@@ -501,10 +501,10 @@ function getUserPermissions(u) {
   return perms;
 }
 
-function JourneyPage({ dark, navbarOffset = 60 }) {
+function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
   const [activeSubTab, setActiveSubTab] = useState("Roles");
   const [aiInput, setAiInput] = useState("");
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(isMobileView);
   const [pendingMessage, setPendingMessage] = useState(null);
   const [chipsOpen, setChipsOpen] = useState(true);
   const [chatInput, setChatInput] = useState("");
@@ -1079,7 +1079,12 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
 
       {/* Docked V2 chat panel — floating overlay style, content reflows around it */}
       {chatOpen && (
-        <div style={{
+        <div style={isMobileView ? {
+          position: "fixed",
+          top: 48, bottom: 0, left: 0, right: 0, zIndex: 2000,
+          display: "flex", flexDirection: "column", overflow: "hidden",
+          background: t.panelBg,
+        } : {
           position: "fixed",
           top: navbarOffset + 16, bottom: 16, right: 16, zIndex: 2000,
           width: chatWidth, borderRadius: 16,
@@ -1173,6 +1178,28 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
             {/* Gradient bottom bar */}
             <div style={{ height: 3, borderRadius: "0 0 4px 4px", background: "linear-gradient(90deg, #FB5C39, #ED1C24, #D6271C)", margin: "0 0 10px" }} />
           </div>
+
+          {/* Suggestion chips — mobile only */}
+          {isMobileView && (
+            <div style={{ flexShrink: 0, overflowX: "auto", padding: "6px 14px 12px", borderTop: `1px solid ${t.border}`, background: t.panelBg }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "nowrap", minWidth: "max-content" }}>
+                {[
+                  { label: "➕ Add User", query: "How do I add a new user to Velocity and assign them a role?" },
+                  { label: "🗑 Delete User", query: "How do I deactivate or delete a user from Velocity?" },
+                  { label: "➕🗑 Add & Delete User", query: "How do I add a new user and also remove an existing user from Velocity?" },
+                  { label: "🌐 Add & Delete User (multi-lingual)", query: "個同事走咗喇，佢account同加個新人頂喺Velocity點整㗎？" },
+                ].map(({ label, query }) => (
+                  <button key={label} onClick={() => setPendingMessage({ text: query, key: Date.now() })} style={{
+                    padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${t.chipBorder}`,
+                    background: t.panelBg, color: t.chipText, fontSize: 12, fontWeight: 500,
+                    cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
+                  }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1279,7 +1306,7 @@ function InfoCard({ widget, info, dark, visible, onToggle }) {
 }
 
 function MobileLayout({ username, onLogout, dark, onToggleDark }) {
-  const [activeTab, setActiveTab] = useState(1);
+  const [activeTab, setActiveTab] = useState("journey");
   const [pendingMessages, setPendingMessages] = useState([null, null, null]);
 
   const handleSend = (text) => {
@@ -1299,28 +1326,40 @@ function MobileLayout({ username, onLogout, dark, onToggleDark }) {
       <div style={{ position: "fixed", top: 8, right: 12, zIndex: 1100 }}>
         <ThemeToggle dark={dark} onToggle={onToggleDark} />
       </div>
-      <div style={{ display: "flex", background: t.panelBg, borderBottom: `1px solid ${t.border}`, flexShrink: 0, paddingTop: 20, transition: "background 0.2s" }}>
+      <div style={{ display: "flex", background: t.panelBg, borderBottom: `1px solid ${t.border}`, flexShrink: 0, paddingTop: 20, transition: "background 0.2s", overflowX: "auto" }}>
+        <button onClick={() => setActiveTab("journey")} style={{
+          flex: "0 0 auto", padding: "12px 16px", border: "none",
+          borderBottom: activeTab === "journey" ? `3px solid #c8102e` : "3px solid transparent",
+          background: "none",
+          color: activeTab === "journey" ? "#c8102e" : (dark ? "#666" : "#888"),
+          fontWeight: activeTab === "journey" ? 700 : 500,
+          fontSize: 13, cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
+        }}>Journey</button>
         {WIDGETS.map((w, i) => (
           <button key={w.label} onClick={() => setActiveTab(i)} style={{
-            flex: 1, padding: "12px 0", border: "none",
+            flex: "0 0 auto", padding: "12px 16px", border: "none",
             borderBottom: activeTab === i ? `3px solid ${w.color}` : "3px solid transparent",
             background: "none",
             color: activeTab === i ? w.color : (dark ? "#666" : "#888"),
             fontWeight: activeTab === i ? 700 : 500,
-            fontSize: 14, cursor: "pointer", transition: "all 0.15s",
+            fontSize: 13, cursor: "pointer", transition: "all 0.15s",
           }}>
             {w.label}
           </button>
         ))}
       </div>
-      {WIDGETS.map((w, i) => (
+      {activeTab === "journey" ? (
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+          <JourneyPage dark={dark} navbarOffset={0} isMobileView={true} />
+        </div>
+      ) : WIDGETS.map((w, i) => (
         <div key={w.sessionId} style={{ display: activeTab === i ? "flex" : "none", flex: 1, minHeight: 0, flexDirection: "column" }}>
           <ChatWidget sessionId={w.sessionId} title={w.title} label={w.label} color={dark ? w.darkColor : w.color}
             pendingMessage={pendingMessages[i]} version={w.version} mobile={true} dark={dark}
             showIntentHint={false} compactIntents={true} />
         </div>
       ))}
-      <div style={{ background: t.panelBg, borderTop: `1px solid ${t.border}`, flexShrink: 0, transition: "background 0.2s" }}>
+      {activeTab !== "journey" && <div style={{ background: t.panelBg, borderTop: `1px solid ${t.border}`, flexShrink: 0, transition: "background 0.2s" }}>
         <div style={{ padding: "6px 12px 6px 16px", fontSize: 11, color: t.labelColor, borderBottom: `1px solid ${t.border}`, letterSpacing: "0.05em", textTransform: "uppercase", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>Sends to all · {username}</span>
           <button style={{ background: "none", border: "none", fontSize: 11, color: "#c8102e", cursor: "pointer", padding: 0, fontWeight: 600, letterSpacing: "0.05em" }} onClick={onLogout}>Sign Out</button>
@@ -1333,7 +1372,7 @@ function MobileLayout({ username, onLogout, dark, onToggleDark }) {
             ))}
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -1347,7 +1386,7 @@ export default function App() {
   const [showChips, setShowChips] = useState(false);
   const [visibleWidgets, setVisibleWidgets] = useState([true, true, true]);
   const [showBanner, setShowBanner] = useState(true);
-  const [activeTab, setActiveTab] = useState("benchmark");
+  const [activeTab, setActiveTab] = useState("journey");
   const toggleWidget = (i) => setVisibleWidgets(v => v.map((val, idx) => idx === i ? !val : val));
 
   useEffect(() => {
