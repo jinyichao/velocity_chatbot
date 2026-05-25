@@ -115,6 +115,39 @@ function CountryClarificationBubble({
   );
 }
 
+function NameConfirmBubble({ reason, onConfirm, accentColor, assistantBg }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{
+        background: assistantBg || "#fff",
+        borderRadius: 12, padding: "14px 16px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        fontSize: 14, lineHeight: 1.5, color: "#1a1a1a",
+        display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6,
+      }}>
+        <span>{reason || "That doesn't look like a real name."}</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+        Please
+        <button onClick={onConfirm}
+          style={{
+            display: "inline-flex", alignItems: "center",
+            padding: "6px 14px", borderRadius: 20,
+            background: "transparent", border: `1.5px solid ${accentColor}`,
+            color: accentColor, fontSize: 13, fontWeight: 600,
+            letterSpacing: "0.01em", cursor: "pointer",
+            fontFamily: "inherit", transition: "background 0.15s, color 0.15s",
+            whiteSpace: "nowrap",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = accentColor; e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = accentColor; }}
+        >confirm</button>
+        or input a new name.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function FormConfirmBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
   return (
     <div style={{ marginBottom: 8 }}>
@@ -260,6 +293,7 @@ export default function ChatWidget({
   onPhoneCountryChange,
   taskProgress = null,
   naturalIntentCopy = false,
+  onActiveFieldChange,
 }) {
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -282,6 +316,8 @@ export default function ChatWidget({
   const [showChatConfirm, setShowChatConfirm] = useState(false);
   // { field: 'nric'|'mobile', value: string, suggestedCountry: 'MY'|'CN'|'HK' } | null
   const [pendingClarification, setPendingClarification] = useState(null);
+  // { name: string, reason: string } | null
+  const [pendingNameConfirm, setPendingNameConfirm] = useState(null);
   const bottomRef = useRef(null);
   const prevKeyRef = useRef(null);
   const prevAssistantKeyRef = useRef(null);
@@ -333,6 +369,13 @@ export default function ChatWidget({
     if (onTaskClosed) onTaskClosed(intent);
   };
 
+  const handleNameConfirm = () => {
+    if (!pendingNameConfirm) return;
+    const { name } = pendingNameConfirm;
+    setPendingNameConfirm(null);
+    advanceField("name", name);
+  };
+
   const handleIntentDismiss = (label) => {
     setMessages(prev => {
       for (let i = prev.length - 1; i >= 0; i--) {
@@ -376,6 +419,7 @@ export default function ChatWidget({
       { role: "assistant", content: "Got it! Let's collect the user's details one by one.\n\n" + FIELD_QUESTIONS[0] },
     ]);
     setFieldIndex(0);
+    if (onActiveFieldChange) onActiveFieldChange(FIELD_KEYS[0]);
     if (onRoleConfirm) onRoleConfirm(selectedRoles);
   };
 
@@ -398,9 +442,11 @@ export default function ChatWidget({
     if (next < questions.length) {
       setMessages(prev => [...prev, { role: "assistant", content: questions[next] }]);
       setFieldIndex(next);
+      if (onActiveFieldChange) onActiveFieldChange(FIELD_KEYS[next]);
     } else {
       setMessages(prev => [...prev, { role: "assistant", content: "Thank you! All details have been captured." }]);
       setFieldIndex(-1);
+      if (onActiveFieldChange) onActiveFieldChange(null);
       setShowChatConfirm(true);
     }
   };
@@ -547,12 +593,10 @@ export default function ChatWidget({
         try {
           const result = await validateName(text);
           if (!result.valid) {
-            setMessages(prev => [...prev, {
-              role: "assistant",
-              content: `${result.reason || "That doesn't look like a real name."} Please try again.`,
-            }]);
+            setPendingNameConfirm({ name: text, reason: result.reason });
             return;
           }
+          setPendingNameConfirm(null);
         } catch {
           // Validator down — fall through and accept rather than block the user.
         } finally {
@@ -661,6 +705,14 @@ export default function ChatWidget({
               accentColor={color}
               assistantBg={assistantBg}
               onPick={handleCountryPick}
+            />
+          )}
+          {pendingNameConfirm && (
+            <NameConfirmBubble
+              reason={pendingNameConfirm.reason}
+              onConfirm={handleNameConfirm}
+              accentColor={color}
+              assistantBg={assistantBg}
             />
           )}
           {showChatConfirm && (

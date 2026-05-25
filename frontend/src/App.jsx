@@ -148,7 +148,7 @@ function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
 
 const VELOCITY_NAV = ["Home", "Accounts", "Pay and transfer", "FX and treasury", "Invoices", "Trade finance", "Tools", "Administration"];
 
-function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm, dark = false, idCountry = "SG", onIdCountryChange, phoneCountry = "SG", onPhoneCountryChange }) {
+function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm, dark = false, idCountry = "SG", onIdCountryChange, phoneCountry = "SG", onPhoneCountryChange, activeField = null }) {
   const hasSignatory = selectedRoles.some(r => r.toLowerCase().includes("signator"));
   const hasBanking   = selectedRoles.some(r => r.toLowerCase().includes("business online banking") && !r.toLowerCase().includes("administrator"));
   const hasFX        = selectedRoles.some(r => r.toLowerCase().includes("fx contract"));
@@ -162,6 +162,13 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
   const [phoneGlow, setPhoneGlow] = useState(false);
   const prevIdCountryRef = React.useRef(idCountry);
   const prevPhoneCountryRef = React.useRef(phoneCountry);
+  const fieldRefs = React.useRef({});
+
+  React.useEffect(() => {
+    if (activeField && fieldRefs.current[activeField]) {
+      fieldRefs.current[activeField].scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [activeField]);
   const name   = formData?.name   ?? "";
   const nric   = formData?.nric   ?? "";
   const mobile = formData?.mobile ?? "";
@@ -261,8 +268,10 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
   };
   const fieldWrap = (field) => ({
     background: ft.fieldBg,
-    border: `1px solid ${fieldErrors[field] ? "#e53e3e" : ft.border}`,
+    border: `1px solid ${fieldErrors[field] ? "#e53e3e" : activeField === field ? "#ED1C24" : ft.border}`,
     borderRadius: 8, padding: "12px 16px", flex: 1,
+    boxShadow: activeField === field ? "0 0 0 3px rgba(237,28,36,0.18)" : undefined,
+    transition: "box-shadow 0.3s, border-color 0.3s",
   });
 
   if (confirmed) return (
@@ -291,9 +300,9 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
 
       {/* Fields row 1 */}
       <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-        <div style={fieldWrap("name")}><input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name (as shown in ID)" style={inputStyle} /></div>
+        <div ref={el => fieldRefs.current["name"] = el} style={fieldWrap("name")}><input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name (as shown in ID)" style={inputStyle} /></div>
         <div style={{ flex: 1 }}>
-          <div style={{
+          <div ref={el => fieldRefs.current["nric"] = el} style={{
             ...fieldWrap("nric"),
             boxShadow: idGlow ? "0 0 0 3px rgba(99, 102, 241, 0.4)" : "none",
             transition: "box-shadow 0.3s",
@@ -304,7 +313,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
       {/* Fields row 2 */}
       <div style={{ display: "flex", gap: 16, marginBottom: 28 }}>
         <div style={{ flex: 1 }}>
-          <div style={{
+          <div ref={el => fieldRefs.current["mobile"] = el} style={{
             ...fieldWrap("mobile"),
             display: "flex", alignItems: "center", gap: 8,
             boxShadow: phoneGlow ? "0 0 0 3px rgba(99, 102, 241, 0.4)" : "none",
@@ -357,7 +366,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
           {fieldErrors.mobile && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.mobile}</div>}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={fieldWrap("email")}><input value={email} onChange={e => setEmail(e.target.value)} onBlur={() => validateField("email", email)} placeholder="Email" style={inputStyle} /></div>
+          <div ref={el => fieldRefs.current["email"] = el} style={fieldWrap("email")}><input value={email} onChange={e => setEmail(e.target.value)} onBlur={() => validateField("email", email)} placeholder="Email" style={inputStyle} /></div>
           {fieldErrors.email && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.email}</div>}
         </div>
       </div>
@@ -386,7 +395,7 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
           <div style={{ fontSize: 13, color: ft.subtext, marginBottom: 10 }}>Business online banking user (Maker and Authoriser)</div>
           {hasBanking && (
             <>
-              <div style={{ background: ft.fieldBg, border: `1px solid ${ft.border}`, borderRadius: 8, padding: "10px 14px", maxWidth: 320, marginBottom: 6 }}>
+              <div ref={el => fieldRefs.current["userId"] = el} style={{ ...fieldWrap("userId"), maxWidth: 320, marginBottom: 6 }}>
                 <input value={userId} onChange={e => setUserId(e.target.value)} style={{ ...inputStyle, background: "transparent" }} placeholder="User ID" />
               </div>
               <div style={{ fontSize: 12, color: ft.muted, marginBottom: 12 }}>Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.</div>
@@ -503,6 +512,7 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
   const [addUserData, setAddUserData] = useState({});
   const [addUserIdCountry, setAddUserIdCountry] = useState("SG");
   const [addUserPhoneCountry, setAddUserPhoneCountry] = useState("SG");
+  const [addUserActiveField, setAddUserActiveField] = useState(null);
   const [journeyUsers, setJourneyUsers] = useState(INITIAL_JOURNEY_USERS);
   const [assistantNotification, setAssistantNotification] = useState(null);
   const [lastIntents, setLastIntents] = useState([]);
@@ -516,6 +526,9 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
   const [closeTaskSignal, setCloseTaskSignal] = useState(null);
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1280);
+  const [reviewAdds, setReviewAdds] = useState([]);
+  const [reviewDeletes, setReviewDeletes] = useState([]);
+  const [reviewVisible, setReviewVisible] = useState(true);
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
@@ -589,6 +602,7 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
   // Shared by the side-panel Confirm button and the in-chat Confirm bubble.
   const submitAddUser = (userName) => {
     setJourneyUsers(prev => [...prev, buildUserEntry(userName, addUserRoles || [])]);
+    setReviewAdds(prev => [...prev, { name: userName, nric: addUserData.nric || "", mobile: addUserData.mobile || "", email: addUserData.email || "", userId: addUserData.userId || "", roles: addUserRoles || [] }]);
     setAddUserRoles(null);
     setAddUserData({});
     setAddUserIdCountry("SG");
@@ -770,7 +784,7 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
           </div>
 
           {activeSubTab === "Add User" && addUserRoles ? (
-            <AddUserForm dark={dark} selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); }} formData={addUserData} onFormChange={setAddUserData} idCountry={addUserIdCountry} onIdCountryChange={setAddUserIdCountry} phoneCountry={addUserPhoneCountry} onPhoneCountryChange={setAddUserPhoneCountry} onConfirm={submitAddUser} />
+            <AddUserForm dark={dark} selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); setAddUserActiveField(null); }} formData={addUserData} onFormChange={setAddUserData} idCountry={addUserIdCountry} onIdCountryChange={setAddUserIdCountry} phoneCountry={addUserPhoneCountry} onPhoneCountryChange={setAddUserPhoneCountry} onConfirm={submitAddUser} activeField={addUserActiveField} />
           ) : activeSubTab === "Delete Users" && deleteTabOpen ? (<>
           {/* Remove Users — new design */}
           <div style={{ maxWidth: 640 }}>
@@ -872,6 +886,8 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
                 disabled={selectedDeleteUsers.length === 0}
                 onClick={() => {
                   const names = selectedDeleteUsers;
+                  const deletedEntries = journeyUsers.filter(u => names.includes(u.name));
+                  setReviewDeletes(prev => [...prev, ...deletedEntries.map(u => ({ name: u.name, sub: u.sub || "", roles: getUserPermissions(u) }))]);
                   setJourneyUsers(prev => prev.filter(u => !names.includes(u.name)));
                   setDeleteConfirmed(true);
                   const msg = `User${names.length > 1 ? "s" : ""} ${names.map(n => `"${n}"`).join(", ")} ${names.length > 1 ? "have" : "has"} been successfully removed. ✓`;
@@ -906,56 +922,152 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
               >Confirm</button>
             </div>
           </div>
-          </>) : (<>
-          {/* Account dropdown */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 14px", fontSize: 13, cursor: "pointer", minWidth: 280, background: t.panelBg, color: t.text, display: "inline-flex" }}>
+          </>) : null}
+
+          {/* Account dropdown — hidden on Add User sub-tab */}
+          {activeSubTab !== "Add User" && <div style={{ marginBottom: 20, marginTop: 32 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 14px", fontSize: 13, cursor: "pointer", background: t.panelBg, color: t.text }}>
               <span>612873120012SGD - PURE DELIVERY P...</span>
               <span style={{ fontSize: 11 }}>▾</span>
             </div>
-            <div style={{ fontSize: 11, color: t.muted, marginTop: 6 }}>Last updated 24 Dec 2022</div>
-          </div>
+            <div style={{ fontSize: 11, color: t.muted, marginTop: 6 }}>Last updated 25 May 2026</div>
+          </div>}
 
-          {/* Table */}
-          <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", background: t.tableHeaderBg, borderBottom: `1px solid ${t.border}`, color: t.text }}>
-              <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
-              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
-                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Open and close accounts, and apply for banking facilities</div>
-                <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
+          {/* Review panel */}
+          {activeSubTab === "Roles" && (reviewAdds.length > 0 || reviewDeletes.length > 0) && (
+            <div style={{ marginTop: 40, border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13, color: t.text }}>
+              {/* Header */}
+              <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.border}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", background: t.panelBg }}>
+                <div>
+                  <div style={{ fontSize: 12, color: t.muted, marginBottom: 4 }}>Details of request:</div>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>
+                    {[reviewAdds.length > 0 && "Add user(s)", reviewDeletes.length > 0 && "remove user(s)"].filter(Boolean).join(", ")}
+                  </div>
+                </div>
+                <button onClick={() => setReviewVisible(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: t.muted, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4 }}>
+                  {reviewVisible ? "Hide" : "Show"} <span style={{ fontSize: 10 }}>{reviewVisible ? "▲" : "▼"}</span>
+                </button>
               </div>
-              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
-                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Sign to authorise transactions</div>
-                <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
-              </div>
-              <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
-                <div style={{ fontWeight: 700, lineHeight: 1.4 }}>View and/or manage online transactions</div>
-                <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
-              </div>
+
+              {reviewVisible && <>
+                {/* Add user(s) section */}
+                {reviewAdds.length > 0 && (
+                  <div>
+                    <div style={{ padding: "12px 20px", fontWeight: 700, fontSize: 14, background: dark ? "#1a1a1a" : "#f7f7f7", borderBottom: `1px solid ${t.border}` }}>Add user(s)</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: `1px solid ${t.border}`, background: t.tableHeaderBg }}>
+                      {["NAME / DETAILS", "ROLES"].map((h, i) => (
+                        <div key={h} style={{ padding: "10px 20px", fontSize: 11, fontWeight: 700, color: t.muted, letterSpacing: "0.05em", borderLeft: i > 0 ? `1px solid ${t.border}` : "none" }}>{h}</div>
+                      ))}
+                    </div>
+                    {reviewAdds.map((u, i) => (
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: i < reviewAdds.length - 1 ? `1px solid ${t.border}` : "none" }}>
+                        <div style={{ padding: "16px 20px" }}>
+                          <div style={{ fontWeight: 700, marginBottom: 4 }}>{i + 1}.&nbsp; {u.name}</div>
+                          {u.nric   && <div style={{ color: t.muted }}>{u.nric}</div>}
+                          {u.mobile && <div style={{ color: t.muted }}>{u.mobile}</div>}
+                          {u.email  && <div style={{ color: t.muted }}>{u.email}</div>}
+                          {u.userId && <div style={{ color: t.muted }}>User ID: {u.userId}</div>}
+                        </div>
+                        <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                          {u.roles.map(r => <div key={r} style={{ marginBottom: 2 }}>{r}</div>)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Remove user(s) section */}
+                {reviewDeletes.length > 0 && (
+                  <div style={{ borderTop: reviewAdds.length > 0 ? `1px solid ${t.border}` : "none" }}>
+                    <div style={{ padding: "12px 20px", fontWeight: 700, fontSize: 14, background: dark ? "#1a1a1a" : "#f7f7f7", borderBottom: `1px solid ${t.border}` }}>Remove user(s)</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", borderBottom: `1px solid ${t.border}`, background: t.tableHeaderBg }}>
+                      {["NAME / USER ID", "ROLES"].map((h, i) => (
+                        <div key={h} style={{ padding: "10px 20px", fontSize: 11, fontWeight: 700, color: t.muted, letterSpacing: "0.05em", borderLeft: i > 0 ? `1px solid ${t.border}` : "none" }}>{h}</div>
+                      ))}
+                    </div>
+                    {reviewDeletes.map((u, i) => (
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 2fr", borderBottom: i < reviewDeletes.length - 1 ? `1px solid ${t.border}` : "none" }}>
+                        <div style={{ padding: "16px 20px" }}>
+                          <div style={{ fontWeight: 700, marginBottom: 4 }}>{i + 1}.&nbsp; {u.name}</div>
+                          {u.sub && u.sub.split("\n").map((line, j) => <div key={j} style={{ color: t.muted }}>{line}</div>)}
+                        </div>
+                        <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                          {u.roles.map(r => <div key={r} style={{ marginBottom: 2 }}>• {r}</div>)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>}
+
             </div>
-            {journeyUsers.map((u, i) => (
-              <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < journeyUsers.length - 1 ? `1px solid ${t.border}` : "none", background: t.panelBg, color: t.text }}>
-                <div style={{ padding: "16px 20px" }}>
-                  <div style={{ fontWeight: 600 }}>{u.name}</div>
-                  {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
-                  {u.pending && <div style={{ color: "#b07d00", fontSize: 11, marginTop: 4, fontStyle: "italic" }}>Pending authorization</div>}
+          )}
+
+          {/* Roles table — hidden on Add User sub-tab */}
+          {activeSubTab !== "Add User" && <div style={{ marginTop: 32 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 16 }}>Status after the operations</div>
+            <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", background: t.tableHeaderBg, borderBottom: `1px solid ${t.border}`, color: t.text }}>
+                <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
+                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                  <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
+                  <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Open and close accounts, and apply for banking facilities</div>
+                  <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
                 </div>
-                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
+                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                  <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
+                  <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Sign to authorise transactions</div>
+                  <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
                 </div>
-                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  {u.as && <span style={{ fontSize: 18 }}>✓</span>}
-                </div>
-                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                  {u.role}
+                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
+                  <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
+                  <div style={{ fontWeight: 700, lineHeight: 1.4 }}>View and/or manage online transactions</div>
+                  <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
                 </div>
               </div>
-            ))}
-          </div>
-          </>)}
+              {journeyUsers.map((u, i) => (
+                <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < journeyUsers.length - 1 ? `1px solid ${t.border}` : "none", background: t.panelBg, color: t.text }}>
+                  <div style={{ padding: "16px 20px" }}>
+                    <div style={{ fontWeight: 600 }}>{u.name}</div>
+                    {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
+                    {u.pending && <div style={{ color: "#b07d00", fontSize: 11, marginTop: 4, fontStyle: "italic" }}>Pending authorization</div>}
+                  </div>
+                  <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
+                    {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
+                  </div>
+                  <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
+                    {u.as && <span style={{ fontSize: 18 }}>✓</span>}
+                  </div>
+                  <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
+                    {u.role}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>}
+
+          {/* Confirm / Cancel */}
+          {activeSubTab === "Roles" && (reviewAdds.length > 0 || reviewDeletes.length > 0) && (
+            <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button onClick={() => {
+                setReviewAdds([]); setReviewDeletes([]);
+                setJourneyUsers(INITIAL_JOURNEY_USERS);
+                setActiveSubTab("Roles");
+                setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); setAddUserActiveField(null);
+                setDeleteTabOpen(false); setSelectedDeleteUsers([]); setDeleteDropdownOpen(false); setDeleteConfirmed(false);
+                setCompletedIntents([]); setLastIntents([]); setActiveIntent(null);
+              }} style={{
+                padding: "9px 24px", borderRadius: 6, border: `1px solid ${t.border}`,
+                background: "none", color: t.text, fontSize: 14, fontWeight: 500,
+                cursor: "pointer", fontFamily: "inherit",
+              }}>Cancel</button>
+              <button onClick={() => { setReviewAdds([]); setReviewDeletes([]); }} style={{
+                padding: "9px 24px", borderRadius: 6, border: "none",
+                background: "#ED1C24", color: "#fff", fontSize: 14, fontWeight: 600,
+                cursor: "pointer", fontFamily: "inherit",
+              }}>Confirm</button>
+            </div>
+          )}
 
           {/* Footer */}
           <div style={{ marginTop: 60, paddingTop: 20, borderTop: `1px solid ${t.border2}`, display: "flex", justifyContent: "space-between", fontSize: 12, color: t.muted }}>
@@ -1018,6 +1130,7 @@ function JourneyPage({ dark, navbarOffset = 60 }) {
             onPhoneCountryChange={setAddUserPhoneCountry}
             onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setActiveSubTab("Add User"); }}
             onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
+            onActiveFieldChange={setAddUserActiveField}
             assistantMessage={assistantNotification}
             closeTaskSignal={closeTaskSignal}
             onTaskClosed={handleTaskClosed}
