@@ -40,6 +40,33 @@ async def generate_greeting(message: str, history: list[dict]) -> str:
     return response.choices[0].message.content
 
 
+async def generate_out_of_scope(message: str) -> str:
+    """Generate a dynamic out-of-scope reply that names the topic briefly."""
+    client = AsyncOpenAI(
+        api_key=settings.DASHSCOPE_API_KEY,
+        base_url=settings.DASHSCOPE_BASE_URL,
+    )
+    response = await client.chat.completions.create(
+        model=settings.QWEN_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are Velocity Assistant, a business banking chatbot for OCBC Velocity. "
+                    "When a user asks something outside your scope, reply in ONE sentence using this exact pattern: "
+                    "'I'm unable to answer your question regarding {3-5 word topic summary}. "
+                    "Instead, may I assist you in managing your Velocity account mandates?' "
+                    "Keep the topic summary short, factual, and neutral. Do not add anything else."
+                ),
+            },
+            {"role": "user", "content": message},
+        ],
+        temperature=0.3,
+        extra_body={"enable_thinking": False},
+    )
+    return response.choices[0].message.content
+
+
 async def generate_response(
     message: str,
     intent: str,

@@ -84,7 +84,7 @@ async def chat(req: ChatRequest):
             intents = ["out_of_scope"]
 
         if intents == ["out_of_scope"]:
-            reply = settings.OUT_OF_SCOPE_MESSAGE
+            reply = await rag.generate_out_of_scope(req.message)
             await audit.log_turn(req.session_id, req.message, reply, "out_of_scope", True)
             return ChatResponse(reply=reply, intents=intents, session_id=req.session_id, open_tasks=open_tasks, closed_tasks=to_close)
 
