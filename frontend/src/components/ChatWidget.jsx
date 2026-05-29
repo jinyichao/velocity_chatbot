@@ -276,6 +276,8 @@ export default function ChatWidget({
   assistantBg,
   intentResponses = {},
   onRoleConfirm,
+  formData = {},
+  chatFocusSignal = null,
   onFieldCollected,
   assistantMessage = null,
   // { intent, key } — bump key to fire a one-shot close from the parent.
@@ -298,13 +300,18 @@ export default function ChatWidget({
   const s = buildStyles(color, offset, mobile, dark);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
 
+  const confirmedRolesRef = useRef([]);
+  const getFieldKeys = () => {
+    const admin = confirmedRolesRef.current.some(r => r.toLowerCase().includes("business online banking") && r.toLowerCase().includes("administrator"));
+    return admin ? ["name", "nric", "mobile", "email"] : ["name", "nric", "mobile", "email", "userId"];
+  };
   const FIELD_KEYS = ["name", "nric", "mobile", "email", "userId"];
-  const buildFieldQuestions = (idC, phoneC) => [
+  const buildFieldQuestions = (idC, phoneC, skipUserId = false) => [
     "Please provide the **Full Name** (as shown in ID).",
     `What is the **${COUNTRY_META[idC].idLabel}**? (e.g. ${COUNTRY_META[idC].idExample})`,
     `What is the **Mobile no.**? (e.g. ${COUNTRY_META[phoneC].phoneExample})`,
     "What is the **Email** address?",
-    "Create a **UserID** for this user. Only numbers or letters can be used.",
+    ...(skipUserId ? [] : ["Create a **UserID** for this user. Only numbers or letters can be used."]),
   ];
   const FIELD_QUESTIONS = buildFieldQuestions(idCountry, phoneCountry);
 
@@ -326,11 +333,59 @@ export default function ChatWidget({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, showRoleSelector]);
 
+
   useEffect(() => {
     if (!pendingMessage || pendingMessage.key === prevKeyRef.current) return;
     prevKeyRef.current = pendingMessage.key;
     handleSend(pendingMessage.text);
   }, [pendingMessage]);
+
+  const prevFocusKeyRef = useRef(null);
+  useEffect(() => {
+    if (!chatFocusSignal || chatFocusSignal.key === prevFocusKeyRef.current) return;
+    prevFocusKeyRef.current = chatFocusSignal.key;
+    if (fieldIndex < 0) return;
+    const activeKeys = getFieldKeys();
+    const admin = activeKeys.length === 4;
+    const questions = buildFieldQuestions(idCountry, phoneCountry, admin);
+    const fieldLabels = { name: "Full Name", nric: COUNTRY_META[idCountry].idLabel, mobile: "mobile number", email: "email address", userId: "User ID" };
+
+    // Validate filled fields
+    const invalidFields = [];
+    for (const k of activeKeys) {
+      const val = (formData?.[k] ?? "").toString().trim();
+      if (!val) continue;
+      if (k === "nric" && !detectId(val, idCountry).isValid) invalidFields.push(fieldLabels.nric);
+      if (k === "mobile" && !detectPhone(val, phoneCountry).isValid) invalidFields.push(fieldLabels.mobile);
+      if (k === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) invalidFields.push(fieldLabels.email);
+    }
+    if (invalidFields.length > 0) {
+      setMessages(prev => [...prev, { role: "assistant", content: `Please fix the invalid ${invalidFields.map(f => `**${f}**`).join(" and ")} in the form before continuing.` }]);
+      return;
+    }
+
+    // Find fields already filled that chatbot hasn't collected yet
+    const alreadyFilled = activeKeys.slice(fieldIndex).filter(k => (formData?.[k] ?? "").toString().trim());
+    if (alreadyFilled.length === 0) return;
+    const filledNames = alreadyFilled.map(k => `**${fieldLabels[k] || k}**`).join(", ");
+
+    // Advance past all pre-filled fields
+    let next = fieldIndex;
+    while (next < activeKeys.length && (formData?.[activeKeys[next]] ?? "").toString().trim()) {
+      if (onFieldCollected) onFieldCollected(activeKeys[next], formData[activeKeys[next]]);
+      next++;
+    }
+    if (next >= questions.length) {
+      setMessages(prev => [...prev, { role: "assistant", content: `It seems you've already filled in ${filledNames}. All details are captured — please confirm!` }]);
+      setFieldIndex(-1);
+      if (onActiveFieldChange) onActiveFieldChange(null);
+      setShowChatConfirm(true);
+    } else {
+      setMessages(prev => [...prev, { role: "assistant", content: `It seems you've already filled in ${filledNames}. Let me continue with the remaining fields.\n\n${questions[next]}` }]);
+      setFieldIndex(next);
+      if (onActiveFieldChange) onActiveFieldChange(activeKeys[next]);
+    }
+  }, [chatFocusSignal]);
 
   useEffect(() => {
     if (!assistantMessage || assistantMessage.key === prevAssistantKeyRef.current) return;
@@ -412,14 +467,36 @@ export default function ChatWidget({
 
   const handleRoleConfirm = (selectedRoles) => {
     setShowRoleSelector(false);
+    confirmedRolesRef.current = selectedRoles;
+    const keys = getFieldKeys();
+    const admin = keys.length === 4;
+    const questions = buildFieldQuestions(idCountry, phoneCountry, admin);
     const roleList = selectedRoles.length > 0 ? selectedRoles.join(", ") : "no specific role";
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: `Selected roles: ${roleList}` },
-      { role: "assistant", content: "Got it! Let's collect the user's details one by one.\n\n" + FIELD_QUESTIONS[0] },
-    ]);
-    setFieldIndex(0);
-    if (onActiveFieldChange) onActiveFieldChange(FIELD_KEYS[0]);
+
+    // Find first unfilled field, skipping any already filled in the form
+    const firstEmpty = keys.findIndex(k => !(formData?.[k] ?? "").toString().trim());
+    const startIdx = firstEmpty === -1 ? keys.length : firstEmpty;
+
+    if (startIdx >= keys.length) {
+      // All fields already filled
+      setMessages(prev => [...prev,
+        { role: "user", content: `Selected roles: ${roleList}` },
+        { role: "assistant", content: "Got it! All details are already filled in — please review and confirm." },
+      ]);
+      setFieldIndex(-1);
+      setShowChatConfirm(true);
+    } else {
+      const prefilledCount = startIdx;
+      const prefillNote = prefilledCount > 0
+        ? `I can see ${prefilledCount} field${prefilledCount > 1 ? "s are" : " is"} already filled in. Let me continue from **${questions[startIdx].replace(/\*\*/g, "").split("?")[0].trim()}**.\n\n`
+        : "Got it! Let's collect the user's details one by one.\n\n";
+      setMessages(prev => [...prev,
+        { role: "user", content: `Selected roles: ${roleList}` },
+        { role: "assistant", content: prefillNote + questions[startIdx] },
+      ]);
+      setFieldIndex(startIdx);
+      if (onActiveFieldChange) onActiveFieldChange(keys[startIdx]);
+    }
     if (onRoleConfirm) onRoleConfirm(selectedRoles);
   };
 
@@ -435,14 +512,17 @@ export default function ChatWidget({
   // state updates have not yet flushed into props (right after a switch).
   const advanceField = (key, value, idOverride = null, phoneOverride = null) => {
     if (onFieldCollected) onFieldCollected(key, value);
-    const next = fieldIndex + 1;
-    const questions = (idOverride || phoneOverride)
-      ? buildFieldQuestions(idOverride || idCountry, phoneOverride || phoneCountry)
-      : FIELD_QUESTIONS;
+    const activeKeys = getFieldKeys();
+    const admin = activeKeys.length === 4;
+    const questions = buildFieldQuestions(idOverride || idCountry, phoneOverride || phoneCountry, admin);
+    // Find next unfilled field, skipping any already in formData (except the one just collected)
+    const updatedData = { ...formData, [key]: value };
+    let next = fieldIndex + 1;
+    while (next < activeKeys.length && (updatedData[activeKeys[next]] ?? "").toString().trim()) next++;
     if (next < questions.length) {
       setMessages(prev => [...prev, { role: "assistant", content: questions[next] }]);
       setFieldIndex(next);
-      if (onActiveFieldChange) onActiveFieldChange(FIELD_KEYS[next]);
+      if (onActiveFieldChange) onActiveFieldChange(activeKeys[next]);
     } else {
       setMessages(prev => [...prev, { role: "assistant", content: "Thank you! All details have been captured." }]);
       setFieldIndex(-1);
@@ -540,8 +620,9 @@ export default function ChatWidget({
     }
 
     // Sequential field collection mode
-    if (fieldIndex >= 0 && fieldIndex < FIELD_KEYS.length) {
-      const currentKey = FIELD_KEYS[fieldIndex];
+    const activeKeys = getFieldKeys();
+    if (fieldIndex >= 0 && fieldIndex < activeKeys.length) {
+      const currentKey = activeKeys[fieldIndex];
 
       if (currentKey === "nric") {
         const idMeta = COUNTRY_META[idCountry];

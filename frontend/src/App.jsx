@@ -513,6 +513,7 @@ function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
   const [addUserIdCountry, setAddUserIdCountry] = useState("SG");
   const [addUserPhoneCountry, setAddUserPhoneCountry] = useState("SG");
   const [addUserActiveField, setAddUserActiveField] = useState(null);
+  const [chatFocusSignal, setChatFocusSignal] = useState(null);
   const [journeyUsers, setJourneyUsers] = useState(INITIAL_JOURNEY_USERS);
   const [assistantNotification, setAssistantNotification] = useState(null);
   const [lastIntents, setLastIntents] = useState([]);
@@ -1134,6 +1135,8 @@ function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
             phoneCountry={addUserPhoneCountry}
             onPhoneCountryChange={setAddUserPhoneCountry}
             onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setActiveSubTab("Add User"); }}
+            formData={addUserData}
+            chatFocusSignal={chatFocusSignal}
             onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
             onActiveFieldChange={setAddUserActiveField}
             assistantMessage={assistantNotification}
@@ -1162,6 +1165,7 @@ function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleChatSend()}
+                onFocus={() => setChatFocusSignal({ key: Date.now() })}
                 placeholder="Type your question"
                 style={{
                   flex: 1, border: "none", outline: "none",
