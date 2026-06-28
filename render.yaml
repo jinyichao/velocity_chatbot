@@ -9,7 +9,7 @@ services:
       - key: DASHSCOPE_API_KEY
         sync: false
       - key: QWEN_MODEL
-        value: qwen-plus
+        value: qwen3.7-max-2026-06-08
       - key: DASHSCOPE_BASE_URL
         value: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
       - key: CHROMA_PERSIST_DIR
