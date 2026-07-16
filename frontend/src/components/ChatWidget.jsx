@@ -175,7 +175,7 @@ function FormConfirmBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
   );
 }
 
-const buildStyles = (color, offset, mobile, dark) => ({
+const buildStyles = (color, offset, mobile, dark, transparentBg) => ({
   window: mobile ? {
     position: "relative",
     width: "100%",
@@ -184,7 +184,7 @@ const buildStyles = (color, offset, mobile, dark) => ({
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    background: dark ? "#1a1a1a" : "#f7f8fa",
+    background: transparentBg ? "transparent" : (dark ? "#1a1a1a" : "#f7f8fa"),
   } : {
     position: "fixed",
     bottom: 12,
@@ -196,7 +196,7 @@ const buildStyles = (color, offset, mobile, dark) => ({
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    background: dark ? "#1a1a1a" : "#f7f8fa",
+    background: transparentBg ? "transparent" : (dark ? "#1a1a1a" : "#f7f8fa"),
     border: dark ? "1px solid #3a3a3a" : "none",
     zIndex: 999,
   },
@@ -229,10 +229,10 @@ const baseStyles = {
     fontSize: 11, opacity: 0.85, display: "flex", alignItems: "center", gap: 4,
   },
   statusDot: { width: 6, height: 6, borderRadius: "50%", background: "#4cff91" },
-  messages: (dark) => ({
+  messages: (dark, transparentBg) => ({
     flex: 1, overflowY: "auto", padding: "16px 12px",
     display: "flex", flexDirection: "column",
-    background: dark ? "#141414" : "#f7f8fa",
+    background: transparentBg ? "transparent" : (dark ? "#141414" : "#f7f8fa"),
   }),
   typing: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 },
   typingDots: (dark) => ({
@@ -296,8 +296,9 @@ export default function ChatWidget({
   taskProgress = null,
   naturalIntentCopy = false,
   onActiveFieldChange,
+  transparentBg = false,
 }) {
-  const s = buildStyles(color, offset, mobile, dark);
+  const s = buildStyles(color, offset, mobile, dark, transparentBg);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
 
   const confirmedRolesRef = useRef([]);
@@ -764,7 +765,7 @@ export default function ChatWidget({
           />
         )}
 
-        <div style={baseStyles.messages(dark)}>
+        <div style={baseStyles.messages(dark, transparentBg)}>
           {messages.map((msg, i) => (
             <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} onIntentDismiss={compactIntents ? null : handleIntentDismiss} showIntentHint={showIntentHint} compactIntents={compactIntents} />
           ))}
