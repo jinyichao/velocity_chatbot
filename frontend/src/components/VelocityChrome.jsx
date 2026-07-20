@@ -165,23 +165,24 @@ export function VelocityHeader({
 export const VELOCITY_HEADER_HEIGHT = 100;
 export const VELOCITY_HEADER_HEIGHT_COMPACT = 44;
 
-const STEPS = ["Add user(s)", "Remove user(s)", "Review"];
-
-export function Stepper({ current = 1 }) {
+export function Stepper({ current = 1, steps }) {
+  const STEPS = steps || ["Add user(s)", "Remove user(s)", "Review"];
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 8 }}>
+    <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 8, width: "100%" }}>
       {STEPS.map((label, i) => {
         const stepNo = i + 1;
         const done = stepNo < current;
         const active = stepNo === current;
+        const isLast = i === STEPS.length - 1;
         return (
-          <div key={label} style={{ display: "flex", alignItems: "flex-start" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: 108 }}>
+          <React.Fragment key={label}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div style={{
                 width: 26, height: 26, borderRadius: "50%",
                 background: done || active ? "#4a5560" : "#c8cdd2",
                 color: "#fff", fontSize: 12.5, fontWeight: 700,
                 display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
               }}>
                 {done ? (
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
@@ -190,15 +191,19 @@ export function Stepper({ current = 1 }) {
                 ) : stepNo}
               </div>
               <div style={{
-                fontSize: 12, marginTop: 8,
+                fontSize: 12, marginTop: 8, whiteSpace: "nowrap",
                 color: done || active ? "#333" : "#b0b5ba",
                 fontWeight: active ? 700 : 500,
               }}>{label}</div>
             </div>
-            {i < STEPS.length - 1 && (
-              <div style={{ width: 40, height: 1.5, background: "#d8dcdf", marginTop: 13, marginRight: 12, marginLeft: -46 }} />
+            {!isLast && (
+              <div style={{
+                flex: 1, height: 1.5, minWidth: 20,
+                background: done ? "#4a5560" : "#d8dcdf",
+                marginTop: 12, alignSelf: "flex-start",
+              }} />
             )}
-          </div>
+          </React.Fragment>
         );
       })}
     </div>

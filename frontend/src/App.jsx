@@ -512,6 +512,11 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
   const [viewportWidth, setViewportWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1280);
   const [reviewAdds, setReviewAdds] = useState([]);
   const [reviewDeletes, setReviewDeletes] = useState([]);
+  const [stepHistory, setStepHistory] = useState(new Set());
+
+  useEffect(() => {
+    if (step >= 1) setStepHistory(prev => new Set([...prev, step]));
+  }, [step]);
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
@@ -623,9 +628,9 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
     setPendingMessage({ text, key: Date.now() });
   };
 
-  // Opens chat (with optional first message); on mobile, gates behind the consent sheet once.
+  // Opens chat (with optional first message); gates behind consent modal once per session.
   const openChat = (text = null) => {
-    if (isMobileView && !consented) {
+    if (!consented) {
       setPendingChatText(text);
       setConsentOpen(true);
       return;
@@ -677,6 +682,23 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
     setStep(3);
   };
 
+  const backFromReview = () => {
+    const hasDelete = lastIntents.some(i => /delete|remove/i.test(i));
+    if (hasDelete) {
+      setStep(2);
+      return;
+    }
+    // Add-only: restore the last added user back into the form
+    if (reviewAdds.length > 0) {
+      const last = reviewAdds[reviewAdds.length - 1];
+      setAddUserData({ name: last.name || "", nric: last.nric || "", mobile: last.mobile || "", email: last.email || "", userId: last.userId || "" });
+      setAddUserRoles(last.roles || []);
+      setReviewAdds(prev => prev.slice(0, -1));
+      setJourneyUsers(prev => prev.length > INITIAL_JOURNEY_USERS.length ? prev.slice(0, -1) : prev);
+    }
+    setStep(1);
+  };
+
   const handleRemoveNext = () => {
     if (chatOpen) setShowExitModal(true);
     else proceedToReview();
@@ -687,7 +709,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
     setJourneyUsers(INITIAL_JOURNEY_USERS);
     setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); setAddUserActiveField(null);
     setSelectedDeleteUsers([]); setDeleteDropdownOpen(false); setDeleteConfirmed(false); setDeleteConfirmIdx(null);
-    setCompletedIntents([]); setLastIntents([]); setActiveIntent(null);
+    setCompletedIntents([]); setLastIntents([]); setActiveIntent(null); setStepHistory(new Set());
     setAssistantNotification(null); setReviewBanner(true); setDetailsOpen(true);
     setChatStarted(false);
     setChatOpen(false);
@@ -829,7 +851,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
                 </div>
                 {/* Star — open chat (with or without typed text) */}
                 <div
-                  onClick={() => { if (aiInput.trim()) handleAiSubmit(); else setChatOpen(true); }}
+                  onClick={() => { if (aiInput.trim()) handleAiSubmit(); else openChat(); }}
                   style={{ width: 40, height: 40, borderRadius: "50%", background: "radial-gradient(circle at 40% 35%, #ffd84d, #f5a623)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 10px rgba(245,166,35,0.45)" }}
                 >✦</div>
               </div>
@@ -864,7 +886,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
                       {[["Add user(s)", 1], ["Remove user(s)", 2]].map(([label, targetStep], idx) => (
                         <div
                           key={label}
-                          onClick={() => { setManageDropdownOpen(false); setStep(targetStep); setChatOpen(true); }}
+                          onClick={() => { setManageDropdownOpen(false); setStep(targetStep); openChat(); }}
                           style={{ padding: "11px 16px", fontSize: 13.5, cursor: "pointer", color: "#222", borderTop: idx > 0 ? "1px solid #eee" : "none" }}
                           onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
                           onMouseLeave={e => e.currentTarget.style.background = "transparent"}
@@ -927,10 +949,31 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
         </div>
       )}
 
+      {/* Dynamic stepper — steps 1-3, desktop only */}
+      {step >= 1 && step <= 3 && !isMobileView && (() => {
+        const hasAdd = stepHistory.has(1) || lastIntents.some(i => /add/i.test(i));
+        const hasDelete = stepHistory.has(2) || lastIntents.some(i => /delete|remove/i.test(i));
+        const journeySteps = [
+          ...(hasAdd || (!hasAdd && !hasDelete) ? ["Add user(s)"] : []),
+          ...(hasDelete || (!hasAdd && !hasDelete) ? ["Remove user(s)"] : []),
+          "Review",
+        ];
+        const stepperCurrent = (() => {
+          if (hasAdd && hasDelete) return step === 3 ? 3 : step;
+          if (hasAdd && !hasDelete) return step === 1 ? 1 : 2;
+          if (!hasAdd && hasDelete) return step === 2 ? 1 : 2;
+          return step; // fallback: both shown
+        })();
+        return (
+          <div style={{ maxWidth: 780, margin: "0 auto", padding: "28px 40px 0", boxSizing: "border-box" }}>
+            <Stepper current={stepperCurrent} steps={journeySteps} />
+          </div>
+        );
+      })()}
+
       {/* Steps 1 & 2 */}
       {step >= 1 && step <= 2 && (
-        <div style={{ maxWidth: 780, margin: "0 auto", padding: isMobileView ? "20px 16px 50px" : "30px 40px 60px", boxSizing: "border-box" }}>
-          {!isMobileView && <Stepper current={step} />}
+        <div style={{ maxWidth: 780, margin: "0 auto", padding: isMobileView ? "20px 16px 50px" : "0 40px 60px", boxSizing: "border-box" }}>
           <div style={{ marginTop: isMobileView ? 4 : 28 }}>
 
             {step === 1 && (<>
@@ -945,7 +988,15 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
                 phoneCountry={addUserPhoneCountry}
                 onPhoneCountryChange={setAddUserPhoneCountry}
                 onConfirm={submitAddUser}
-                onNext={() => setStep(2)}
+                onNext={() => {
+                  const hasDelete = lastIntents.some(i => /delete|remove/i.test(i));
+                  if (hasDelete) {
+                    setStep(2);
+                  } else {
+                    if (chatOpen) setShowExitModal(true);
+                    else setStep(3);
+                  }
+                }}
                 onBack={!isMobileView ? () => setStep(0) : null}
                 activeField={addUserActiveField}
                 mobileView={isMobileView}
@@ -1041,7 +1092,9 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
 
               <div style={{ height: 1, background: "#ececec", margin: "42px 0 24px" }} />
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <button onClick={() => setStep(1)} style={outlineBtn}>Back</button>
+                {lastIntents.some(i => /add/i.test(i)) ? (
+                  <button onClick={() => setStep(1)} style={outlineBtn}>Back</button>
+                ) : <div />}
                 <button onClick={handleRemoveNext} style={slateBtn}>Next</button>
               </div>
             </>)}
@@ -1061,7 +1114,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
           <div style={{ flex: 1, minWidth: 0 }}>
             {isMobileView && (
               <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid #eee", marginBottom: 18, position: "sticky", top: 0, background: "#fff", zIndex: 100 }}>
-                <button onClick={() => setStep(2)} style={{ background: "none", border: "none", fontSize: 20, color: "#333", cursor: "pointer", padding: 0, lineHeight: 1, fontFamily: "inherit" }}>‹</button>
+                <button onClick={backFromReview} style={{ background: "none", border: "none", fontSize: 20, color: "#333", cursor: "pointer", padding: 0, lineHeight: 1, fontFamily: "inherit" }}>‹</button>
                 <span style={{ flex: 1, textAlign: "center", fontSize: 15.5, fontWeight: 700, color: "#222" }}>Review</span>
                 <span style={{ color: "#8a9299", fontSize: 15 }}>ⓘ</span>
               </div>
@@ -1156,7 +1209,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
                 By clicking on 'Submit', you confirm that the information and content provided in this request is true, complete and accurate. You also confirm that you are authorised to act on behalf of your entity, and have read, understood and agree to be bound by <span style={{ color: "#2f80c3", cursor: "pointer" }}>OCBC's Business Account Terms and Conditions</span>.
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <button onClick={() => setStep(2)} style={outlineBtn}>Back</button>
+                <button onClick={backFromReview} style={outlineBtn}>Back</button>
                 <button onClick={() => setStep(4)} style={slateBtn}>Submit</button>
               </div>
             </div>
@@ -1290,14 +1343,15 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
               dark={false}
               showHeader={false}
               taskProgress={taskProgress}
+              showOpenTasks={false}
               naturalIntentCopy={true}
               assistantBg={isMobileView ? "#f0eeec" : "#ececec"}
               transparentBg={true}
               intentResponses={{
                 "add user":    { type: "role_selector" },
                 "add_user":    { type: "role_selector" },
-                "delete user": "Sure! Please select the user(s) you'd like to remove in the **Remove user(s)** step. Once you've made your selection, click **Next** to proceed.",
-                "delete_user": "Sure! Please select the user(s) you'd like to remove in the **Remove user(s)** step. Once you've made your selection, click **Next** to proceed.",
+                "delete user": "Sure! Please type the name of the user you'd like to remove, and I'll look them up for you.",
+                "delete_user": "Sure! Please type the name of the user you'd like to remove, and I'll look them up for you.",
               }}
               idCountry={addUserIdCountry}
               onIdCountryChange={setAddUserIdCountry}
@@ -1320,6 +1374,11 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
                   setStep(2);
                   setDeleteConfirmed(false);
                 }
+              }}
+              deleteUsers={journeyUsers.filter(u => !u.pending)}
+              onDeleteUserSelected={(user) => {
+                setSelectedDeleteUsers([user.name]);
+                setStep(2);
               }}
             />
           )}
@@ -1359,7 +1418,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
 
       {/* Reopen chat pill (desktop) */}
       {!isMobileView && !chatOpen && step <= 2 && (
-        <button onClick={() => setChatOpen(true)} style={{
+        <button onClick={() => openChat()} style={{
           position: "fixed", right: 22, bottom: 22, zIndex: 1500,
           display: "flex", alignItems: "center", gap: 8,
           padding: "12px 20px", borderRadius: 26, border: "none",
@@ -1391,18 +1450,38 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
         </div>
       )}
 
-      {/* Mobile consent sheet */}
-      {isMobileView && consentOpen && (
-        <div style={{ position: "fixed", top: 0, bottom: 0, left: 0, right: 0, zIndex: 2500, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end" }}>
-          <div style={{ width: "100%", background: "#fff", borderRadius: "18px 18px 0 0", overflow: "hidden", textAlign: "center" }}>
-            <div style={{ background: "linear-gradient(180deg, #fbe0cf 0%, rgba(255,255,255,0) 90%)", padding: "34px 28px 4px" }}>
-              <div style={{ fontSize: 30, color: "#ED1C24", marginBottom: 14, lineHeight: 1 }}>❋</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#222", marginBottom: 18 }}>Start OCBC Chat (Beta)</div>
+      {/* Consent modal — shown once per session on first chat open */}
+      {consentOpen && (
+        <div style={{ position: "fixed", top: 0, bottom: 0, left: 0, right: 0, zIndex: 2500, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#fff", borderRadius: 16, overflow: "hidden", maxWidth: 500, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
+            {/* Top section — background image + gif logo */}
+            <div style={{
+              backgroundImage: "url(/startxchatbg.jpg)",
+              backgroundSize: "cover", backgroundPosition: "center",
+              padding: "36px 28px 28px",
+              display: "flex", flexDirection: "column", alignItems: "center",
+            }}>
+              <img src="/startxchatlogo.gif" alt="" style={{ width: 72, height: 72, objectFit: "contain" }} />
             </div>
-            <div style={{ padding: "0 30px 28px" }}>
-              <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.65, marginBottom: 16 }}>OCBC Chat (Beta) helps you prepare user management requests. It does not authorise, decide, or submit requests on your behalf.</div>
-              <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.65, marginBottom: 26 }}>By proceeding, you have read and accept OCBC's <span style={{ color: "#2f80c3" }}>Chat Policy</span>.</div>
-              <button onClick={handleConsentProceed} style={{ ...slateBtn, width: "100%", padding: "15px 0" }}>Proceed</button>
+            {/* Content */}
+            <div style={{ padding: "24px 40px 32px" }}>
+              <div style={{ fontSize: 19, fontWeight: 700, color: "#222", marginBottom: 18 }}>Start X Chat (Beta)</div>
+              <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.7, marginBottom: 14 }}>
+                X Chat (Beta) helps you prepare user management requests. It does not authorise, decide, or submit requests on your behalf.
+              </div>
+              <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.7, marginBottom: 28 }}>
+                By proceeding, you have read and accept OCBC's <span style={{ color: "#2f80c3", cursor: "pointer" }}>&lt;policy name&gt;</span>.
+              </div>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                <button
+                  onClick={() => { setConsentOpen(false); setPendingChatText(null); }}
+                  style={{ padding: "12px 34px", borderRadius: 8, border: "1.5px solid #c8cdd2", background: "#fff", color: "#333", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}
+                >Go back</button>
+                <button
+                  onClick={handleConsentProceed}
+                  style={{ padding: "12px 34px", borderRadius: 8, border: "none", background: "#3d4d5c", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                >Proceed</button>
+              </div>
             </div>
           </div>
         </div>
