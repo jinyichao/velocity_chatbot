@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import { getToken, getUsername, clearSession } from "./api/auth";
 import { QUICK_REPLIES, MULTI_INTENT_3_REPLIES, HALLUCINATION_REPLIES, OUT_OF_SCOPE_REPLIES, MULTILINGUAL_REPLIES } from "./data/quickReplies";
 import { detectId, detectPhone, COUNTRY_META, COUNTRIES } from "./utils/piiDetection";
+import { VelocityHeader, Stepper, VELOCITY_HEADER_HEIGHT } from "./components/VelocityChrome";
 
 const SESSION_A = uuidv4();
 const SESSION_B = uuidv4();
@@ -49,33 +50,6 @@ const WIDGET_INFO = [
   },
 ];
 
-function ThemeToggle({ dark, onToggle }) {
-  return (
-    <button
-      onClick={onToggle}
-      title={dark ? "Switch to light mode" : "Switch to dark mode"}
-      style={{
-        background: dark ? "#333" : "#e8e8e8",
-        border: "none", borderRadius: 20,
-        width: 44, height: 24,
-        cursor: "pointer", display: "flex", alignItems: "center",
-        padding: "0 3px", transition: "background 0.2s", flexShrink: 0,
-      }}
-    >
-      <div style={{
-        width: 18, height: 18, borderRadius: "50%",
-        background: dark ? "#fff" : "#555",
-        transform: dark ? "translateX(20px)" : "translateX(0)",
-        transition: "transform 0.2s",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 11,
-      }}>
-        {dark ? "☀" : "🌙"}
-      </div>
-    </button>
-  );
-}
-
 function Chip({ label, onClick, dark }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -98,64 +72,30 @@ function Chip({ label, onClick, dark }) {
   );
 }
 
-const NAV_TABS = [
-  { id: "benchmark",  label: "Chatbot Technology Benchmark" },
-  { id: "journey",    label: "Service AI Chatbot Journey" },
-];
+const SLATE = "#4a5560";
 
-function Navbar({ dark, onToggleDark, onLogout, activeTab, onTabChange }) {
-  const border = dark ? "#2a2a2a" : "#e8e8e8";
-  return (
-    <div style={{
-      position: "fixed", top: 0, left: 0, right: 0, zIndex: 1100,
-      background: dark ? "#141414" : "#fff",
-      borderBottom: `1px solid ${border}`,
-      height: 60, display: "flex", alignItems: "center", padding: "0 28px", gap: 0,
-      transition: "background 0.2s",
-    }}>
-      {NAV_TABS.map((tab) => {
-        const active = activeTab === tab.id;
-        return (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            style={{
-              background: "none", border: "none",
-              borderBottom: active ? "2px solid #c8102e" : "2px solid transparent",
-              height: 60, padding: "0 18px",
-              fontSize: 14, fontWeight: active ? 600 : 400,
-              color: active ? (dark ? "#f0f0f0" : "#111") : (dark ? "#666" : "#888"),
-              cursor: "pointer", transition: "all 0.15s",
-              letterSpacing: "-0.2px", whiteSpace: "nowrap",
-              fontFamily: "inherit",
-            }}
-          >
-            {tab.label}
-          </button>
-        );
-      })}
-      <div style={{ flex: 1 }} />
-      <ThemeToggle dark={dark} onToggle={onToggleDark} />
-      <button
-        onClick={onLogout}
-        style={{ background: "none", border: "none", fontSize: 13, color: dark ? "#888" : "#555", cursor: "pointer", padding: "6px 0 6px 12px", fontFamily: "inherit" }}
-      >
-        Sign Out
-      </button>
-    </div>
-  );
-}
+function AddUserForm({ selectedRoles = [], formData, onFormChange, onRolesChange, onConfirm, onNext, onBack = null, idCountry = "SG", onIdCountryChange, phoneCountry = "SG", onPhoneCountryChange, activeField = null, mobileView = false }) {
+  const rl = selectedRoles.map(r => r.toLowerCase());
+  const hasSignatory  = rl.some(r => r.includes("signator"));
+  const hasBanking    = rl.some(r => r.includes("business online banking") && !r.includes("administrator"));
+  const hasMaker      = rl.some(r => r.includes("- maker"));
+  const hasAuthoriser = rl.some(r => r.includes("- authoriser"));
+  const hasAdmin      = rl.some(r => r.includes("administrator"));
+  const hasFX         = rl.some(r => r.includes("fx contract"));
+  const hasContact    = rl.some(r => r.includes("contact person"));
 
-const VELOCITY_NAV = ["Home", "Accounts", "Pay and transfer", "FX and treasury", "Invoices", "Trade finance", "Tools", "Administration"];
+  const setRoles = (roles) => onRolesChange && onRolesChange(roles);
+  const addRole = (role) => setRoles([...selectedRoles, role]);
+  const removeWhere = (pred) => setRoles(selectedRoles.filter(r => !pred(r.toLowerCase())));
+  const toggleSignatory  = () => hasSignatory ? removeWhere(r => r.includes("signator")) : addRole("Authorised Signatories");
+  const toggleBanking    = () => hasBanking ? removeWhere(r => r.includes("business online banking") && !r.includes("administrator")) : addRole("Business Online Banking - Viewer");
+  const toggleMaker      = () => hasMaker ? removeWhere(r => r.includes("- maker")) : addRole("Business Online Banking - Maker");
+  const toggleAuthoriser = () => hasAuthoriser ? removeWhere(r => r.includes("- authoriser")) : addRole("Business Online Banking - Authoriser");
+  const toggleAdmin      = () => hasAdmin ? removeWhere(r => r.includes("administrator")) : addRole("Business Online Banking - Administrator");
+  const toggleFX         = () => hasFX ? removeWhere(r => r.includes("fx contract")) : addRole("Book FX Contract");
+  const toggleContact    = () => hasContact ? removeWhere(r => r.includes("contact person")) : addRole("Entity's Contact Person");
 
-function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm, dark = false, idCountry = "SG", onIdCountryChange, phoneCountry = "SG", onPhoneCountryChange, activeField = null }) {
-  const hasSignatory = selectedRoles.some(r => r.toLowerCase().includes("signator"));
-  const hasBanking   = selectedRoles.some(r => r.toLowerCase().includes("business online banking") && !r.toLowerCase().includes("administrator"));
-  const hasFX        = selectedRoles.some(r => r.toLowerCase().includes("fx contract"));
-  const hasContact   = selectedRoles.some(r => r.toLowerCase().includes("contact person"));
-
-  const [learnOpen, setLearnOpen] = useState(true);
-  const [confirmed, setConfirmed] = useState(false);
+  const [followExisting, setFollowExisting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
   const [idGlow, setIdGlow] = useState(false);
@@ -249,228 +189,255 @@ function AddUserForm({ selectedRoles, onClose, formData, onFormChange, onConfirm
     }
   }, [phoneCountry]);
 
-  const hasErrors = Object.values(fieldErrors).some(Boolean);
-
-  const ft = {
-    bg:      dark ? "#1e1e1e" : "#fff",
-    text:    dark ? "#f0f0f0" : "#111",
-    subtext: dark ? "#aaa"    : "#555",
-    muted:   dark ? "#666"    : "#888",
-    border:  dark ? "#3a3a3a" : "#e8e8e8",
-    fieldBg: dark ? "#2a2a2a" : "#fafafa",
-    inputBorderBottom: dark ? "#555" : "#ddd",
-    checkBg: dark ? "#ED1C24" : "#ED1C24",
-  };
   const inputStyle = {
-    width: "100%", border: "none", borderBottom: `1px solid ${ft.inputBorderBottom}`,
-    outline: "none", fontSize: 14, padding: "8px 0", fontFamily: "inherit",
-    background: "transparent", color: ft.text, boxSizing: "border-box",
+    width: "100%", border: "none", outline: "none", fontSize: 14.5,
+    fontFamily: "inherit", background: "transparent", color: "#1a1a1a",
+    padding: 0, boxSizing: "border-box",
   };
-  const fieldWrap = (field) => ({
-    background: ft.fieldBg,
-    border: `1px solid ${fieldErrors[field] ? "#e53e3e" : activeField === field ? "#ED1C24" : ft.border}`,
-    borderRadius: 8, padding: "12px 16px", flex: 1,
-    boxShadow: activeField === field ? "0 0 0 3px rgba(237,28,36,0.18)" : undefined,
+  const fieldBox = (field, extra = {}) => ({
+    background: "#f6f7f8",
+    border: `1px solid ${fieldErrors[field] ? "#e53e3e" : "#eceff1"}`,
+    borderBottom: `1px solid ${fieldErrors[field] ? "#e53e3e" : "#c5ccd2"}`,
+    borderRadius: "6px 6px 0 0", padding: "9px 14px 10px",
+    boxShadow: activeField === field ? "0 0 0 3px rgba(227,6,19,0.15)" : undefined,
     transition: "box-shadow 0.3s, border-color 0.3s",
+    ...extra,
   });
+  const labelStyle = { fontSize: 11.5, color: "#8a9299", marginBottom: 3 };
+  const helperStyle = { fontSize: 11.5, color: "#8a9299", marginTop: 6, lineHeight: 1.5 };
+  const errStyle = { fontSize: 11.5, color: "#e53e3e", marginTop: 6 };
+  const sectionTitle = { fontSize: 15, fontWeight: 700, color: "#222", marginBottom: 18 };
+  const divider = { height: 1, background: "#ececec", margin: "26px 0" };
 
-  if (confirmed) return (
-    <div style={{ background: ft.bg, borderRadius: 12, border: `1px solid ${ft.border}`, padding: "48px 32px", maxWidth: 860, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" }}>
-      <div style={{ width: 56, height: 56, borderRadius: "50%", background: dark ? "#1a3a1a" : "#e6f4ea", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>✓</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: ft.text }}>User Added Successfully</div>
-      <div style={{ fontSize: 15, color: ft.subtext }}>New user <strong>"{name || "Unknown"}"</strong> has been added.</div>
-      <button onClick={onClose} style={{ marginTop: 8, padding: "9px 28px", background: ft.checkBg, color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Done</button>
+  const checkbox = (checked, onClick, { disabled = false, round = false } = {}) => (
+    <div
+      onClick={disabled ? undefined : onClick}
+      style={{
+        width: 20, height: 20, borderRadius: round ? "50%" : 4, flexShrink: 0, marginTop: 1,
+        background: checked ? (disabled ? "#c8cdd2" : SLATE) : "#fff",
+        border: `2px solid ${checked ? (disabled ? "#c8cdd2" : SLATE) : disabled ? "#d8dcdf" : "#9aa2a9"}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        cursor: disabled ? "default" : "pointer", boxSizing: "border-box",
+      }}
+    >
+      {checked && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.4"><path d="M4.5 12.5l5 5L19.5 7" /></svg>}
     </div>
   );
 
+  const validateAll = () => {
+    const errors = {};
+    if (nric)   { const { fn, msg } = VALIDATORS.nric;   if (!fn(nric))   errors.nric = msg; }
+    if (mobile) { const { fn, msg } = VALIDATORS.mobile; if (!fn(mobile)) errors.mobile = msg; }
+    if (email)  { const { fn, msg } = VALIDATORS.email;  if (!fn(email))  errors.email = msg; }
+    setFieldErrors(errors);
+    return !Object.values(errors).some(Boolean);
+  };
+  const commitUser = () => {
+    if (!validateAll()) return false;
+    if ((name || "").trim() && onConfirm) onConfirm(name.trim());
+    return true;
+  };
+
   return (
-    <div style={{ background: ft.bg, borderRadius: 12, border: `1px solid ${ft.border}`, padding: "28px 32px", maxWidth: 860, boxSizing: "border-box", color: ft.text }}>
-      {/* Title */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
-        <div style={{ fontSize: 22, fontWeight: 700 }}>Add user</div>
-        <div style={{
-          background: "linear-gradient(90deg, #FB5C39, #ED1C24)",
-          borderRadius: 20, padding: "3px 12px",
-          fontSize: 12, fontWeight: 600, color: "#fff",
-          display: "flex", alignItems: "center", gap: 5,
-        }}>✦ AI Suggested</div>
-        <div style={{ flex: 1 }} />
-        <button onClick={onClose} style={{ background: dark ? "#333" : "#f0f0f0", color: ft.text, border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-      </div>
+    <div>
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 8, padding: mobileView ? "20px 16px" : "26px 28px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", boxSizing: "border-box" }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#222", marginBottom: 22 }}>User 1</div>
 
-      {/* Fields row 1 */}
-      <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-        <div ref={el => fieldRefs.current["name"] = el} style={fieldWrap("name")}><input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name (as shown in ID)" style={inputStyle} /></div>
-        <div style={{ flex: 1 }}>
-          <div ref={el => fieldRefs.current["nric"] = el} style={{
-            ...fieldWrap("nric"),
-            boxShadow: idGlow ? "0 0 0 3px rgba(99, 102, 241, 0.4)" : "none",
-            transition: "box-shadow 0.3s",
-          }}><input value={nric} onChange={e => setNric(e.target.value)} onBlur={onNricBlur} placeholder={`${idMeta.idLabel} (e.g. ${idMeta.idExample})`} style={inputStyle} /></div>
-          {fieldErrors.nric && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.nric}</div>}
-        </div>
-      </div>
-      {/* Fields row 2 */}
-      <div style={{ display: "flex", gap: 16, marginBottom: 28 }}>
-        <div style={{ flex: 1 }}>
-          <div ref={el => fieldRefs.current["mobile"] = el} style={{
-            ...fieldWrap("mobile"),
-            display: "flex", alignItems: "center", gap: 8,
-            boxShadow: phoneGlow ? "0 0 0 3px rgba(99, 102, 241, 0.4)" : "none",
-            transition: "box-shadow 0.3s",
-          }}>
-            <span style={{ fontSize: 13, color: ft.subtext, whiteSpace: "nowrap" }}>Mobile no.</span>
-            <div
-              onClick={() => setCountryDropdownOpen(o => !o)}
-              style={{ position: "relative", fontSize: 13, color: ft.text, borderRight: `1px solid ${ft.inputBorderBottom}`, paddingRight: 8, cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: 4 }}
-            >
-              <span>{phoneMeta.flag} {phoneMeta.code}</span>
-              <span style={{ fontSize: 10 }}>▾</span>
-              {countryDropdownOpen && (
-                <div style={{
-                  position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 30,
-                  background: ft.bg, border: `1px solid ${ft.border}`, borderRadius: 8,
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.12)", overflow: "hidden", minWidth: 180,
-                }}>
-                  {COUNTRIES.map((c, i) => {
-                    const m = COUNTRY_META[c];
-                    const active = c === phoneCountry;
-                    return (
-                      <div
-                        key={c}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCountryDropdownOpen(false);
-                          if (c !== phoneCountry && onPhoneCountryChange) onPhoneCountryChange(c);
-                        }}
-                        style={{
-                          padding: "10px 14px", fontSize: 13, color: ft.text,
-                          borderBottom: i < COUNTRIES.length - 1 ? `1px solid ${ft.border}` : "none",
-                          background: active ? (dark ? "#2a2a2a" : "#f0f0f0") : "transparent",
-                          display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
-                        }}
-                        onMouseEnter={e => { if (!active) e.currentTarget.style.background = dark ? "#333" : "#f6f6f6"; }}
-                        onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
-                      >
-                        <span>{m.flag}</span>
-                        <span style={{ flex: 1 }}>{m.name}</span>
-                        <span style={{ color: ft.muted, fontSize: 12 }}>{m.code}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+        {/* Fields grid */}
+        <div style={{ display: "grid", gridTemplateColumns: mobileView ? "1fr" : "1fr 1fr", gap: mobileView ? 14 : "18px 24px" }}>
+          <div ref={el => fieldRefs.current["name"] = el}>
+            <div style={fieldBox("name")}>
+              <div style={labelStyle}>Name as shown in ID</div>
+              <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
             </div>
-            <input value={mobile} onChange={e => setMobile(e.target.value)} onBlur={() => validateField("mobile", mobile)} placeholder={phoneMeta.phoneExample} style={{ ...inputStyle, flex: 1 }} />
           </div>
-          {fieldErrors.mobile && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.mobile}</div>}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div ref={el => fieldRefs.current["email"] = el} style={fieldWrap("email")}><input value={email} onChange={e => setEmail(e.target.value)} onBlur={() => validateField("email", email)} placeholder="Email" style={inputStyle} /></div>
-          {fieldErrors.email && <div style={{ fontSize: 11, color: "#e53e3e", marginTop: 4 }}>{fieldErrors.email}</div>}
-        </div>
-      </div>
-
-      {/* Roles */}
-      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Roles</div>
-
-      {/* Sign to authorise */}
-      <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
-        <div style={{ width: 20, height: 20, borderRadius: 4, background: hasSignatory ? ft.checkBg : "transparent", border: `2px solid ${hasSignatory ? ft.checkBg : ft.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
-          {hasSignatory && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
-        </div>
-        <div>
-          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Sign to authorise transactions</div>
-          <div style={{ fontSize: 13, color: ft.subtext, lineHeight: 1.5 }}>Authorised Signatory who can sign or accept documents (e.g. payment instructions, bills of exchange) on behalf of the account holder. Automatically acts as entity's contact person.</div>
-        </div>
-      </div>
-
-      {/* View create authorise */}
-      <div style={{ display: "flex", gap: 14, marginBottom: hasBanking ? 12 : 20 }}>
-        <div style={{ width: 20, height: 20, borderRadius: 4, background: hasBanking ? ft.checkBg : "transparent", border: `2px solid ${hasBanking ? ft.checkBg : ft.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
-          {hasBanking && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>View, create and authorise online transactions</div>
-          <div style={{ fontSize: 13, color: ft.subtext, marginBottom: 10 }}>Business online banking user (Maker and Authoriser)</div>
-          {hasBanking && (
-            <>
-              <div ref={el => fieldRefs.current["userId"] = el} style={{ ...fieldWrap("userId"), maxWidth: 320, marginBottom: 6 }}>
-                <input value={userId} onChange={e => setUserId(e.target.value)} style={{ ...inputStyle, background: "transparent" }} placeholder="User ID" />
-              </div>
-              <div style={{ fontSize: 12, color: ft.muted, marginBottom: 12 }}>Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.</div>
-              {/* Learn what user can do */}
-              <div style={{ border: `1px solid ${ft.border}`, borderRadius: 8, overflow: "hidden", maxWidth: 480, background: ft.bg }}>
-                <div onClick={() => setLearnOpen(v => !v)} style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
-                  <span>Learn what the user can do</span>
-                  <span style={{ fontSize: 12, color: ft.muted }}>{learnOpen ? "Hide ∧" : "Show ∨"}</span>
+          <div>
+            <div ref={el => fieldRefs.current["nric"] = el} style={fieldBox("nric", {
+              boxShadow: idGlow ? "0 0 0 3px rgba(99, 102, 241, 0.4)" : activeField === "nric" ? "0 0 0 3px rgba(227,6,19,0.15)" : undefined,
+            })}>
+              <div style={labelStyle}>{idMeta.idLabel}</div>
+              <input value={nric} onChange={e => setNric(e.target.value)} onBlur={onNricBlur} style={inputStyle} />
+            </div>
+            {fieldErrors.nric
+              ? <div style={errStyle}>{fieldErrors.nric}</div>
+              : <div style={helperStyle}>{idCountry === "SG" ? "Enter in either format: S1234567A or T1234567A" : `e.g. ${idMeta.idExample}`}</div>}
+          </div>
+          <div>
+            <div ref={el => fieldRefs.current["mobile"] = el} style={fieldBox("mobile", {
+              boxShadow: phoneGlow ? "0 0 0 3px rgba(99, 102, 241, 0.4)" : activeField === "mobile" ? "0 0 0 3px rgba(227,6,19,0.15)" : undefined,
+            })}>
+              <div style={labelStyle}>Mobile no.</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div
+                  onClick={() => setCountryDropdownOpen(o => !o)}
+                  style={{ position: "relative", fontSize: 14.5, color: "#1a1a1a", cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}
+                >
+                  <span>{phoneMeta.code}</span>
+                  <span style={{ fontSize: 9, color: "#888" }}>▾</span>
+                  {countryDropdownOpen && (
+                    <div style={{
+                      position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 30,
+                      background: "#fff", border: "1px solid #e8e8e8", borderRadius: 8,
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.12)", overflow: "hidden", minWidth: 180,
+                    }}>
+                      {COUNTRIES.map((c, i) => {
+                        const m = COUNTRY_META[c];
+                        const active = c === phoneCountry;
+                        return (
+                          <div
+                            key={c}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCountryDropdownOpen(false);
+                              if (c !== phoneCountry && onPhoneCountryChange) onPhoneCountryChange(c);
+                            }}
+                            style={{
+                              padding: "10px 14px", fontSize: 13, color: "#1a1a1a",
+                              borderBottom: i < COUNTRIES.length - 1 ? "1px solid #eee" : "none",
+                              background: active ? "#f0f0f0" : "transparent",
+                              display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+                            }}
+                            onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#f6f6f6"; }}
+                            onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+                          >
+                            <span>{m.flag}</span>
+                            <span style={{ flex: 1 }}>{m.name}</span>
+                            <span style={{ color: "#888", fontSize: 12 }}>{m.code}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                {learnOpen && (
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                    <thead>
-                      <tr style={{ background: ft.fieldBg, borderTop: `1px solid ${ft.border}`, color: ft.text }}>
-                        <th style={{ padding: "8px 16px", textAlign: "left", fontWeight: 600, borderRight: `1px solid ${ft.border}` }}>Role</th>
-                        <th style={{ padding: "8px 16px", textAlign: "left", fontWeight: 600 }}>What the user can do</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[
-                        ["Viewer",        "View accounts, transaction history, and reports. Cannot initiate or approve any transactions."],
-                        ["Maker",         "Create transactions (e.g. Telegraphic Transfers) that will be sent to the Authoriser(s) for review."],
-                        ["Authoriser",    "Authorise transactions that have been requested by a Maker. Depending on your entity's setup, transactions will require the approval of one or more Authorisers."],
-                        ["Administrator", "Manage users, roles, and permissions. Cannot initiate or authorise financial transactions."],
-                      ].filter(([role]) => selectedRoles.some(r => r.toLowerCase().includes(role.toLowerCase())))
-                       .map(([role, desc]) => (
-                        <tr key={role} style={{ borderTop: `1px solid ${ft.border}`, color: ft.text }}>
-                          <td style={{ padding: "10px 16px", fontWeight: 600, borderRight: `1px solid ${ft.border}`, verticalAlign: "top", whiteSpace: "nowrap" }}>{role}</td>
-                          <td style={{ padding: "10px 16px", color: ft.subtext, lineHeight: 1.5 }}>{desc}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                <div style={{ width: 1, height: 16, background: "#d5d9dd", flexShrink: 0 }} />
+                <input value={mobile} onChange={e => setMobile(e.target.value)} onBlur={() => validateField("mobile", mobile)} style={{ ...inputStyle, flex: 1 }} />
               </div>
-            </>
-          )}
+            </div>
+            {fieldErrors.mobile && <div style={errStyle}>{fieldErrors.mobile}</div>}
+          </div>
+          <div>
+            <div ref={el => fieldRefs.current["email"] = el} style={fieldBox("email")}>
+              <div style={labelStyle}>Email address</div>
+              <input value={email} onChange={e => setEmail(e.target.value)} onBlur={() => validateField("email", email)} style={inputStyle} />
+            </div>
+            {fieldErrors.email && <div style={errStyle}>{fieldErrors.email}</div>}
+          </div>
+        </div>
+
+        {/* Roles */}
+        <div style={divider} />
+        <div style={sectionTitle}>Roles</div>
+
+        <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
+          {checkbox(hasSignatory, toggleSignatory)}
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14, color: "#222", marginBottom: 4 }}>Sign to authorise transactions</div>
+            <div style={{ fontSize: 13, color: "#777", lineHeight: 1.55 }}><strong style={{ color: "#555" }}>Authorised Signatory</strong> who can sign or accept documents (e.g. payment instructions, bills of exchange) on behalf of the account holder. Automatically acts as entity's contact person.</div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 14 }}>
+          {checkbox(hasBanking || hasAdmin, toggleBanking)}
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14, color: "#222", marginBottom: 4 }}>View and/or manage online transactions</div>
+            <div style={{ fontSize: 13, color: "#777" }}>Business online banking user</div>
+          </div>
+        </div>
+
+        {/* Business online banking setup */}
+        <div style={divider} />
+        <div style={sectionTitle}>Business online banking setup</div>
+
+        <div style={{ maxWidth: mobileView ? "100%" : 340 }}>
+          <div ref={el => fieldRefs.current["userId"] = el} style={fieldBox("userId")}>
+            <div style={labelStyle}>User ID</div>
+            <input value={userId} onChange={e => setUserId(e.target.value)} style={inputStyle} />
+          </div>
+          <div style={helperStyle}>Create a User ID that the user can use to log in to business online banking. Only numbers or letters can be used.</div>
+        </div>
+
+        <div style={{ display: "flex", gap: 14, margin: "22px 0 26px" }}>
+          {checkbox(followExisting, () => setFollowExisting(v => !v))}
+          <div style={{ fontSize: 14, color: "#222", marginTop: 1 }}>Follow existing user setup and account access (recommended)</div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ display: "flex", gap: 14 }}>
+            {checkbox(hasMaker, toggleMaker, { round: true })}
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: "#222", marginBottom: 3 }}>Create transactions</div>
+              <div style={{ fontSize: 13, color: "#777" }}><strong style={{ color: "#555" }}>Maker</strong> who prepares and submits transactions for authorisation.</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 14 }}>
+            {checkbox(hasAuthoriser, toggleAuthoriser, { round: true })}
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: "#222", marginBottom: 3 }}>Authorise transactions</div>
+              <div style={{ fontSize: 13, color: "#777" }}><strong style={{ color: "#555" }}>Authoriser</strong> who reviews and authorises transactions submitted by Maker(s).</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 14 }}>
+            {checkbox(true, undefined, { round: true, disabled: true })}
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: "#8a9299", marginBottom: 3 }}>View account balances and statements only</div>
+              <div style={{ fontSize: 13, color: "#9aa2a9" }}><strong>Viewer</strong> access is included for all users by default.</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Other roles */}
+        <div style={divider} />
+        <div style={sectionTitle}>Other roles</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", gap: 14 }}>
+            {checkbox(hasFX, toggleFX)}
+            <div style={{ fontSize: 14, color: "#222", marginTop: 1 }}>Book FX Contract (only for business online banking users)</div>
+          </div>
+          <div style={{ display: "flex", gap: 14 }}>
+            {checkbox(hasContact, toggleContact)}
+            <div style={{ fontSize: 14, color: "#222", marginTop: 1 }}>Act as entity's contact person <span style={{ color: "#9aa2a9", fontSize: 12 }}>ⓘ</span></div>
+          </div>
+          <div style={{ display: "flex", gap: 14 }}>
+            {checkbox(hasAdmin, toggleAdmin)}
+            <div style={{ fontSize: 14, color: "#222", marginTop: 1 }}>Business online banking Administrator <span style={{ color: "#9aa2a9", fontSize: 12 }}>ⓘ</span></div>
+          </div>
         </div>
       </div>
 
-      {/* Other roles */}
-      <div style={{ fontWeight: 700, fontSize: 16, margin: "24px 0 16px" }}>Other roles</div>
-      {[
-        { label: "Book FX Contract (only for business online banking users)", checked: hasFX },
-        { label: "Act as entity's contact person", checked: hasContact },
-      ].map(({ label, checked }) => (
-        <div key={label} style={{ display: "flex", gap: 14, marginBottom: 14, alignItems: "flex-start" }}>
-          <div style={{ width: 20, height: 20, borderRadius: 4, background: checked ? ft.checkBg : "transparent", border: `2px solid ${checked ? ft.checkBg : ft.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
-            {checked && <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span>}
-          </div>
-          <div style={{ fontSize: 14, color: ft.text }}>{label}</div>
-        </div>
-      ))}
+      {/* + Add user */}
+      <button
+        onClick={() => commitUser()}
+        style={{
+          marginTop: 22, padding: "10px 18px", borderRadius: 6,
+          border: "1px solid #c8cdd2", background: "#fff", color: "#333",
+          fontSize: 14, cursor: "pointer", fontFamily: "inherit",
+          display: "inline-flex", alignItems: "center", gap: 8,
+        }}
+      >＋ Add user</button>
 
-      {/* Confirm */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 28 }}>
+      <div style={{ height: 1, background: "#ececec", margin: "30px 0 24px" }} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {onBack ? (
+          <button onClick={onBack} style={{ padding: "12px 30px", borderRadius: 6, border: "1px solid #c8cdd2", background: "#fff", color: "#333", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>Back</button>
+        ) : <div />}
         <button
-          onClick={() => {
-            const errors = {};
-            if (nric) { const { fn, msg } = VALIDATORS.nric; if (!fn(nric)) errors.nric = msg; }
-            if (mobile) { const { fn, msg } = VALIDATORS.mobile; if (!fn(mobile)) errors.mobile = msg; }
-            if (email) { const { fn, msg } = VALIDATORS.email; if (!fn(email)) errors.email = msg; }
-            if (Object.values(errors).some(Boolean)) { setFieldErrors(errors); return; }
-            setConfirmed(true);
-            if (onConfirm) onConfirm(name || "Unknown");
+          onClick={() => { if (commitUser()) onNext && onNext(); }}
+          style={{
+            padding: "13px 36px", borderRadius: 6, border: "none",
+            background: SLATE, color: "#fff", fontSize: 14, fontWeight: 600,
+            cursor: "pointer", fontFamily: "inherit",
           }}
-          style={{ padding: "10px 32px", background: ft.checkBg, color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
-        >Confirm</button>
+        >Next</button>
       </div>
     </div>
   );
 }
 const INITIAL_JOURNEY_USERS = [
-  { name: "Peter Poh Wen Xiang", sub: "", ap: true,  as: false, role: "Maker and Authoriser" },
-  { name: "Alex Loh", sub: "Entity's contact person\nBusiness online banking contact person", ap: true, as: true, role: "Maker and Authoriser" },
-  { name: "Mabel Teoh", sub: "Entity's contact person", ap: true, as: true, role: "Viewer" },
+  { name: "Peter Poh Wen Xiang", userId: "peter456", nricMasked: "NRIC •••••321A", sub: "", ap: true,  as: false, role: "Maker and Authoriser" },
+  { name: "Alex Loh", userId: "alexloh88", nricMasked: "NRIC •••••654B", sub: "Entity's contact person\nBusiness online banking contact person", ap: true, as: true, role: "Maker and Authoriser" },
+  { name: "Mabel Teoh", userId: "mabelteoh1", nricMasked: "NRIC •••••887C", sub: "Entity's contact person", ap: true, as: true, role: "Viewer" },
+  { name: "Gabriel Tan", userId: "Gabrieltan234", nricMasked: "NRIC •••••567F", sub: "", ap: false, as: true, role: "Authoriser" },
+  { name: "Angeline Chow", userId: "angeline22", nricMasked: "NRIC •••••210D", sub: "", ap: true, as: false, role: "Viewer" },
 ];
 
 function buildUserEntry(name, roles) {
@@ -492,6 +459,15 @@ function buildUserEntry(name, roles) {
   return { name, sub: "", ap, as: as_, role: roleStr, pending: true };
 }
 
+function roleDisplay(r) {
+  const l = r.toLowerCase();
+  if (l.includes("signator")) return "Sign to authorise transactions";
+  if (l.includes("authorised person")) return "Open and close accounts, apply for banking facilities";
+  if (l.includes("fx contract")) return "Book FX Contract";
+  if (l.includes("contact person")) return "Act as entity's contact person";
+  return r;
+}
+
 function getUserPermissions(u) {
   const perms = [];
   if (u.as) perms.push("Sign to authorise transactions");
@@ -501,12 +477,21 @@ function getUserPermissions(u) {
   return perms;
 }
 
-function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
-  const [activeSubTab, setActiveSubTab] = useState("Roles");
+function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = false, username = "Patrick Tan" }) {
+  // step: 0 = landing / entry, 1 = add user(s), 2 = remove user(s), 3 = review, 4 = submitted
+  const [step, setStep] = useState(0);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [reviewBanner, setReviewBanner] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(true);
+  const [consented, setConsented] = useState(false);
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [pendingChatText, setPendingChatText] = useState(null);
+  const [chatStarted, setChatStarted] = useState(false);
+  const [mobileRoleTab, setMobileRoleTab] = useState("AP");
   const [aiInput, setAiInput] = useState("");
-  const [chatOpen, setChatOpen] = useState(isMobileView);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [manageDropdownOpen, setManageDropdownOpen] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
-  const [chipsOpen, setChipsOpen] = useState(true);
   const [chatInput, setChatInput] = useState("");
   const [addUserRoles, setAddUserRoles] = useState(null);
   const [addUserData, setAddUserData] = useState({});
@@ -518,9 +503,7 @@ function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
   const [assistantNotification, setAssistantNotification] = useState(null);
   const [lastIntents, setLastIntents] = useState([]);
   const [activeIntent, setActiveIntent] = useState(null);
-  const [deleteTabOpen, setDeleteTabOpen] = useState(false);
   const [deleteConfirmIdx, setDeleteConfirmIdx] = useState(null);
-  const [deletedUsers, setDeletedUsers] = useState([]);
   const [selectedDeleteUsers, setSelectedDeleteUsers] = useState([]);
   const [deleteDropdownOpen, setDeleteDropdownOpen] = useState(false);
   const [completedIntents, setCompletedIntents] = useState([]);
@@ -529,14 +512,18 @@ function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
   const [viewportWidth, setViewportWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1280);
   const [reviewAdds, setReviewAdds] = useState([]);
   const [reviewDeletes, setReviewDeletes] = useState([]);
-  const [reviewVisible, setReviewVisible] = useState(true);
+  const [stepHistory, setStepHistory] = useState(new Set());
+
+  useEffect(() => {
+    if (step >= 1) setStepHistory(prev => new Set([...prev, step]));
+  }, [step]);
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-  const chatWidth = viewportWidth < 1024 ? 360 : 420;
+  const chatW = viewportWidth < 1200 ? 300 : 330;
 
   // Derive per-task progress for the open-tasks strip. Keyed by raw intent
   // string (e.g. "add_user") and also by title-case label (e.g. "Add User")
@@ -590,13 +577,10 @@ function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
       setAddUserData({});
       setAddUserIdCountry("SG");
       setAddUserPhoneCountry("SG");
-      setActiveSubTab(prev => (prev === "Add User" ? "Roles" : prev));
     } else if (intent === "delete_user") {
-      setDeleteTabOpen(false);
       setSelectedDeleteUsers([]);
       setDeleteConfirmIdx(null);
       setDeleteConfirmed(false);
-      setActiveSubTab(prev => (prev === "Delete Users" ? "Roles" : prev));
     }
   };
 
@@ -608,7 +592,6 @@ function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
     setAddUserData({});
     setAddUserIdCountry("SG");
     setAddUserPhoneCountry("SG");
-    setActiveSubTab("Roles");
     setAssistantNotification({
       text: `Your request to add "${userName}" as a user has been submitted. You will receive an email and push notification after the request has been authorised.`,
       key: Date.now(),
@@ -622,6 +605,7 @@ function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
     setTimeout(() => {
       if (remaining.length === 0 && lastIntents.length > 0) {
         setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
+        if (isMobileView) setTimeout(() => setShowExitModal(true), 1400);
       } else if (remaining.length > 0) {
         setAssistantNotification({
           text: `Next up: **${toTitle(remaining[0])}**.`,
@@ -640,584 +624,880 @@ function JourneyPage({ dark, navbarOffset = 60, isMobileView = false }) {
     const text = chatInput.trim();
     if (!text) return;
     setChatInput("");
+    setChatStarted(true);
     setPendingMessage({ text, key: Date.now() });
+  };
+
+  // Opens chat (with optional first message); gates behind consent modal once per session.
+  const openChat = (text = null) => {
+    if (!consented) {
+      setPendingChatText(text);
+      setConsentOpen(true);
+      return;
+    }
+    setChatOpen(true);
+    if (text) {
+      setChatStarted(true);
+      setPendingMessage({ text, key: Date.now() });
+    }
+  };
+
+  const handleConsentProceed = () => {
+    setConsented(true);
+    setConsentOpen(false);
+    setChatOpen(true);
+    if (pendingChatText) {
+      setChatStarted(true);
+      setPendingMessage({ text: pendingChatText, key: Date.now() });
+      setPendingChatText(null);
+    }
   };
 
   const handleAiSubmit = () => {
     const text = aiInput.trim();
     if (!text) return;
     setAiInput("");
-    setChatOpen(true);
-    setPendingMessage({ text, key: Date.now() });
+    openChat(text);
   };
 
-  const t = {
-    bg:            dark ? "#141414" : "#fff",
-    text:          dark ? "#f0f0f0" : "#111",
-    subtext:       dark ? "#aaa"    : "#666",
-    muted:         dark ? "#666"    : "#888",
-    border:        dark ? "#2a2a2a" : "#e0e0e0",
-    border2:       dark ? "#333"    : "#e8e8e8",
-    panelBg:       dark ? "#1e1e1e" : "#fff",
-    tableHeaderBg: dark ? "#252525" : "#fafafa",
-    inputText:     dark ? "#ccc"    : "#333",
-    accentLink:    dark ? "#FB5C39" : "#ED1C24",
-    chipBorder:    dark ? "#FB5C39" : "#ED1C24",
-    chipText:      dark ? "#FB5C39" : "#ED1C24",
+  const confirmDeletes = () => {
+    const names = selectedDeleteUsers;
+    if (names.length === 0) return;
+    const deletedEntries = journeyUsers.filter(u => names.includes(u.name));
+    setReviewDeletes(prev => [...prev, ...deletedEntries.map(u => ({ name: u.name, userId: u.userId || "", nricMasked: u.nricMasked || "", roles: getUserPermissions(u) }))]);
+    setJourneyUsers(prev => prev.filter(u => !names.includes(u.name)));
+    setDeleteConfirmed(true);
+    setCloseTaskSignal({ intent: "delete_user", key: Date.now() });
+    const norm = (s) => s.toLowerCase().replace(/\s+/g, "_");
+    const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(norm);
+    setCompletedIntents(nowCompleted);
+    setSelectedDeleteUsers([]);
+    setDeleteDropdownOpen(false);
   };
+
+  const proceedToReview = () => {
+    setShowExitModal(false);
+    confirmDeletes();
+    setChatOpen(false);
+    setStep(3);
+  };
+
+  const backFromReview = () => {
+    const hasDelete = lastIntents.some(i => /delete|remove/i.test(i));
+    if (hasDelete) {
+      setStep(2);
+      return;
+    }
+    // Add-only: restore the last added user back into the form
+    if (reviewAdds.length > 0) {
+      const last = reviewAdds[reviewAdds.length - 1];
+      setAddUserData({ name: last.name || "", nric: last.nric || "", mobile: last.mobile || "", email: last.email || "", userId: last.userId || "" });
+      setAddUserRoles(last.roles || []);
+      setReviewAdds(prev => prev.slice(0, -1));
+      setJourneyUsers(prev => prev.length > INITIAL_JOURNEY_USERS.length ? prev.slice(0, -1) : prev);
+    }
+    setStep(1);
+  };
+
+  const handleRemoveNext = () => {
+    if (chatOpen) setShowExitModal(true);
+    else proceedToReview();
+  };
+
+  const resetAll = () => {
+    setReviewAdds([]); setReviewDeletes([]);
+    setJourneyUsers(INITIAL_JOURNEY_USERS);
+    setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); setAddUserActiveField(null);
+    setSelectedDeleteUsers([]); setDeleteDropdownOpen(false); setDeleteConfirmed(false); setDeleteConfirmIdx(null);
+    setCompletedIntents([]); setLastIntents([]); setActiveIntent(null); setStepHistory(new Set());
+    setAssistantNotification(null); setReviewBanner(true); setDetailsOpen(true);
+    setChatStarted(false);
+    setChatOpen(false);
+    setStep(0);
+  };
+
+  const outlineBtn = { padding: "12px 30px", borderRadius: 6, border: "1px solid #c8cdd2", background: "#fff", color: "#333", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" };
+  const slateBtn = { padding: "13px 36px", borderRadius: 6, border: "none", background: SLATE, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" };
 
   return (
     <div style={{
-      width: "100%", minHeight: "100vh", background: t.bg,
-      fontFamily: "'Helvetica Neue', Arial, sans-serif", color: t.text,
-      transition: "background 0.2s, padding-right 0.2s ease",
-      paddingRight: chatOpen ? chatWidth + 32 : 0,
+      width: "100%", minHeight: "100vh", background: "#fff",
+      fontFamily: "'Helvetica Neue', Arial, sans-serif", color: "#222",
+      transition: "padding-right 0.2s ease",
+      paddingRight: !isMobileView && chatOpen ? chatW : 0,
       boxSizing: "border-box",
     }}>
 
-      {/* Main content */}
-      <div style={{
-        display: "flex", padding: "36px 32px",
-        gap: chatOpen ? 0 : 40,
-        maxWidth: 1200, margin: "0 auto",
-        flexDirection: chatOpen ? "column" : "row",
-      }}>
+      {/* Mobile top bar (entry + form steps) */}
+      {isMobileView && step <= 2 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12, padding: "14px 16px",
+          borderBottom: "1px solid #eee", background: "#fff",
+          position: "sticky", top: 0, zIndex: 100,
+        }}>
+          {step === 0 ? (
+            <span style={{ fontSize: 18, color: "#333", lineHeight: 1 }}>☰</span>
+          ) : (
+            <button onClick={() => setStep(s => Math.max(0, s - 1))} style={{ background: "none", border: "none", fontSize: 20, color: "#333", cursor: "pointer", padding: 0, lineHeight: 1, fontFamily: "inherit" }}>‹</button>
+          )}
+          <span style={{ flex: 1, textAlign: "center", fontSize: 15.5, fontWeight: 700, color: "#222" }}>
+            {step === 0 ? "Roles and authorisation" : step === 1 ? "Add user(s)" : "Remove user(s)"}
+          </span>
+          <button onClick={() => openChat()} style={{ background: "none", border: "none", fontSize: 14, color: "#2f80c3", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Manage</button>
+        </div>
+      )}
 
-        {/* Heading — left sidebar when chat closed, top header when chat open */}
-        {chatOpen ? (
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ width: 40, height: 4, background: "#c8102e", marginBottom: 12 }} />
-            <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.4, color: t.text }}>
-              Manage Roles and Authorisation
-            </div>
-          </div>
-        ) : (
-          <div style={{ width: 280, flexShrink: 0, paddingTop: 4 }}>
-            <div style={{ width: 40, height: 4, background: "#c8102e", marginBottom: 16 }} />
-            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", lineHeight: 1.7, color: t.text }}>
-              Manage Roles<br />and Authorisation
-            </div>
-          </div>
-        )}
-
-        {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-
+      {/* Mobile entry page */}
+      {isMobileView && step === 0 && (
+        <div style={{ padding: "18px 16px 90px", position: "relative", minHeight: "70vh" }}>
           {/* AI input */}
           <div style={{
-            border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px 0 18px",
-            marginBottom: 28, boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
-            background: t.panelBg,
+            border: "1px solid #eee", borderRadius: 10, padding: "10px 12px 0 16px",
+            marginBottom: 20, boxShadow: "0 1px 6px rgba(0,0,0,0.06)", background: "#fff",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <input
                 value={aiInput}
                 onChange={e => setAiInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleAiSubmit()}
-                placeholder="Simply describe what you want to do, and our AI will help you complete the task."
-                style={{
-                  flex: 1, border: "none", outline: "none", fontSize: 14, color: t.inputText,
-                  background: "transparent", fontFamily: "inherit", padding: "4px 0 12px",
-                }}
+                placeholder="Simply describe what you want to do"
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 14, color: "#333", background: "transparent", fontFamily: "inherit", padding: "4px 0 12px" }}
               />
               <div onClick={handleAiSubmit} style={{
-                width: 42, height: 42, borderRadius: "50%", background: "#ED1C24",
+                width: 36, height: 36, borderRadius: "50%",
+                background: "radial-gradient(circle at 35% 35%, #FB8C39, #ED1C24)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", flexShrink: 0, marginBottom: 10,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                cursor: "pointer", flexShrink: 0, marginBottom: 8,
               }}>
-                <span style={{ color: "#fff", fontSize: 18 }}>✦</span>
+                <span style={{ color: "#fff", fontSize: 15 }}>✦</span>
               </div>
             </div>
-            {/* Gradient border bottom */}
-            <div style={{ height: 3, borderRadius: "0 0 10px 10px", background: "linear-gradient(90deg, #FB5C39, #ED1C24, #D6271C)", margin: "0 -14px" }} />
+            <div style={{ height: 3, borderRadius: "0 0 10px 10px", background: "linear-gradient(90deg, #FB5C39, #ED1C24, #D6271C)", margin: "0 -12px" }} />
           </div>
 
-          {/* Expandable suggestion chips */}
-          <div style={{ marginBottom: 24 }}>
-            <button onClick={() => setChipsOpen(v => !v)} style={{
-              background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
-              fontSize: 12, color: t.chipText, fontWeight: 600, padding: 0,
-              display: "flex", alignItems: "center", gap: 5, marginBottom: chipsOpen ? 12 : 0,
-            }}>
-              <span style={{ fontSize: 10, transition: "transform 0.2s", display: "inline-block", transform: chipsOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
-              {chipsOpen ? "Hide suggestions" : "Show suggestions"}
-            </button>
-            {chipsOpen && (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {[
-                  { label: "➕ Add User", query: "How do I add a new user to Velocity and assign them a role?" },
-                  { label: "🗑 Delete User", query: "How do I deactivate or delete a user from Velocity?" },
-                  { label: "➕🗑 Add & Delete User", query: "How do I add a new user and also remove an existing user from Velocity?" },
-                  { label: "🌐 Add & Delete User (multi-lingual)", query: "個同事走咗喇，佢account同加個新人頂喺Velocity點整㗎？" },
-                ].map(({ label, query }) => (
-                  <button key={label} onClick={() => { setChatOpen(true); setPendingMessage({ text: query, key: Date.now() }); }} style={{
-                    padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${t.chipBorder}`,
-                    background: t.panelBg, color: t.chipText, fontSize: 12, fontWeight: 500,
-                    cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.background = t.chipBorder; e.currentTarget.style.color = "#fff"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = t.panelBg; e.currentTarget.style.color = t.chipText; }}
-                  >{label}</button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Sub-tabs */}
-          <div style={{ borderBottom: `1px solid ${t.border2}`, marginBottom: 24, display: "flex" }}>
-            {[
-              "Roles",
-              ...(addUserRoles ? ["Add User"] : []),
-              ...(deleteTabOpen ? ["Delete Users"] : []),
-            ].map(tab => {
-              const active = activeSubTab === tab;
+          {/* Role pill tabs */}
+          <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+            {[["AP", "AUTHORISED PERSONS"], ["AS", "AUTHORISED SIGNATORIES"]].map(([key, label]) => {
+              const active = mobileRoleTab === key;
               return (
-                <button key={tab} onClick={() => setActiveSubTab(tab)} style={{
-                  background: "none", border: "none", padding: "10px 20px 10px 0",
-                  fontSize: 14, fontWeight: active ? 600 : 400,
-                  color: active ? "#c8102e" : t.muted,
-                  borderBottom: active ? "2px solid #c8102e" : "2px solid transparent",
-                  cursor: "pointer", fontFamily: "inherit", marginBottom: -1,
-                }}>{tab}</button>
+                <button key={key} onClick={() => setMobileRoleTab(key)} style={{
+                  padding: "8px 16px", borderRadius: 20,
+                  border: active ? "none" : "1px solid #d5d9dd",
+                  background: active ? "#dfe4ea" : "#fff",
+                  color: active ? "#333" : "#8a9299",
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.05em",
+                  cursor: "pointer", fontFamily: "inherit",
+                }}>{label}</button>
               );
             })}
           </div>
 
-          {activeSubTab === "Add User" && addUserRoles ? (
-            <AddUserForm dark={dark} selectedRoles={addUserRoles} onClose={() => { setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); setAddUserActiveField(null); }} formData={addUserData} onFormChange={setAddUserData} idCountry={addUserIdCountry} onIdCountryChange={setAddUserIdCountry} phoneCountry={addUserPhoneCountry} onPhoneCountryChange={setAddUserPhoneCountry} onConfirm={submitAddUser} activeField={addUserActiveField} />
-          ) : activeSubTab === "Delete Users" && deleteTabOpen ? (<>
-          {/* Remove Users — new design */}
-          <div style={{ maxWidth: 640 }}>
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <span style={{ fontSize: 17, fontWeight: 700, color: t.text }}>Remove user(s)</span>
-              {selectedDeleteUsers.length > 0 && (
-                <span style={{
-                  background: "#ED1C24", color: "#fff", borderRadius: 12,
-                  fontSize: 12, fontWeight: 700, padding: "1px 8px", minWidth: 20, textAlign: "center",
-                }}>{selectedDeleteUsers.length}</span>
-              )}
-              <span style={{
-                background: "linear-gradient(90deg,#FB5C39,#ED1C24)", color: "#fff",
-                borderRadius: 20, fontSize: 12, fontWeight: 600, padding: "3px 12px",
-                display: "inline-flex", alignItems: "center", gap: 5,
-              }}>✦ AI Suggested</span>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: "#222", marginBottom: 4 }}>
+            {mobileRoleTab === "AP" ? "Open and close accounts, and apply for banking facilities" : "Sign to authorise transactions"}
+          </div>
+          <div style={{ fontSize: 12.5, color: "#8a9299", lineHeight: 1.55, marginBottom: 8 }}>
+            {mobileRoleTab === "AP" ? "Any Authorised Person can act for or on behalf of the entity. " : "Authorised Signatories can sign or accept documents on behalf of the account holder. "}
+            <span style={{ color: "#2f80c3", cursor: "pointer" }}>Learn more about roles</span>
+          </div>
+
+          {journeyUsers.filter(u => (mobileRoleTab === "AP" ? u.ap : u.as)).map(u => (
+            <div key={u.name} style={{ padding: "16px 2px", borderBottom: "1px solid #eee", fontSize: 15, fontWeight: 600, color: "#222" }}>
+              {u.name}
             </div>
-            <div style={{ fontSize: 13, color: t.muted, marginBottom: 24 }}>
-              The user(s) will be removed from all roles.
+          ))}
+
+          {/* Need help pill */}
+          <div style={{ position: "fixed", bottom: 22, left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 90 }}>
+            <button onClick={() => openChat()} style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "11px 22px", borderRadius: 24, border: "1px solid #f3d9c8",
+              background: "linear-gradient(90deg, #fdf3ec, #fbe3d2)",
+              color: "#333", fontSize: 13.5, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit", boxShadow: "0 3px 12px rgba(0,0,0,0.12)",
+            }}>
+              <span style={{ color: "#ED1C24" }}>❋</span> Need help?
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 0 — Desktop landing page (Roles & Authorisation) */}
+      {!isMobileView && step === 0 && (
+        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "36px 40px 24px", boxSizing: "border-box" }}>
+          <div style={{ display: "flex", gap: 52, alignItems: "flex-start" }}>
+
+            {/* Left sidebar — title */}
+            <div style={{ flexShrink: 0, width: 176, paddingTop: 6 }}>
+              <div style={{ width: 34, height: 3, background: "#E30613", marginBottom: 10 }} />
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: "#222", letterSpacing: "0.12em", lineHeight: 1.6, textTransform: "uppercase" }}>
+                Manage Roles<br />and Authorisation
+              </div>
             </div>
 
-            {/* Dropdown */}
-            <div style={{ position: "relative", marginBottom: 28 }}>
-              <div
-                onClick={() => setDeleteDropdownOpen(o => !o)}
-                style={{
-                  border: `1px solid ${t.border}`, borderRadius: 6, padding: "12px 16px",
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                  cursor: "pointer", background: dark ? "#1e1e1e" : "#f7f7f7", color: t.muted, fontSize: 14,
-                }}
-              >
-                <span>Select user(s)</span>
-                <span style={{ fontSize: 12, transform: deleteDropdownOpen ? "rotate(180deg)" : "none", display: "inline-block", transition: "transform 0.15s" }}>▾</span>
+            {/* Main content */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+
+              {/* AI input + star button */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+                <div style={{ flex: 1, border: "1px solid #e0e0e0", borderRadius: 8, padding: "14px 18px 0", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+                  <input
+                    value={aiInput}
+                    onChange={e => setAiInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleAiSubmit()}
+                    placeholder="Simply describe what you want to do, and our AI will help you complete the task."
+                    style={{ width: "100%", border: "none", outline: "none", fontSize: 14, color: "#333", background: "transparent", fontFamily: "inherit", padding: "0 0 14px", boxSizing: "border-box" }}
+                  />
+                  <div style={{ height: 3, borderRadius: "0 0 8px 8px", background: "linear-gradient(90deg, #FB5C39, #ED1C24, #f7a04b)", margin: "0 -18px" }} />
+                </div>
+                {/* Star — open chat (with or without typed text) */}
+                <div
+                  onClick={() => { if (aiInput.trim()) handleAiSubmit(); else openChat(); }}
+                  style={{ width: 40, height: 40, borderRadius: "50%", background: "radial-gradient(circle at 40% 35%, #ffd84d, #f5a623)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 10px rgba(245,166,35,0.45)" }}
+                >✦</div>
               </div>
-              {deleteDropdownOpen && (
-                <div style={{
-                  position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 20,
-                  background: dark ? "#252525" : "#fff", border: `1px solid ${t.border}`,
-                  borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", overflow: "hidden",
-                }}>
-                  {journeyUsers.filter(u => !selectedDeleteUsers.includes(u.name)).map((u, i, arr) => (
-                    <div
-                      key={u.name}
-                      onClick={() => { setSelectedDeleteUsers(prev => [...prev, u.name]); setDeleteDropdownOpen(false); }}
-                      style={{
-                        padding: "11px 16px", fontSize: 14, cursor: "pointer", color: t.text,
-                        borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : "none",
-                        background: "transparent",
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = dark ? "#333" : "#f0f0f0"}
-                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                    >
-                      {u.name}
+
+              {/* Sub-tabs */}
+              <div style={{ display: "flex", borderBottom: "1px solid #e8e8e8", marginBottom: 22 }}>
+                {["Roles", "Authorisation"].map(tab => (
+                  <button key={tab} style={{ padding: "10px 20px 11px", border: "none", background: "none", fontSize: 13.5, cursor: "pointer", fontFamily: "inherit", color: tab === "Roles" ? "#222" : "#8a9299", fontWeight: tab === "Roles" ? 700 : 400, borderBottom: tab === "Roles" ? "2px solid #333" : "2px solid transparent", marginBottom: -1 }}>{tab}</button>
+                ))}
+              </div>
+
+              {/* Controls row */}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
+                <div>
+                  <div style={{ border: "1px solid #d8dcdf", borderRadius: 4, padding: "8px 14px", fontSize: 13.5, color: "#333", background: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, minWidth: 240 }}>
+                    <span style={{ flex: 1 }}>612873120012SGD - PURE DELIVERY P...</span>
+                    <span style={{ fontSize: 9, color: "#666" }}>▾</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8a9299", marginTop: 6 }}>Last updated 24 Dec 2022</div>
+                </div>
+                {/* Manage users button (outlined) + dropdown */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    onClick={() => setManageDropdownOpen(o => !o)}
+                    style={{ padding: "8px 18px", borderRadius: 4, border: "1px solid #c8cdd2", background: "#fff", color: "#222", fontSize: 13.5, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+                    Manage users
+                  </button>
+                  {manageDropdownOpen && (
+                    <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 20, background: "#fff", border: "1px solid #e8e8e8", borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", minWidth: 170, overflow: "hidden" }}>
+                      {[["Add user(s)", 1], ["Remove user(s)", 2]].map(([label, targetStep], idx) => (
+                        <div
+                          key={label}
+                          onClick={() => { setManageDropdownOpen(false); setStep(targetStep); openChat(); }}
+                          style={{ padding: "11px 16px", fontSize: 13.5, cursor: "pointer", color: "#222", borderTop: idx > 0 ? "1px solid #eee" : "none" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                        >{label}</div>
+                      ))}
                     </div>
-                  ))}
-                  {journeyUsers.filter(u => !selectedDeleteUsers.includes(u.name)).length === 0 && (
-                    <div style={{ padding: "11px 16px", fontSize: 13, color: t.muted }}>No more users to select</div>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Selected user cards */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {selectedDeleteUsers.map(name => {
-                const u = journeyUsers.find(x => x.name === name);
-                if (!u) return null;
-                const perms = getUserPermissions(u);
-                return (
-                  <div key={name} style={{
-                    border: `1px solid ${t.border}`, borderRadius: 10,
-                    padding: "18px 20px", background: dark ? "#1e1e1e" : "#fff",
-                    position: "relative", maxWidth: 360,
-                  }}>
-                    <button
-                      onClick={() => setSelectedDeleteUsers(prev => prev.filter(n => n !== name))}
-                      style={{
-                        position: "absolute", top: 14, right: 14,
-                        background: "none", border: "none", cursor: "pointer",
-                        color: t.muted, fontSize: 18, lineHeight: 1, padding: 2,
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.color = "#c8102e"}
-                      onMouseLeave={e => e.currentTarget.style.color = t.muted}
-                    >×</button>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: t.text, marginBottom: 2 }}>{u.name}</div>
-                    {u.sub && <div style={{ fontSize: 12, color: t.muted, marginBottom: 8 }}>{u.sub.split("\n")[0]}</div>}
-                    <ul style={{ margin: 0, padding: "0 0 0 16px", listStyle: "disc", fontSize: 13, color: t.text, lineHeight: 1.7 }}>
-                      {perms.map(p => <li key={p}>{p}</li>)}
-                    </ul>
+              {/* Search row */}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+                <div style={{ border: "1px solid #d8dcdf", borderRadius: 4, padding: "7px 14px", display: "flex", alignItems: "center", gap: 8, background: "#fff", minWidth: 200 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8a9299" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                  <input placeholder="Search" style={{ border: "none", outline: "none", fontSize: 13.5, color: "#333", background: "transparent", fontFamily: "inherit", width: 160 }} />
+                </div>
+              </div>
+
+              {/* Roles table */}
+              <div style={{ border: "1px solid #e0e0e0", borderRadius: 4, overflow: "hidden" }}>
+                {/* Header row */}
+                <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.3fr 1.1fr 1.3fr", borderBottom: "1px solid #e0e0e0" }}>
+                  <div style={{ padding: "16px 20px", background: "#f2f4f6" }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: "#222" }}>Users and roles</div>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Confirm button */}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 32 }}>
-              <button
-                disabled={selectedDeleteUsers.length === 0}
-                onClick={() => {
-                  const names = selectedDeleteUsers;
-                  const deletedEntries = journeyUsers.filter(u => names.includes(u.name));
-                  setReviewDeletes(prev => [...prev, ...deletedEntries.map(u => ({ name: u.name, sub: u.sub || "", roles: getUserPermissions(u) }))]);
-                  setJourneyUsers(prev => prev.filter(u => !names.includes(u.name)));
-                  setDeleteConfirmed(true);
-                  const msg = `User${names.length > 1 ? "s" : ""} ${names.map(n => `"${n}"`).join(", ")} ${names.length > 1 ? "have" : "has"} been successfully removed. ✓`;
-                  setAssistantNotification({ text: msg, key: Date.now() });
-                  setCloseTaskSignal({ intent: "delete_user", key: Date.now() });
-                  const norm = (s) => s.toLowerCase().replace(/\s+/g, "_");
-                  const toTitle = (s) => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-                  const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(norm);
-                  setCompletedIntents(nowCompleted);
-                  const remaining = lastIntents.filter(i => !nowCompleted.includes(norm(i)));
-                  setTimeout(() => {
-                    if (remaining.length === 0 && lastIntents.length > 0) {
-                      setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
-                    } else if (remaining.length > 0) {
-                      setAssistantNotification({
-                        text: `Next up: **${toTitle(remaining[0])}**.`,
-                        key: Date.now(),
-                        meta: "intent_intro",
-                      });
-                    }
-                  }, 600);
-                  setDeleteTabOpen(false);
-                  setSelectedDeleteUsers([]);
-                  setDeleteConfirmIdx(null);
-                  setActiveSubTab("Roles");
-                }}
-                style={{
-                  padding: "10px 32px", background: selectedDeleteUsers.length > 0 ? "#ED1C24" : (dark ? "#333" : "#ccc"),
-                  color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600,
-                  cursor: selectedDeleteUsers.length > 0 ? "pointer" : "default", fontFamily: "inherit",
-                }}
-              >Confirm</button>
+                  {[
+                    { label: "Authorised Person", desc: "Open and close accounts, and apply for banking facilities" },
+                    { label: "Authorised Signatory", desc: "Sign to authorise transactions" },
+                    { label: "Business online banking user", desc: "View and/or manage online transactions" },
+                  ].map((col, i) => (
+                    <div key={col.label} style={{ padding: "12px 16px", background: "#fff", borderLeft: "1px solid #e8e8e8" }}>
+                      <div style={{ fontSize: 11, color: "#8a9299", marginBottom: 4 }}>{col.label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#222", lineHeight: 1.4, marginBottom: 6 }}>{col.desc}</div>
+                      <div style={{ fontSize: 12.5, color: "#2f80c3", cursor: "pointer" }}>What else they can do</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Data rows */}
+                {journeyUsers.map((u, i) => (
+                  <div key={u.name} style={{ display: "grid", gridTemplateColumns: "1.6fr 1.3fr 1.1fr 1.3fr", borderBottom: i < journeyUsers.length - 1 ? "1px solid #f0f0f0" : "none", alignItems: "center" }}>
+                    <div style={{ padding: "14px 20px", background: "#f2f4f6" }}>
+                      <div style={{ fontWeight: 500, fontSize: 14, color: "#222" }}>{u.name}</div>
+                      {u.sub && u.sub.split("\n").filter(Boolean).map(s => (
+                        <div key={s} style={{ fontSize: 12, color: "#8a9299", marginTop: 2 }}>{s}</div>
+                      ))}
+                      {u.pending && <span style={{ fontSize: 11, color: "#f5a623", fontWeight: 600 }}>Pending</span>}
+                    </div>
+                    <div style={{ padding: "14px 20px", background: "#fff", borderLeft: "1px solid #f0f0f0" }}>
+                      {u.ap && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.5"><path d="M5 13l4 4L19 7" /></svg>}
+                    </div>
+                    <div style={{ padding: "14px 20px", background: "#fff", borderLeft: "1px solid #f0f0f0" }}>
+                      {u.as && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.5"><path d="M5 13l4 4L19 7" /></svg>}
+                    </div>
+                    <div style={{ padding: "14px 16px", background: "#fff", borderLeft: "1px solid #f0f0f0", fontSize: 13.5, color: "#555" }}>{u.role || "—"}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          </>) : null}
+        </div>
+      )}
 
-          {/* Account dropdown — hidden on Add User sub-tab */}
-          {activeSubTab !== "Add User" && <div style={{ marginBottom: 20, marginTop: 32 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, border: `1px solid ${t.border}`, borderRadius: 6, padding: "8px 14px", fontSize: 13, cursor: "pointer", background: t.panelBg, color: t.text }}>
-              <span>612873120012SGD - PURE DELIVERY P...</span>
-              <span style={{ fontSize: 11 }}>▾</span>
-            </div>
-            <div style={{ fontSize: 11, color: t.muted, marginTop: 6 }}>Last updated 25 May 2026</div>
-          </div>}
+      {/* Dynamic stepper — steps 1-3, desktop only */}
+      {step >= 1 && step <= 3 && !isMobileView && (() => {
+        const hasAdd = stepHistory.has(1) || lastIntents.some(i => /add/i.test(i));
+        const hasDelete = stepHistory.has(2) || lastIntents.some(i => /delete|remove/i.test(i));
+        const journeySteps = [
+          ...(hasAdd || (!hasAdd && !hasDelete) ? ["Add user(s)"] : []),
+          ...(hasDelete || (!hasAdd && !hasDelete) ? ["Remove user(s)"] : []),
+          "Review",
+        ];
+        const stepperCurrent = (() => {
+          if (hasAdd && hasDelete) return step === 3 ? 3 : step;
+          if (hasAdd && !hasDelete) return step === 1 ? 1 : 2;
+          if (!hasAdd && hasDelete) return step === 2 ? 1 : 2;
+          return step; // fallback: both shown
+        })();
+        return (
+          <div style={{ maxWidth: 780, margin: "0 auto", padding: "28px 40px 0", boxSizing: "border-box" }}>
+            <Stepper current={stepperCurrent} steps={journeySteps} />
+          </div>
+        );
+      })()}
 
-          {/* Review panel */}
-          {activeSubTab === "Roles" && (reviewAdds.length > 0 || reviewDeletes.length > 0) && (
-            <div style={{ marginTop: 40, border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13, color: t.text }}>
-              {/* Header */}
-              <div style={{ padding: "16px 20px", borderBottom: `1px solid ${t.border}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", background: t.panelBg }}>
-                <div>
-                  <div style={{ fontSize: 12, color: t.muted, marginBottom: 4 }}>Details of request:</div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>
-                    {[reviewAdds.length > 0 && "Add user(s)", reviewDeletes.length > 0 && "remove user(s)"].filter(Boolean).join(", ")}
-                  </div>
+      {/* Steps 1 & 2 */}
+      {step >= 1 && step <= 2 && (
+        <div style={{ maxWidth: 780, margin: "0 auto", padding: isMobileView ? "20px 16px 50px" : "0 40px 60px", boxSizing: "border-box" }}>
+          <div style={{ marginTop: isMobileView ? 4 : 28 }}>
+
+            {step === 1 && (<>
+              {!isMobileView && <div style={{ fontSize: 22, fontWeight: 700, color: "#222", marginBottom: 22 }}>Add user(s)</div>}
+              <AddUserForm
+                selectedRoles={addUserRoles || []}
+                onRolesChange={(roles) => setAddUserRoles(roles)}
+                formData={addUserData}
+                onFormChange={setAddUserData}
+                idCountry={addUserIdCountry}
+                onIdCountryChange={setAddUserIdCountry}
+                phoneCountry={addUserPhoneCountry}
+                onPhoneCountryChange={setAddUserPhoneCountry}
+                onConfirm={submitAddUser}
+                onNext={() => {
+                  const hasDelete = lastIntents.some(i => /delete|remove/i.test(i));
+                  if (hasDelete) {
+                    setStep(2);
+                  } else {
+                    if (chatOpen) setShowExitModal(true);
+                    else setStep(3);
+                  }
+                }}
+                onBack={!isMobileView ? () => setStep(0) : null}
+                activeField={addUserActiveField}
+                mobileView={isMobileView}
+              />
+            </>)}
+
+            {step === 2 && (<>
+              {!isMobileView && <div style={{ fontSize: 22, fontWeight: 700, color: "#222", marginBottom: 6 }}>Remove user(s)</div>}
+              <div style={{ fontSize: 13, color: "#8a9299", marginBottom: 26 }}>The user(s) will be removed from all roles, other than the role of business online banking contact person.</div>
+
+              {/* Select user(s) dropdown */}
+              <div style={{ position: "relative", maxWidth: isMobileView ? "100%" : 320, marginBottom: 28 }}>
+                <div
+                  onClick={() => setDeleteDropdownOpen(o => !o)}
+                  style={{
+                    background: "#f6f7f8", border: "1px solid #eceff1", borderBottom: "1px solid #c5ccd2",
+                    borderRadius: "6px 6px 0 0", padding: "9px 14px 10px", cursor: "pointer", userSelect: "none",
+                  }}
+                >
+                  {selectedDeleteUsers.length > 0 ? (<>
+                    <div style={{ fontSize: 11.5, color: "#8a9299", marginBottom: 3 }}>Select user(s)</div>
+                    <div style={{ fontSize: 14.5, color: "#1a1a1a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>{selectedDeleteUsers.length} Selected</span>
+                      <span style={{ fontSize: 11, color: "#666", transform: deleteDropdownOpen ? "rotate(180deg)" : "none", display: "inline-block", transition: "transform 0.15s" }}>▾</span>
+                    </div>
+                  </>) : (
+                    <div style={{ fontSize: 14, color: "#8a9299", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0 6px" }}>
+                      <span>Select user(s)</span>
+                      <span style={{ fontSize: 11, color: "#666", transform: deleteDropdownOpen ? "rotate(180deg)" : "none", display: "inline-block", transition: "transform 0.15s" }}>▾</span>
+                    </div>
+                  )}
                 </div>
-                <button onClick={() => setReviewVisible(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: t.muted, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4 }}>
-                  {reviewVisible ? "Hide" : "Show"} <span style={{ fontSize: 10 }}>{reviewVisible ? "▲" : "▼"}</span>
-                </button>
+                {deleteDropdownOpen && (
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 20,
+                    background: "#fff", border: "1px solid #e8e8e8",
+                    borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", overflow: "hidden",
+                  }}>
+                    {journeyUsers.filter(u => !selectedDeleteUsers.includes(u.name)).map((u, i, arr) => (
+                      <div
+                        key={u.name}
+                        onClick={() => { setSelectedDeleteUsers(prev => [...prev, u.name]); setDeleteDropdownOpen(false); }}
+                        style={{
+                          padding: "11px 16px", fontSize: 14, cursor: "pointer", color: "#222",
+                          borderBottom: i < arr.length - 1 ? "1px solid #eee" : "none",
+                          background: "transparent",
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        {u.name}
+                      </div>
+                    ))}
+                    {journeyUsers.filter(u => !selectedDeleteUsers.includes(u.name)).length === 0 && (
+                      <div style={{ padding: "11px 16px", fontSize: 13, color: "#8a9299" }}>No more users to select</div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {reviewVisible && <>
-                {/* Add user(s) section */}
-                {reviewAdds.length > 0 && (
-                  <div>
-                    <div style={{ padding: "12px 20px", fontWeight: 700, fontSize: 14, background: dark ? "#1a1a1a" : "#f7f7f7", borderBottom: `1px solid ${t.border}` }}>Add user(s)</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: `1px solid ${t.border}`, background: t.tableHeaderBg }}>
-                      {["NAME / DETAILS", "ROLES"].map((h, i) => (
-                        <div key={h} style={{ padding: "10px 20px", fontSize: 11, fontWeight: 700, color: t.muted, letterSpacing: "0.05em", borderLeft: i > 0 ? `1px solid ${t.border}` : "none" }}>{h}</div>
-                      ))}
+              {/* Selected user cards */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {selectedDeleteUsers.map(name => {
+                  const u = journeyUsers.find(x => x.name === name);
+                  if (!u) return null;
+                  const perms = getUserPermissions(u);
+                  return (
+                    <div key={name} style={{
+                      border: "1px solid #e8e8e8", borderRadius: 8,
+                      padding: "18px 20px", background: "#fff",
+                      position: "relative", maxWidth: isMobileView ? "100%" : 300,
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.05)", boxSizing: "border-box",
+                    }}>
+                      <button
+                        onClick={() => setSelectedDeleteUsers(prev => prev.filter(n => n !== name))}
+                        style={{
+                          position: "absolute", top: 14, right: 14,
+                          background: "none", border: "none", cursor: "pointer",
+                          color: "#8a9299", fontSize: 18, lineHeight: 1, padding: 2,
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.color = "#c8102e"}
+                        onMouseLeave={e => e.currentTarget.style.color = "#8a9299"}
+                      >×</button>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: "#222", marginBottom: 2 }}>{u.name}</div>
+                      {u.userId && <div style={{ fontSize: 12.5, color: "#8a9299", marginBottom: 10 }}>{u.userId}</div>}
+                      <ul style={{ margin: 0, padding: "0 0 0 16px", listStyle: "disc", fontSize: 13, color: "#555", lineHeight: 1.8 }}>
+                        {perms.map(p => <li key={p}>{p}</li>)}
+                      </ul>
                     </div>
-                    {reviewAdds.map((u, i) => (
-                      <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: i < reviewAdds.length - 1 ? `1px solid ${t.border}` : "none" }}>
-                        <div style={{ padding: "16px 20px" }}>
-                          <div style={{ fontWeight: 700, marginBottom: 4 }}>{i + 1}.&nbsp; {u.name}</div>
-                          {u.nric   && <div style={{ color: t.muted }}>{u.nric}</div>}
-                          {u.mobile && <div style={{ color: t.muted }}>{u.mobile}</div>}
-                          {u.email  && <div style={{ color: t.muted }}>{u.email}</div>}
-                          {u.userId && <div style={{ color: t.muted }}>User ID: {u.userId}</div>}
-                        </div>
-                        <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                          {u.roles.map(r => <div key={r} style={{ marginBottom: 2 }}>{r}</div>)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  );
+                })}
+              </div>
 
-                {/* Remove user(s) section */}
-                {reviewDeletes.length > 0 && (
-                  <div style={{ borderTop: reviewAdds.length > 0 ? `1px solid ${t.border}` : "none" }}>
-                    <div style={{ padding: "12px 20px", fontWeight: 700, fontSize: 14, background: dark ? "#1a1a1a" : "#f7f7f7", borderBottom: `1px solid ${t.border}` }}>Remove user(s)</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", borderBottom: `1px solid ${t.border}`, background: t.tableHeaderBg }}>
-                      {["NAME / USER ID", "ROLES"].map((h, i) => (
-                        <div key={h} style={{ padding: "10px 20px", fontSize: 11, fontWeight: 700, color: t.muted, letterSpacing: "0.05em", borderLeft: i > 0 ? `1px solid ${t.border}` : "none" }}>{h}</div>
-                      ))}
-                    </div>
-                    {reviewDeletes.map((u, i) => (
-                      <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 2fr", borderBottom: i < reviewDeletes.length - 1 ? `1px solid ${t.border}` : "none" }}>
-                        <div style={{ padding: "16px 20px" }}>
-                          <div style={{ fontWeight: 700, marginBottom: 4 }}>{i + 1}.&nbsp; {u.name}</div>
-                          {u.sub && u.sub.split("\n").map((line, j) => <div key={j} style={{ color: t.muted }}>{line}</div>)}
-                        </div>
-                        <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                          {u.roles.map(r => <div key={r} style={{ marginBottom: 2 }}>• {r}</div>)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>}
+              <div style={{ height: 1, background: "#ececec", margin: "42px 0 24px" }} />
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                {lastIntents.some(i => /add/i.test(i)) ? (
+                  <button onClick={() => setStep(1)} style={outlineBtn}>Back</button>
+                ) : <div />}
+                <button onClick={handleRemoveNext} style={slateBtn}>Next</button>
+              </div>
+            </>)}
+          </div>
+        </div>
+      )}
 
+      {/* Step 3 — Review */}
+      {step === 3 && (
+        <div style={{ display: "flex", maxWidth: 1160, margin: "0 auto", padding: isMobileView ? 0 : "44px 40px 50px", gap: 44, boxSizing: "border-box" }}>
+          {!isMobileView && (
+            <div style={{ width: 150, flexShrink: 0, paddingTop: 10 }}>
+              <div style={{ width: 34, height: 3, background: "#E30613", marginBottom: 12 }} />
+              <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.18em", color: "#222" }}>REVIEW</div>
             </div>
           )}
-
-          {/* Roles table — hidden on Add User sub-tab */}
-          {activeSubTab !== "Add User" && <div style={{ marginTop: 32 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 16 }}>Status after the operations</div>
-            <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: "hidden", fontSize: 13 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", background: t.tableHeaderBg, borderBottom: `1px solid ${t.border}`, color: t.text }}>
-                <div style={{ padding: "16px 20px", fontWeight: 600 }}>Users and roles</div>
-                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                  <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Person</div>
-                  <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Open and close accounts, and apply for banking facilities</div>
-                  <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
-                </div>
-                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                  <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Authorised Signatory</div>
-                  <div style={{ fontWeight: 700, lineHeight: 1.4 }}>Sign to authorise transactions</div>
-                  <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
-                </div>
-                <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}` }}>
-                  <div style={{ color: t.muted, fontSize: 12, marginBottom: 4 }}>Business online banking user</div>
-                  <div style={{ fontWeight: 700, lineHeight: 1.4 }}>View and/or manage online transactions</div>
-                  <div style={{ color: t.accentLink, fontSize: 12, marginTop: 4, cursor: "pointer" }}>What else they can do</div>
-                </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {isMobileView && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid #eee", marginBottom: 18, position: "sticky", top: 0, background: "#fff", zIndex: 100 }}>
+                <button onClick={backFromReview} style={{ background: "none", border: "none", fontSize: 20, color: "#333", cursor: "pointer", padding: 0, lineHeight: 1, fontFamily: "inherit" }}>‹</button>
+                <span style={{ flex: 1, textAlign: "center", fontSize: 15.5, fontWeight: 700, color: "#222" }}>Review</span>
+                <span style={{ color: "#8a9299", fontSize: 15 }}>ⓘ</span>
               </div>
-              {journeyUsers.map((u, i) => (
-                <div key={u.name + i} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", borderBottom: i < journeyUsers.length - 1 ? `1px solid ${t.border}` : "none", background: t.panelBg, color: t.text }}>
-                  <div style={{ padding: "16px 20px" }}>
-                    <div style={{ fontWeight: 600 }}>{u.name}</div>
-                    {u.sub && <div style={{ color: t.muted, fontSize: 12, marginTop: 2, whiteSpace: "pre-line" }}>{u.sub}</div>}
-                    {u.pending && <div style={{ color: "#b07d00", fontSize: 11, marginTop: 4, fontStyle: "italic" }}>Pending authorization</div>}
+            )}
+            <div style={{ padding: isMobileView ? "0 16px 40px" : 0 }}>
+
+              {reviewBanner && (
+                <div style={{ background: "#eef3f9", border: "1px solid #d9e4f0", borderRadius: 4, padding: "12px 16px", display: "flex", gap: 10, marginBottom: 26 }}>
+                  <span style={{ color: "#2f6fad", fontSize: 14, lineHeight: 1.4 }}>ⓘ</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#222", marginBottom: 3 }}>Review required</div>
+                    <div style={{ fontSize: 12, color: "#666", lineHeight: 1.55 }}>Information below is generated by AI. Please verify all details for accuracy before submission. To edit, tap the 'back' button to make changes.</div>
                   </div>
-                  <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                    {u.ap && <span style={{ fontSize: 18 }}>✓</span>}
+                  <button onClick={() => setReviewBanner(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#666", fontSize: 15, lineHeight: 1, padding: 2, fontFamily: "inherit" }}>×</button>
+                </div>
+              )}
+
+              {/* Details of request */}
+              <div style={{ border: "1px solid #e5e5e5", borderRadius: 4, overflow: "hidden", fontSize: 13, marginBottom: 26, background: "#fff" }}>
+                <div style={{ padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: detailsOpen ? "1px solid #e5e5e5" : "none" }}>
+                  <div>
+                    <div style={{ fontSize: 12.5, color: "#666", marginBottom: 3 }}>Details of request:</div>
+                    <div style={{ fontWeight: 700, fontSize: 14.5, color: "#222" }}>
+                      {reviewAdds.length > 0 && reviewDeletes.length > 0 ? "Add and remove user(s)" : reviewAdds.length > 0 ? "Add user(s)" : reviewDeletes.length > 0 ? "Remove user(s)" : "No changes requested"}
+                    </div>
                   </div>
-                  <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                    {u.as && <span style={{ fontSize: 18 }}>✓</span>}
+                  <button onClick={() => setDetailsOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#444", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
+                    {detailsOpen ? "Hide" : "Show"} <span style={{ fontSize: 9 }}>{detailsOpen ? "▲" : "▼"}</span>
+                  </button>
+                </div>
+
+                {detailsOpen && <>
+                  {reviewAdds.length > 0 && (<>
+                    <div style={{ padding: "11px 18px", fontWeight: 700, fontSize: 13.5, color: "#333", background: "#eceef0" }}>Add user(s)</div>
+                    {!isMobileView && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.4fr", borderBottom: "1px solid #eee", padding: "10px 18px" }}>
+                        {["NAME/USER ID", "DETAILS", "ROLES"].map(h => (
+                          <div key={h} style={{ fontSize: 10.5, fontWeight: 700, color: "#8a9299", letterSpacing: "0.06em" }}>{h}</div>
+                        ))}
+                      </div>
+                    )}
+                    {reviewAdds.map((u, i) => (
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: isMobileView ? "1fr" : "1fr 1fr 1.4fr", borderBottom: "1px solid #eee", padding: "15px 18px", gap: isMobileView ? 8 : 0 }}>
+                        <div>
+                          <div style={{ fontWeight: 700, color: "#222" }}>{i + 1}.&nbsp; {u.name}</div>
+                          {u.userId && <div style={{ color: "#8a9299", marginTop: 3, paddingLeft: 17 }}>{u.userId}</div>}
+                        </div>
+                        <div style={{ color: "#666", lineHeight: 1.7, paddingLeft: isMobileView ? 17 : 0 }}>
+                          {u.nric   && <div>NRIC {u.nric}</div>}
+                          {u.mobile && <div>{u.mobile}</div>}
+                          {u.email  && <div>{u.email}</div>}
+                        </div>
+                        <div style={{ color: "#555", lineHeight: 1.7, paddingLeft: isMobileView ? 17 : 0 }}>
+                          {isMobileView && <div style={{ fontWeight: 700, color: "#222", marginBottom: 2 }}>Roles</div>}
+                          {u.roles.map(r => <div key={r}>{isMobileView ? "" : "•  "}{roleDisplay(r)}</div>)}
+                        </div>
+                      </div>
+                    ))}
+                  </>)}
+
+                  {reviewDeletes.length > 0 && (<>
+                    <div style={{ padding: "11px 18px", fontWeight: 700, fontSize: 13.5, color: "#333", background: "#eceef0" }}>Remove user(s)</div>
+                    {!isMobileView && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.4fr", borderBottom: "1px solid #eee", padding: "10px 18px" }}>
+                        {["NAME/USER ID", "DETAILS", "ROLES"].map(h => (
+                          <div key={h} style={{ fontSize: 10.5, fontWeight: 700, color: "#8a9299", letterSpacing: "0.06em" }}>{h}</div>
+                        ))}
+                      </div>
+                    )}
+                    {reviewDeletes.map((u, i) => (
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: isMobileView ? "1fr" : "1fr 1fr 1.4fr", borderBottom: i < reviewDeletes.length - 1 ? "1px solid #eee" : "none", padding: "15px 18px", gap: isMobileView ? 8 : 0 }}>
+                        <div>
+                          <div style={{ fontWeight: 700, color: "#222" }}>{i + 1}.&nbsp; {u.name}</div>
+                          {u.userId && <div style={{ color: "#8a9299", marginTop: 3, paddingLeft: 17 }}>{u.userId}</div>}
+                        </div>
+                        <div style={{ color: "#666", lineHeight: 1.7, paddingLeft: isMobileView ? 17 : 0 }}>
+                          {u.nricMasked && <div>{u.nricMasked}</div>}
+                        </div>
+                        <div style={{ color: "#555", lineHeight: 1.7, paddingLeft: isMobileView ? 17 : 0 }}>
+                          {isMobileView && <div style={{ fontWeight: 700, color: "#222", marginBottom: 2 }}>Roles</div>}
+                          {u.roles.map(r => <div key={r}>{isMobileView ? "" : "•  "}{roleDisplay(r)}</div>)}
+                        </div>
+                      </div>
+                    ))}
+                  </>)}
+                </>}
+              </div>
+
+              <div style={{ fontSize: 13.5, color: "#333", marginBottom: 4 }}>Learn more about <span style={{ color: "#2f80c3", cursor: "pointer" }}>roles</span></div>
+              <div style={{ height: 1, background: "#ececec", margin: "26px 0" }} />
+              <div style={{ fontSize: 13, color: "#444", lineHeight: 1.65, marginBottom: 32 }}>
+                By clicking on 'Submit', you confirm that the information and content provided in this request is true, complete and accurate. You also confirm that you are authorised to act on behalf of your entity, and have read, understood and agree to be bound by <span style={{ color: "#2f80c3", cursor: "pointer" }}>OCBC's Business Account Terms and Conditions</span>.
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <button onClick={backFromReview} style={outlineBtn}>Back</button>
+                <button onClick={() => setStep(4)} style={slateBtn}>Submit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4 — Request submitted */}
+      {step === 4 && (
+        <div style={{ background: "#f2f4f6", minHeight: isMobileView ? "100vh" : `calc(100vh - ${headerOffset}px)`, padding: "50px 16px 40px", boxSizing: "border-box" }}>
+          <div style={{ maxWidth: 620, margin: "0 auto", position: "relative" }}>
+            <div style={{
+              position: "absolute", top: -26, left: "50%", transform: "translateX(-50%)",
+              width: 52, height: 52, borderRadius: "50%", background: "#2f80c3", zIndex: 2,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
+            </div>
+            <div style={{ background: "#fff", borderRadius: 4, boxShadow: "0 1px 6px rgba(0,0,0,0.08)", padding: isMobileView ? "44px 22px 26px" : "48px 44px 28px" }}>
+              <div style={{ fontSize: 18, fontWeight: 700, textAlign: "center", color: "#222", marginBottom: 18 }}>Request submitted</div>
+              <div style={{ fontSize: 13, color: "#444", textAlign: "center", lineHeight: 1.65, marginBottom: 14 }}>
+                We have received your request to add and remove users and will send you an email and push notification/SMS after each step below has been completed.
+              </div>
+              <div style={{ fontSize: 13, color: "#444", textAlign: "center", lineHeight: 1.65, marginBottom: 26 }}>
+                If a user you remove is the business online banking contact person, we will continue to contact him/her until another person is appointed through our <span style={{ color: "#2f80c3", cursor: "pointer" }}>Apply and Manage OCBC Velocity form</span>.
+              </div>
+              <div style={{ height: 1, background: "#ececec", marginBottom: 26 }} />
+
+              {[
+                { label: "Request submitted", filled: true },
+                { label: "Pending authorisation", bullets: ["Patrick Tan", "Jane Doe"] },
+                { label: "Pending review", desc: "Appointed user(s) must verify their identity through the OCBC Business app. We will inform them via email and SMS to do so within 14 days of this request being authorised.\nYou will be notified after each user verifies his/her identity.", bullets: reviewAdds.length > 0 ? reviewAdds.map(u => u.name) : ["Newbie 1", "Newbie 2"] },
+                { label: "In progress", items: [{ text: "Add user(s)" }, { text: "Remove user(s)", note: "The user(s) will be removed from all accounts and roles, other than the role of business online banking contact person, within 8 working days." }] },
+                { label: "Successful" },
+              ].map((it, i, arr) => (
+                <div key={it.label} style={{ display: "flex", gap: 14 }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 12, flexShrink: 0 }}>
+                    <div style={{ width: 9, height: 9, borderRadius: "50%", marginTop: 4, background: it.filled ? "#222" : "#fff", border: `1.5px solid ${it.filled ? "#222" : "#9aa2a9"}`, boxSizing: "border-box", flexShrink: 0 }} />
+                    {i < arr.length - 1 && <div style={{ flex: 1, width: 0, borderLeft: "1.5px dotted #c0c6cb", margin: "3px 0" }} />}
                   </div>
-                  <div style={{ padding: "16px 20px", borderLeft: `1px solid ${t.border}`, display: "flex", alignItems: "center" }}>
-                    {u.role}
+                  <div style={{ paddingBottom: i < arr.length - 1 ? 22 : 0, fontSize: 13, color: "#444" }}>
+                    <div style={{ fontWeight: 700, color: "#222", marginBottom: it.desc || it.bullets || it.items ? 6 : 0 }}>{it.label}</div>
+                    {it.desc && <div style={{ whiteSpace: "pre-line", lineHeight: 1.6, marginBottom: 6 }}>{it.desc}</div>}
+                    {it.bullets && <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.9 }}>{it.bullets.map(b => <li key={b}>{b}</li>)}</ul>}
+                    {it.items && <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>{it.items.map(x => <li key={x.text} style={{ marginBottom: 4 }}>{x.text}{x.note && <div style={{ color: "#666", fontSize: 12.5, lineHeight: 1.6 }}>{x.note}</div>}</li>)}</ul>}
                   </div>
                 </div>
               ))}
-            </div>
-          </div>}
 
-          {/* Confirm / Cancel */}
-          {activeSubTab === "Roles" && (reviewAdds.length > 0 || reviewDeletes.length > 0) && (
-            <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end", gap: 12 }}>
-              <button onClick={() => {
-                setReviewAdds([]); setReviewDeletes([]);
-                setJourneyUsers(INITIAL_JOURNEY_USERS);
-                setActiveSubTab("Roles");
-                setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); setAddUserActiveField(null);
-                setDeleteTabOpen(false); setSelectedDeleteUsers([]); setDeleteDropdownOpen(false); setDeleteConfirmed(false);
-                setCompletedIntents([]); setLastIntents([]); setActiveIntent(null);
-              }} style={{
-                padding: "9px 24px", borderRadius: 6, border: `1px solid ${t.border}`,
-                background: "none", color: t.text, fontSize: 14, fontWeight: 500,
-                cursor: "pointer", fontFamily: "inherit",
-              }}>Cancel</button>
-              <button onClick={() => { setReviewAdds([]); setReviewDeletes([]); }} style={{
-                padding: "9px 24px", borderRadius: 6, border: "none",
-                background: "#ED1C24", color: "#fff", fontSize: 14, fontWeight: 600,
-                cursor: "pointer", fontFamily: "inherit",
-              }}>Confirm</button>
+              <div style={{ fontSize: 13, color: "#444", marginTop: 8 }}>Track the status of your request by going to <span style={{ color: "#2f80c3", cursor: "pointer" }}>tasks and statuses</span>.</div>
+              <div style={{ textAlign: "center", marginTop: 20, color: "#666", fontSize: 14 }}>⌄</div>
             </div>
-          )}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
+              <button onClick={resetAll} style={slateBtn}>Back to Home</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-          {/* Footer */}
-          <div style={{ marginTop: 60, paddingTop: 20, borderTop: `1px solid ${t.border2}`, display: "flex", justifyContent: "space-between", fontSize: 12, color: t.muted }}>
+      {/* Footer */}
+      {!isMobileView && step <= 3 && (
+        <div style={{ maxWidth: 1160, margin: "0 auto", padding: "0 40px 26px", boxSizing: "border-box" }}>
+          <div style={{ paddingTop: 20, borderTop: "1px solid #ececec", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#8a9299" }}>
             <span>© OCBC. All Rights Reserved.</span>
             <span>Conditions of Access &nbsp;|&nbsp; Security &amp; Privacy</span>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Docked V2 chat panel — floating overlay style, content reflows around it */}
+      {/* X Chat panel — docked right on desktop, fullscreen overlay on mobile */}
       {chatOpen && (
         <div style={isMobileView ? {
-          position: "fixed",
-          top: 48, bottom: 0, left: 0, right: 0, zIndex: 2000,
+          position: "fixed", top: 0, bottom: 0, left: 0, right: 0, zIndex: 2000,
           display: "flex", flexDirection: "column", overflow: "hidden",
-          background: t.panelBg,
+          backgroundImage: "url(/chatbackground.jpg)",
+          backgroundSize: "cover", backgroundPosition: "bottom center",
         } : {
-          position: "fixed",
-          top: navbarOffset + 16, bottom: 16, right: 16, zIndex: 2000,
-          width: chatWidth, borderRadius: 16,
-          display: "flex", flexDirection: "column", overflow: "hidden",
-          border: `1px solid ${t.border}`,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
-          background: t.panelBg,
+          position: "fixed", top: headerOffset, bottom: 0, right: 0, zIndex: 1500,
+          width: chatW, display: "flex", flexDirection: "column", overflow: "hidden",
+          backgroundImage: "url(/chatbackground.jpg)",
+          backgroundSize: "cover", backgroundPosition: "bottom center",
+          borderLeft: "1px solid #e5e5e5", boxSizing: "border-box",
         }}>
           {/* Chat header */}
           <div style={{
-            background: "#D6271C", color: "#fff",
-            padding: "14px 18px", display: "flex", alignItems: "flex-start", gap: 12, flexShrink: 0,
+            display: "flex", alignItems: "center", gap: 8, padding: "15px 18px", flexShrink: 0,
+            background: "rgba(255,255,255,0.92)", borderBottom: "1px solid #e8e8e8",
           }}>
-            <span style={{ fontSize: 20, lineHeight: 1, marginTop: 2 }}>✦</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>Manage with AI</div>
-              <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>Our chatbot will assist with your enquiries.</div>
-            </div>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>X Chat</span>
+            <span style={{ fontSize: 9.5, fontWeight: 600, color: "#666", letterSpacing: "0.08em", marginTop: 2 }}>BETA</span>
+            <div style={{ flex: 1 }} />
             <button onClick={() => setChatOpen(false)} style={{
-              background: "none", border: "none", color: "#fff", fontSize: 20,
-              cursor: "pointer", lineHeight: 1, padding: 0, opacity: 0.7, marginTop: 2,
-            }}>×</button>
+              background: "none", border: "none", color: "#333", fontSize: isMobileView ? 19 : 18,
+              cursor: "pointer", lineHeight: 1, padding: "0 2px", fontFamily: "inherit",
+            }}>{isMobileView ? "✕" : "—"}</button>
           </div>
 
-          {/* ChatWidget body */}
-          <ChatWidget
-            sessionId={SESSION_JOURNEY}
-            title="Gen-AI Powered Engine"
-            label="V2"
-            color="#ED1C24"
-            pendingMessage={pendingMessage}
-            version={2}
-            mobile={true}
-            dark={dark}
-            showHeader={false}
-            taskProgress={taskProgress}
-            naturalIntentCopy={true}
-            assistantBg={dark ? "#2a2a2a" : "#ebebeb"}
-            intentResponses={{
-              "add user":    { type: "role_selector" },
-              "add_user":    { type: "role_selector" },
-              "delete user": "Sure! Please select the user(s) you'd like to remove from the **Delete Users** tab on the left. Once you've made your selection, click **Confirm** to proceed.",
-              "delete_user": "Sure! Please select the user(s) you'd like to remove from the **Delete Users** tab on the left. Once you've made your selection, click **Confirm** to proceed.",
-            }}
-            idCountry={addUserIdCountry}
-            onIdCountryChange={setAddUserIdCountry}
-            phoneCountry={addUserPhoneCountry}
-            onPhoneCountryChange={setAddUserPhoneCountry}
-            onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setActiveSubTab("Add User"); }}
-            formData={addUserData}
-            chatFocusSignal={chatFocusSignal}
-            onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
-            onActiveFieldChange={setAddUserActiveField}
-            assistantMessage={assistantNotification}
-            closeTaskSignal={closeTaskSignal}
-            onTaskClosed={handleTaskClosed}
-            onChatConfirm={handleInChatConfirm}
-            onIntentsDetected={(intents) => { setLastIntents(intents); setCompletedIntents([]); }}
-            onIntentDismiss={handleIntentDismiss}
-            onIntentStarted={(label) => {
-              setActiveIntent(label);
-              if (label.toLowerCase().includes("delete")) {
-                setDeleteTabOpen(true);
-                setActiveSubTab("Delete Users");
-                setDeleteConfirmed(false);
-              }
-            }}
-          />
+          {/* Welcome state (before first message) or chat body */}
+          {!chatStarted ? (
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", padding: "0 30px", textAlign: "center" }}>
+              <div style={{
+                width: 220, height: 220, marginTop: 30, flexShrink: 0,
+                backgroundImage: "url(/initialchatbg.jpg)",
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                mixBlendMode: "multiply",
+              }} />
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#222", marginTop: 26, marginBottom: 10 }}>How may I help today, {(username || "there").split(" ")[0]}?</div>
+              <div style={{ fontSize: 13.5, color: "#666", lineHeight: 1.6, marginBottom: 26 }}>I can currently add and remove online banking users, with more features being introduced over time.</div>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                {[["Add user", "I want to add a new user"], ["Remove user", "I want to remove an existing user"]].map(([label, query]) => (
+                  <button key={label} onClick={() => { setChatStarted(true); setPendingMessage({ text: query, key: Date.now() }); }} style={{
+                    padding: "10px 22px", borderRadius: 22, border: "1.5px solid #b8bfc5",
+                    background: "#fff", color: "#333", fontSize: 13.5, fontWeight: 600,
+                    cursor: "pointer", fontFamily: "inherit",
+                  }}>{label}</button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <ChatWidget
+              sessionId={SESSION_JOURNEY}
+              title="X Chat"
+              label="X"
+              color="#ED1C24"
+              pendingMessage={pendingMessage}
+              version={2}
+              mobile={true}
+              dark={false}
+              showHeader={false}
+              taskProgress={taskProgress}
+              showOpenTasks={false}
+              naturalIntentCopy={true}
+              assistantBg={isMobileView ? "#f0eeec" : "#ececec"}
+              transparentBg={true}
+              intentResponses={{
+                "add user":    { type: "role_selector" },
+                "add_user":    { type: "role_selector" },
+                "delete user": "Sure! Please type the name of the user you'd like to remove, and I'll look them up for you.",
+                "delete_user": "Sure! Please type the name of the user you'd like to remove, and I'll look them up for you.",
+              }}
+              idCountry={addUserIdCountry}
+              onIdCountryChange={setAddUserIdCountry}
+              phoneCountry={addUserPhoneCountry}
+              onPhoneCountryChange={setAddUserPhoneCountry}
+              onRoleConfirm={(roles) => { setAddUserRoles(roles); setAddUserData({}); setStep(1); }}
+              formData={addUserData}
+              chatFocusSignal={chatFocusSignal}
+              onFieldCollected={(field, value) => setAddUserData(prev => ({ ...prev, [field]: value }))}
+              onActiveFieldChange={setAddUserActiveField}
+              assistantMessage={assistantNotification}
+              closeTaskSignal={closeTaskSignal}
+              onTaskClosed={handleTaskClosed}
+              onChatConfirm={handleInChatConfirm}
+              onIntentsDetected={(intents) => { setLastIntents(intents); setCompletedIntents([]); }}
+              onIntentDismiss={handleIntentDismiss}
+              onIntentStarted={(label) => {
+                setActiveIntent(label);
+                if (label.toLowerCase().includes("delete")) {
+                  setStep(2);
+                  setDeleteConfirmed(false);
+                }
+              }}
+              deleteUsers={journeyUsers.filter(u => !u.pending)}
+              onDeleteUserSelected={(user) => {
+                setSelectedDeleteUsers([user.name]);
+                setStep(2);
+              }}
+            />
+          )}
 
-          {/* Input bar */}
-          <div style={{ flexShrink: 0, padding: "10px 16px 0", background: t.panelBg }}>
+          {/* Input bar with warm gradient */}
+          <div style={{ flexShrink: 0, background: "linear-gradient(180deg, rgba(246,246,246,0) 0%, rgba(247,178,120,0.55) 165%)", paddingTop: 20 }}>
             <div style={{
-              border: `1px solid ${t.border2}`, borderRadius: 10,
-              display: "flex", alignItems: "center", padding: "10px 14px", gap: 10,
+              background: "#fff", borderRadius: isMobileView ? 0 : "14px 14px 0 0",
+              boxShadow: "0 -3px 12px rgba(0,0,0,0.08)",
+              display: "flex", alignItems: "center", padding: "13px 14px", gap: 10,
             }}>
               <input
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleChatSend()}
                 onFocus={() => setChatFocusSignal({ key: Date.now() })}
-                placeholder="Type your question"
+                placeholder="Tell me what you need to do"
                 style={{
                   flex: 1, border: "none", outline: "none",
-                  fontSize: 14, color: t.inputText, fontFamily: "inherit",
+                  fontSize: 14, color: "#333", fontFamily: "inherit",
                   background: "transparent",
                 }}
               />
               <button onClick={handleChatSend} style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: "#ED1C24", fontSize: 18, padding: 0, lineHeight: 1,
-                display: "flex", alignItems: "center",
-              }}>➤</button>
+                width: 30, height: 30, borderRadius: "50%", border: "none",
+                background: "#ED1C24", color: "#fff", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, padding: 0,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6"><path d="M12 19V5" /><path d="M5 12l7-7 7 7" /></svg>
+              </button>
             </div>
-            {/* Gradient bottom bar */}
-            <div style={{ height: 3, borderRadius: "0 0 4px 4px", background: "linear-gradient(90deg, #FB5C39, #ED1C24, #D6271C)", margin: "0 0 10px" }} />
+            {isMobileView && <div style={{ height: 3, background: "linear-gradient(90deg, #FB5C39, #ED1C24, #f7a04b)" }} />}
           </div>
+        </div>
+      )}
 
-          {/* Suggestion chips — mobile only */}
-          {isMobileView && (
-            <div style={{ flexShrink: 0, overflowX: "auto", padding: "6px 14px 12px", borderTop: `1px solid ${t.border}`, background: t.panelBg }}>
-              <div style={{ display: "flex", gap: 6, flexWrap: "nowrap", minWidth: "max-content" }}>
-                {[
-                  { label: "➕ Add User", query: "How do I add a new user to Velocity and assign them a role?" },
-                  { label: "🗑 Delete User", query: "How do I deactivate or delete a user from Velocity?" },
-                  { label: "➕🗑 Add & Delete User", query: "How do I add a new user and also remove an existing user from Velocity?" },
-                  { label: "🌐 Add & Delete User (multi-lingual)", query: "個同事走咗喇，佢account同加個新人頂喺Velocity點整㗎？" },
-                ].map(({ label, query }) => (
-                  <button key={label} onClick={() => setPendingMessage({ text: query, key: Date.now() })} style={{
-                    padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${t.chipBorder}`,
-                    background: t.panelBg, color: t.chipText, fontSize: 12, fontWeight: 500,
-                    cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-                  }}>
-                    {label}
-                  </button>
-                ))}
+      {/* Reopen chat pill (desktop) */}
+      {!isMobileView && !chatOpen && step <= 2 && (
+        <button onClick={() => openChat()} style={{
+          position: "fixed", right: 22, bottom: 22, zIndex: 1500,
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "12px 20px", borderRadius: 26, border: "none",
+          background: "#ED1C24", color: "#fff", fontSize: 14, fontWeight: 600,
+          cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+        }}>✦ X Chat</button>
+      )}
+
+      {/* Exit chat modal */}
+      {showExitModal && (
+        <div style={{ position: "fixed", top: 0, bottom: 0, left: 0, right: 0, zIndex: 3000, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ position: "relative", background: "#fff", borderRadius: 6, maxWidth: 470, width: "100%", padding: "52px 36px 34px", textAlign: "center", boxShadow: "0 12px 48px rgba(0,0,0,0.3)", boxSizing: "border-box" }}>
+            <div style={{
+              position: "absolute", top: -28, left: "50%", transform: "translateX(-50%)",
+              width: 56, height: 56, borderRadius: "50%", background: "#f5a623",
+              color: "#fff", fontSize: 26, fontWeight: 800,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>!</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#222", marginBottom: 14 }}>Exit chat to review your request?</div>
+            <div style={{ fontSize: 13.5, color: "#666", lineHeight: 1.65, marginBottom: 28 }}>
+              You are about to leave this chat and continue on the review page.<br />
+              Please review your request before submitting it.
+            </div>
+            <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
+              <button onClick={() => setShowExitModal(false)} style={outlineBtn}>Go back</button>
+              <button onClick={proceedToReview} style={slateBtn}>Proceed</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Consent modal — shown once per session on first chat open */}
+      {consentOpen && (
+        <div style={{ position: "fixed", top: 0, bottom: 0, left: 0, right: 0, zIndex: 2500, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#fff", borderRadius: 16, overflow: "hidden", maxWidth: 500, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
+            {/* Top section — background image + gif logo */}
+            <div style={{
+              backgroundImage: "url(/startxchatbg.jpg)",
+              backgroundSize: "cover", backgroundPosition: "center",
+              padding: "36px 28px 28px",
+              display: "flex", flexDirection: "column", alignItems: "center",
+            }}>
+              <img src="/startxchatlogo.gif" alt="" style={{ width: 72, height: 72, objectFit: "contain" }} />
+            </div>
+            {/* Content */}
+            <div style={{ padding: "24px 40px 32px" }}>
+              <div style={{ fontSize: 19, fontWeight: 700, color: "#222", marginBottom: 18 }}>Start X Chat (Beta)</div>
+              <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.7, marginBottom: 14 }}>
+                X Chat (Beta) helps you prepare user management requests. It does not authorise, decide, or submit requests on your behalf.
+              </div>
+              <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.7, marginBottom: 28 }}>
+                By proceeding, you have read and accept OCBC's <span style={{ color: "#2f80c3", cursor: "pointer" }}>&lt;policy name&gt;</span>.
+              </div>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                <button
+                  onClick={() => { setConsentOpen(false); setPendingChatText(null); }}
+                  style={{ padding: "12px 34px", borderRadius: 8, border: "1.5px solid #c8cdd2", background: "#fff", color: "#333", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}
+                >Go back</button>
+                <button
+                  onClick={handleConsentProceed}
+                  style={{ padding: "12px 34px", borderRadius: 8, border: "none", background: "#3d4d5c", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                >Proceed</button>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function WarningBanner({ onDismiss, dark }) {
+function WarningBanner({ onDismiss }) {
   return (
     <div style={{
-      position: "fixed", top: 60, left: 0, right: 0, zIndex: 1050,
-      background: dark ? "#1c1500" : "#fffbeb",
-      borderBottom: `1px solid ${dark ? "#4a3800" : "#fde68a"}`,
+      position: "fixed", top: VELOCITY_HEADER_HEIGHT, left: 0, right: 0, zIndex: 1050,
+      background: "#fffbeb",
+      borderBottom: "1px solid #fde68a",
       padding: "9px 28px", display: "flex", alignItems: "center", gap: 10,
-      fontSize: 13, color: dark ? "#c8a000" : "#92400e",
+      fontSize: 13, color: "#92400e", boxSizing: "border-box", height: 40,
     }}>
       <span>⚠</span>
       <span style={{ flex: 1 }}>
@@ -1309,88 +1589,15 @@ function InfoCard({ widget, info, dark, visible, onToggle }) {
   );
 }
 
-function MobileLayout({ username, onLogout, dark, onToggleDark }) {
-  const [activeTab, setActiveTab] = useState("journey");
-  const [pendingMessages, setPendingMessages] = useState([null, null, null]);
-
-  const handleSend = (text) => {
-    const msg = { text, key: Date.now() };
-    setPendingMessages([msg, msg, msg]);
-  };
-
-  const t = {
-    bg:         dark ? "#141414" : "#f4f6f8",
-    panelBg:    dark ? "#1e1e1e" : "#fff",
-    border:     dark ? "#2a2a2a" : "#e8e8e8",
-    labelColor: dark ? "#888"   : "#999",
-  };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: t.bg, transition: "background 0.2s" }}>
-      <div style={{ position: "fixed", top: 8, right: 12, zIndex: 1100 }}>
-        <ThemeToggle dark={dark} onToggle={onToggleDark} />
-      </div>
-      <div style={{ display: "flex", background: t.panelBg, borderBottom: `1px solid ${t.border}`, flexShrink: 0, paddingTop: 20, transition: "background 0.2s", overflowX: "auto" }}>
-        <button onClick={() => setActiveTab("journey")} style={{
-          flex: "0 0 auto", padding: "12px 16px", border: "none",
-          borderBottom: activeTab === "journey" ? `3px solid #c8102e` : "3px solid transparent",
-          background: "none",
-          color: activeTab === "journey" ? "#c8102e" : (dark ? "#666" : "#888"),
-          fontWeight: activeTab === "journey" ? 700 : 500,
-          fontSize: 13, cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
-        }}>Journey</button>
-        {WIDGETS.map((w, i) => (
-          <button key={w.label} onClick={() => setActiveTab(i)} style={{
-            flex: "0 0 auto", padding: "12px 16px", border: "none",
-            borderBottom: activeTab === i ? `3px solid ${w.color}` : "3px solid transparent",
-            background: "none",
-            color: activeTab === i ? w.color : (dark ? "#666" : "#888"),
-            fontWeight: activeTab === i ? 700 : 500,
-            fontSize: 13, cursor: "pointer", transition: "all 0.15s",
-          }}>
-            {w.label}
-          </button>
-        ))}
-      </div>
-      {activeTab === "journey" ? (
-        <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
-          <JourneyPage dark={dark} navbarOffset={0} isMobileView={true} />
-        </div>
-      ) : WIDGETS.map((w, i) => (
-        <div key={w.sessionId} style={{ display: activeTab === i ? "flex" : "none", flex: 1, minHeight: 0, flexDirection: "column" }}>
-          <ChatWidget sessionId={w.sessionId} title={w.title} label={w.label} color={dark ? w.darkColor : w.color}
-            pendingMessage={pendingMessages[i]} version={w.version} mobile={true} dark={dark}
-            showIntentHint={false} compactIntents={true} />
-        </div>
-      ))}
-      {activeTab !== "journey" && <div style={{ background: t.panelBg, borderTop: `1px solid ${t.border}`, flexShrink: 0, transition: "background 0.2s" }}>
-        <div style={{ padding: "6px 12px 6px 16px", fontSize: 11, color: t.labelColor, borderBottom: `1px solid ${t.border}`, letterSpacing: "0.05em", textTransform: "uppercase", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span>Sends to all · {username}</span>
-          <button style={{ background: "none", border: "none", fontSize: 11, color: "#c8102e", cursor: "pointer", padding: 0, fontWeight: 600, letterSpacing: "0.05em" }} onClick={onLogout}>Sign Out</button>
-        </div>
-        <InputBar onSend={handleSend} dark={dark} />
-        <div style={{ overflowX: "auto", padding: "6px 14px 12px", borderTop: `1px solid ${t.border}` }}>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "nowrap", minWidth: "max-content" }}>
-            {[...QUICK_REPLIES, ...MULTI_INTENT_3_REPLIES, ...OUT_OF_SCOPE_REPLIES, ...HALLUCINATION_REPLIES, ...MULTILINGUAL_REPLIES].map(({ label, query }) => (
-              <Chip key={label} label={label} onClick={() => handleSend(query)} dark={dark} />
-            ))}
-          </div>
-        </div>
-      </div>}
-    </div>
-  );
-}
-
 export default function App() {
   const [authed, setAuthed] = useState(!!getToken());
   const [username, setUsername] = useState(getUsername() || "");
   const [pendingMessage, setPendingMessage] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [dark, setDark] = useState(false);
   const [showChips, setShowChips] = useState(false);
   const [visibleWidgets, setVisibleWidgets] = useState([true, true, true]);
   const [showBanner, setShowBanner] = useState(true);
-  const [activeTab, setActiveTab] = useState("journey");
+  const [activeNav, setActiveNav] = useState("Administration");
   const toggleWidget = (i) => setVisibleWidgets(v => v.map((val, idx) => idx === i ? !val : val));
 
   useEffect(() => {
@@ -1404,40 +1611,37 @@ export default function App() {
   const handleSharedSend = (text) => setPendingMessage({ text, key: Date.now() });
 
   if (!authed) return <LoginPage onLogin={handleLogin} />;
-  if (isMobile) return <MobileLayout username={username} onLogout={handleLogout} dark={dark} onToggleDark={() => setDark(v => !v)} />;
-
-  const t = {
-    bg:                  dark ? "#0f0f0f" : "#f0f0f0",
-    panelBg:             dark ? "#1a1a1a" : "#fff",
-    border:              dark ? "#2a2a2a" : "#e8e8e8",
-    labelColor:          dark ? "#888"   : "#999",
-    chipGroupLabelColor: dark ? "#888"   : "#bbb",
-  };
+  if (isMobile) return <JourneyPage isMobileView={true} username="Patrick Tan" />;
 
   const bannerH = showBanner ? 40 : 0;
-  const topOffset = 60 + bannerH;
+  const topOffset = VELOCITY_HEADER_HEIGHT + bannerH;
+  const showBenchmark = activeNav === "Tools";
 
   return (
-    <div style={{ minHeight: "100vh", background: t.bg, transition: "background 0.2s", fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
-      <Navbar dark={dark} onToggleDark={() => setDark(v => !v)} onLogout={handleLogout} activeTab={activeTab} onTabChange={setActiveTab} />
-      {showBanner && <WarningBanner onDismiss={() => setShowBanner(false)} dark={dark} />}
+    <div style={{ minHeight: "100vh", background: showBenchmark ? "#f0f0f0" : "#fff", fontFamily: "'Helvetica Neue', Arial, sans-serif" }}>
+      <VelocityHeader
+        username="Patrick Tan"
+        activeNav={activeNav}
+        onNavChange={(tab) => { if (tab === "Tools" || tab === "Administration") setActiveNav(tab); }}
+        onLogout={handleLogout}
+      />
+      {showBanner && <WarningBanner onDismiss={() => setShowBanner(false)} />}
 
-      {/* Scrollable content */}
-      <div style={{ paddingTop: topOffset + 36, paddingBottom: 110, display: "flex", justifyContent: "center", minHeight: "100vh", boxSizing: "border-box" }}>
-        {activeTab === "benchmark" ? (
+      {showBenchmark ? (
+        <div style={{ paddingTop: topOffset + 36, paddingBottom: 110, display: "flex", justifyContent: "center", minHeight: "100vh", boxSizing: "border-box" }}>
           <div style={{ display: "flex", gap: 28, alignItems: "stretch" }}>
             {WIDGETS.map((w, i) => (
               <div key={w.sessionId} style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
-                <PhoneFrame dark={dark} visible={visibleWidgets[i]}>
+                <PhoneFrame dark={false} visible={visibleWidgets[i]}>
                   <ChatWidget
                     sessionId={w.sessionId}
                     title={w.title}
                     label={w.label}
-                    color={dark ? w.darkColor : w.color}
+                    color={w.color}
                     pendingMessage={visibleWidgets[i] ? pendingMessage : null}
                     version={w.version}
                     mobile={true}
-                    dark={dark}
+                    dark={false}
                     showHeader={false}
                     showIntentHint={false}
                     compactIntents={true}
@@ -1446,34 +1650,36 @@ export default function App() {
                 <InfoCard
                   widget={w}
                   info={WIDGET_INFO[i]}
-                  dark={dark}
+                  dark={false}
                   visible={visibleWidgets[i]}
                   onToggle={() => toggleWidget(i)}
                 />
               </div>
             ))}
           </div>
-        ) : (
-          <JourneyPage dark={dark} navbarOffset={topOffset} />
-        )}
-      </div>
+        </div>
+      ) : (
+        <div style={{ paddingTop: topOffset }}>
+          <JourneyPage headerOffset={topOffset} username="Patrick Tan" />
+        </div>
+      )}
 
-      {/* Fixed bottom input bar — only on benchmark tab */}
-      {activeTab !== "benchmark" ? null : <div style={{
+      {/* Fixed bottom input bar — only on benchmark (Tools) view */}
+      {showBenchmark && <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
-        background: t.panelBg, borderTop: `1px solid ${t.border}`,
-        zIndex: 1001, transition: "background 0.2s",
+        background: "#fff", borderTop: "1px solid #e8e8e8",
+        zIndex: 1001,
       }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           <div style={{ padding: "6px 16px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 11, color: t.labelColor, letterSpacing: "0.05em", textTransform: "uppercase" }}>{username}</span>
-            <button onClick={() => setShowChips(v => !v)} style={{ background: "none", border: "none", fontSize: 11, color: t.labelColor, cursor: "pointer", padding: 0, letterSpacing: "0.05em" }}>
+            <span style={{ fontSize: 11, color: "#999", letterSpacing: "0.05em", textTransform: "uppercase" }}>{username}</span>
+            <button onClick={() => setShowChips(v => !v)} style={{ background: "none", border: "none", fontSize: 11, color: "#999", cursor: "pointer", padding: 0, letterSpacing: "0.05em" }}>
               {showChips ? "▲ Hide chips" : "▼ Show chips"}
             </button>
           </div>
-          <InputBar onSend={handleSharedSend} dark={dark} />
+          <InputBar onSend={handleSharedSend} dark={false} />
           {showChips && (
-            <div style={{ padding: "6px 16px 14px", borderTop: `1px solid ${t.border}`, display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" }}>
+            <div style={{ padding: "6px 16px 14px", borderTop: "1px solid #e8e8e8", display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" }}>
               {[
                 { groupLabel: "Single",       items: QUICK_REPLIES },
                 { groupLabel: "Multi ×3+",    items: MULTI_INTENT_3_REPLIES },
@@ -1481,9 +1687,9 @@ export default function App() {
                 { groupLabel: "Multilingual",  items: MULTILINGUAL_REPLIES },
               ].map(({ groupLabel, items }) => (
                 <div key={groupLabel} style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: t.chipGroupLabelColor, letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 2, whiteSpace: "nowrap" }}>{groupLabel}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#bbb", letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 2, whiteSpace: "nowrap" }}>{groupLabel}</span>
                   {items.map(({ label, query }) => (
-                    <Chip key={label} label={label} onClick={() => handleSharedSend(query)} dark={dark} />
+                    <Chip key={label} label={label} onClick={() => handleSharedSend(query)} dark={false} />
                   ))}
                 </div>
               ))}

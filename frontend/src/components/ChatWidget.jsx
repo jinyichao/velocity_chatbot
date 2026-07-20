@@ -13,21 +13,37 @@ function naturalIntentSentence(intents) {
   return `Got it — I've added ${list} to your open tasks.`;
 }
 
-const ROLES = [
-  "Business Online Banking - Viewer",
-  "Business Online Banking - Maker",
-  "Business Online Banking - Authoriser",
-  "Business Online Banking - Administrator",
-  "Authorised Person",
-  "Authorised Signatories",
-  "Book FX Contract",
-  "Entity's Contact Person",
+const ROLE_ITEMS = [
+  { label: "Create transactions",                    role: "Business Online Banking - Maker",         disabled: false },
+  { label: "Authorise transactions",                 role: "Business Online Banking - Authoriser",    disabled: false },
+  { label: "View account balances and statements only", role: "Business Online Banking - Viewer",    disabled: false },
+  { label: "Book FX Contract",                       role: "Book FX Contract",                        disabled: false },
+  { label: "Act as entity's contact person",         role: "Entity's Contact Person",                 disabled: false },
+  { label: "Business online banking Administrator",  role: "Business Online Banking - Administrator", disabled: false },
 ];
 
-function RoleSelectorBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
-  const [selected, setSelected] = useState([]);
+function RoleSelectorBubble({ onConfirm, onCancel, assistantBg }) {
+  // Viewer is always included; start with it pre-selected
+  const [selected, setSelected] = useState(["Business Online Banking - Viewer"]);
+
   const toggle = (role) =>
-    setSelected((prev) => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+    setSelected(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+
+  const Checkbox = ({ checked, disabled }) => (
+    <div style={{
+      width: 20, height: 20, borderRadius: 4, flexShrink: 0,
+      background: checked ? (disabled ? "#b0b5ba" : "#3d4d5c") : "#fff",
+      border: `2px solid ${checked ? (disabled ? "#b0b5ba" : "#3d4d5c") : "#c8cdd2"}`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxSizing: "border-box",
+    }}>
+      {checked && (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.4">
+          <path d="M4.5 12.5l5 5L19.5 7" />
+        </svg>
+      )}
+    </div>
+  );
 
   return (
     <div style={{ marginBottom: 8 }}>
@@ -35,37 +51,49 @@ function RoleSelectorBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
         background: assistantBg || "#fff",
         borderRadius: 12, padding: "14px 16px",
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        marginBottom: 10, fontSize: 14, lineHeight: 1.5, color: "#1a1a1a",
+        marginBottom: 8, fontSize: 14, lineHeight: 1.5, color: "#1a1a1a",
       }}>
-        Which role(s) are you looking to add? You may select more than 1 role and select 'confirm' once ready.
+        Got it — I will start <strong>adding 1 user</strong>. Any roles to assign him/her before we continue?
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-        {ROLES.map((role) => {
-          const active = selected.includes(role);
+
+      <div style={{
+        background: assistantBg || "#fff",
+        borderRadius: 12, overflow: "hidden",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        marginBottom: 10,
+      }}>
+        {ROLE_ITEMS.map((item, i) => {
+          const checked = selected.includes(item.role);
           return (
-            <button key={role} onClick={() => toggle(role)} style={{
-              padding: "7px 14px", borderRadius: 20,
-              border: `1.5px solid ${active ? accentColor : "#ccc"}`,
-              background: "#fff",
-              color: active ? accentColor : "#555",
-              fontSize: 13, cursor: "pointer", fontFamily: "inherit",
-              display: "flex", alignItems: "center", gap: 6,
-              transition: "all 0.15s",
-            }}>
-              {active && <span style={{ fontSize: 12 }}>✓</span>}
-              {role}
-            </button>
+            <div
+              key={item.role}
+              onClick={() => !item.disabled && toggle(item.role)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "13px 16px",
+                borderBottom: i < ROLE_ITEMS.length - 1 ? "1px solid #eee" : "none",
+                cursor: item.disabled ? "default" : "pointer",
+              }}
+              onMouseEnter={e => { if (!item.disabled) e.currentTarget.style.background = "rgba(0,0,0,0.02)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <span style={{ fontSize: 13.5, color: item.disabled ? "#aaa" : "#222", flex: 1, paddingRight: 14, lineHeight: 1.4 }}>
+                {item.label}
+              </span>
+              <Checkbox checked={checked} disabled={item.disabled} />
+            </div>
           );
         })}
       </div>
+
       <div style={{ display: "flex", gap: 10 }}>
         <button onClick={onCancel} style={{
-          padding: "8px 20px", borderRadius: 6, border: "1.5px solid #ccc",
+          padding: "10px 28px", borderRadius: 6, border: "1.5px solid #c8cdd2",
           background: "#fff", color: "#333", fontSize: 13, cursor: "pointer", fontFamily: "inherit",
         }}>Cancel</button>
         <button onClick={() => onConfirm(selected)} style={{
-          padding: "8px 20px", borderRadius: 6, border: "none",
-          background: "#ED1C24", color: "#fff", fontSize: 13, fontWeight: 600,
+          padding: "10px 28px", borderRadius: 6, border: "none",
+          background: "#3d4d5c", color: "#fff", fontSize: 13, fontWeight: 600,
           cursor: "pointer", fontFamily: "inherit",
         }}>Confirm</button>
       </div>
@@ -148,6 +176,53 @@ function NameConfirmBubble({ reason, onConfirm, accentColor, assistantBg }) {
   );
 }
 
+function DeleteUserConfirmBubble({ user, onYes, onNo, assistantBg }) {
+  const roleLabels = [];
+  if (user.as) roleLabels.push("Authorised Signatory");
+  if (user.role) roleLabels.push(`Business online banking user (${user.role})`);
+  if (user.ap) roleLabels.push("Authorised Person");
+
+  const greyBtn = {
+    padding: "8px 22px", borderRadius: 20,
+    border: "1.5px solid #c0c4c8", background: "#fff", color: "#555",
+    fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+    transition: "background 0.12s",
+  };
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{
+        background: assistantBg || "#fff",
+        borderRadius: 12, padding: "14px 16px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        marginBottom: 10, fontSize: 14, lineHeight: 1.6, color: "#1a1a1a",
+      }}>
+        <div>Next, I found a user matching <strong>{user.name}</strong>. Please confirm that this is the user you want to remove.</div>
+        <div style={{ marginTop: 10, fontSize: 13, color: "#555", lineHeight: 1.7 }}>
+          <div><strong>Name and User ID:</strong> {user.name} ({user.userId})</div>
+          {roleLabels.length > 0 && (
+            <div><strong>Current role(s):</strong> {roleLabels.join(", ")}</div>
+          )}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button
+          onClick={onNo}
+          style={greyBtn}
+          onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+          onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+        >No</button>
+        <button
+          onClick={onYes}
+          style={greyBtn}
+          onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+          onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+        >Yes</button>
+      </div>
+    </div>
+  );
+}
+
 function FormConfirmBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
   return (
     <div style={{ marginBottom: 8 }}>
@@ -175,7 +250,7 @@ function FormConfirmBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
   );
 }
 
-const buildStyles = (color, offset, mobile, dark) => ({
+const buildStyles = (color, offset, mobile, dark, transparentBg) => ({
   window: mobile ? {
     position: "relative",
     width: "100%",
@@ -184,7 +259,7 @@ const buildStyles = (color, offset, mobile, dark) => ({
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    background: dark ? "#1a1a1a" : "#f7f8fa",
+    background: transparentBg ? "transparent" : (dark ? "#1a1a1a" : "#f7f8fa"),
   } : {
     position: "fixed",
     bottom: 12,
@@ -196,7 +271,7 @@ const buildStyles = (color, offset, mobile, dark) => ({
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    background: dark ? "#1a1a1a" : "#f7f8fa",
+    background: transparentBg ? "transparent" : (dark ? "#1a1a1a" : "#f7f8fa"),
     border: dark ? "1px solid #3a3a3a" : "none",
     zIndex: 999,
   },
@@ -229,10 +304,10 @@ const baseStyles = {
     fontSize: 11, opacity: 0.85, display: "flex", alignItems: "center", gap: 4,
   },
   statusDot: { width: 6, height: 6, borderRadius: "50%", background: "#4cff91" },
-  messages: (dark) => ({
+  messages: (dark, transparentBg) => ({
     flex: 1, overflowY: "auto", padding: "16px 12px",
     display: "flex", flexDirection: "column",
-    background: dark ? "#141414" : "#f7f8fa",
+    background: transparentBg ? "transparent" : (dark ? "#141414" : "#f7f8fa"),
   }),
   typing: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 },
   typingDots: (dark) => ({
@@ -296,8 +371,12 @@ export default function ChatWidget({
   taskProgress = null,
   naturalIntentCopy = false,
   onActiveFieldChange,
+  transparentBg = false,
+  showOpenTasks = true,
+  deleteUsers = [],
+  onDeleteUserSelected,
 }) {
-  const s = buildStyles(color, offset, mobile, dark);
+  const s = buildStyles(color, offset, mobile, dark, transparentBg);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
 
   const confirmedRolesRef = useRef([]);
@@ -325,6 +404,8 @@ export default function ChatWidget({
   const [pendingClarification, setPendingClarification] = useState(null);
   // { name: string, reason: string } | null
   const [pendingNameConfirm, setPendingNameConfirm] = useState(null);
+  // matched user object | null
+  const [pendingDeleteConfirm, setPendingDeleteConfirm] = useState(null);
   const bottomRef = useRef(null);
   const prevKeyRef = useRef(null);
   const prevAssistantKeyRef = useRef(null);
@@ -460,6 +541,11 @@ export default function ChatWidget({
       return; // handled externally, no chat message
     } else if (response) {
       setMessages((prev) => [...prev, { role: "assistant", content: response }]);
+      // Ensure delete_user is tracked locally when the canned response is served
+      // so name-interception works if the user later types a name in chat
+      if (/delete|remove/i.test(intentLabel)) {
+        setOpenTasks(prev => prev.includes("delete_user") ? prev : [...prev, "delete_user"]);
+      }
     } else {
       handleSend(intentLabel);
     }
@@ -690,6 +776,39 @@ export default function ChatWidget({
       return;
     }
 
+    // Delete user: intercept name input when delete_user task is open
+    if (
+      !pendingClarification &&
+      !pendingNameConfirm &&
+      openTasks.includes("delete_user") &&
+      deleteUsers.length > 0
+    ) {
+      const lc = text.toLowerCase().trim();
+      const matched = deleteUsers.find(u => {
+        const nameLc = u.name.toLowerCase();
+        return (
+          nameLc.includes(lc) ||
+          lc.includes(nameLc) ||
+          nameLc.split(" ").some(part => part.length > 2 && lc.includes(part))
+        );
+      });
+      if (matched) {
+        setPendingDeleteConfirm(matched);
+        return;
+      }
+      // Generic "remove/delete user" phrase — prompt for a name instead of going to backend
+      if (/\b(remove|delete)\b.*\buser\b|\buser\b.*\b(remove|delete)\b/i.test(text)) {
+        setMessages(prev => [...prev, { role: "assistant", content: "Please type the name of the user you'd like to remove, and I'll look them up for you." }]);
+        return;
+      }
+      // Short input without command keywords — treat as a failed name lookup, not a new intent
+      const isLikelyCommand = /\b(cancel|stop|change|instead|add|want|help|can you|please|never mind)\b/i.test(text);
+      if (!isLikelyCommand) {
+        setMessages(prev => [...prev, { role: "assistant", content: `I couldn't find a user matching "${text}". Please type the full name of the user you'd like to remove (e.g. Gabriel Tan).` }]);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const data = await sendMessage({ message: text, sessionId, history: messages, version });
@@ -699,16 +818,53 @@ export default function ChatWidget({
       if (reply.startsWith("Intent identified:")) {
         const lines = reply.split("\n").slice(1);
         detectedIntents = lines.map(l => l.match(/^[•\-]\s*\*?\*?(.+?)\*?\*?$/)).filter(Boolean).map(m => m[1].trim());
+
+        // Supplement intents the backend missed using keyword detection on the original message
+        const textLc = text.toLowerCase();
+        const hasAddIntent = detectedIntents.some(i => /add/i.test(i));
+        const hasDelIntent = detectedIntents.some(i => /delete|remove/i.test(i));
+        if (hasAddIntent && !hasDelIntent && /\b(delete|remove)\b/.test(textLc)) {
+          detectedIntents = [...detectedIntents, "delete user"];
+        }
+        if (hasDelIntent && !hasAddIntent && /\badd\b/.test(textLc)) {
+          detectedIntents = [...detectedIntents, "add user"];
+        }
+        // Always show add user before delete user regardless of the order spoken
+        detectedIntents = detectedIntents.sort((a, b) => {
+          const aIsAdd = /add/i.test(a);
+          const bIsAdd = /add/i.test(b);
+          if (aIsAdd && !bIsAdd) return -1;
+          if (!aIsAdd && bIsAdd) return 1;
+          return 0;
+        });
+
         if (naturalIntentCopy && detectedIntents.length > 0) {
           reply = naturalIntentSentence(detectedIntents);
           isNaturalIntro = true;
         }
       }
-      setMessages((prev) => [...prev, isNaturalIntro
-        ? { role: "assistant", content: reply, meta: "intent_intro" }
-        : { role: "assistant", content: reply }
-      ]);
-      if (Array.isArray(data.open_tasks)) setOpenTasks(data.open_tasks);
+      // Suppress silent task-close acknowledgements — they're noise in the journey UI
+      const isTaskClosedAck = reply.startsWith("Got it — closed:");
+      // Replace the generic "confirm" nudge with a name prompt when in delete-user mode
+      const isConfirmNudge = reply === "Please click the **Confirm** button on the form to finalize.";
+      if (isConfirmNudge && openTasks.includes("delete_user") && !openTasks.includes("add_user")) {
+        reply = "Please type the name of the user you'd like to remove, and I'll look them up for you.";
+      }
+      if (!isTaskClosedAck) {
+        setMessages((prev) => [...prev, isNaturalIntro
+          ? { role: "assistant", content: reply, meta: "intent_intro" }
+          : { role: "assistant", content: reply }
+        ]);
+      }
+      if (Array.isArray(data.open_tasks)) {
+        // Merge supplemented intents into open_tasks so later name-interception works
+        let tasks = [...data.open_tasks];
+        if (detectedIntents) {
+          if (detectedIntents.some(i => /delete|remove/i.test(i)) && !tasks.includes("delete_user")) tasks.push("delete_user");
+          if (detectedIntents.some(i => /add/i.test(i)) && !tasks.includes("add_user")) tasks.push("add_user");
+        }
+        setOpenTasks(tasks);
+      }
       if (Array.isArray(data.closed_tasks)) {
         for (const closed of data.closed_tasks) {
           if (closed === "add_user") {
@@ -753,7 +909,7 @@ export default function ChatWidget({
           </div>
         )}
 
-        {openTasks.length > 0 && (
+        {showOpenTasks && openTasks.length > 0 && (
           <OpenTasksStrip
             tasks={openTasks}
             onDismiss={handleOpenTaskDismiss}
@@ -764,7 +920,7 @@ export default function ChatWidget({
           />
         )}
 
-        <div style={baseStyles.messages(dark)}>
+        <div style={baseStyles.messages(dark, transparentBg)}>
           {messages.map((msg, i) => (
             <MessageBubble key={i} message={msg} accentColor={color} dark={dark} assistantBg={assistantBg} onIntentClick={handleIntentClick} onIntentDismiss={compactIntents ? null : handleIntentDismiss} showIntentHint={showIntentHint} compactIntents={compactIntents} />
           ))}
@@ -773,7 +929,6 @@ export default function ChatWidget({
             <RoleSelectorBubble
               onConfirm={handleRoleConfirm}
               onCancel={handleRoleCancel}
-              accentColor={color}
               assistantBg={assistantBg}
             />
           )}
@@ -802,6 +957,22 @@ export default function ChatWidget({
               onCancel={handleChatConfirmCancel}
               accentColor={color}
               assistantBg={assistantBg}
+            />
+          )}
+          {pendingDeleteConfirm && (
+            <DeleteUserConfirmBubble
+              user={pendingDeleteConfirm}
+              assistantBg={assistantBg}
+              onYes={() => {
+                const user = pendingDeleteConfirm;
+                setPendingDeleteConfirm(null);
+                setMessages(prev => [...prev, { role: "assistant", content: `Got it — I've added **${user.name}** to the removal list.` }]);
+                if (onDeleteUserSelected) onDeleteUserSelected(user);
+              }}
+              onNo={() => {
+                setPendingDeleteConfirm(null);
+                setMessages(prev => [...prev, { role: "assistant", content: "OK, which user would you like to remove?" }]);
+              }}
             />
           )}
           <div ref={bottomRef} />
