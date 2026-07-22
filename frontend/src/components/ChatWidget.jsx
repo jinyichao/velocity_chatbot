@@ -22,7 +22,7 @@ const ROLE_ITEMS = [
   { label: "Business online banking Administrator",  role: "Business Online Banking - Administrator", disabled: false },
 ];
 
-function RoleSelectorBubble({ onConfirm, onCancel, assistantBg }) {
+function RoleSelectorBubble({ onConfirm, onCancel, assistantBg, multiIntent }) {
   // Viewer is always included; start with it pre-selected
   const [selected, setSelected] = useState(["Business Online Banking - Viewer"]);
 
@@ -53,7 +53,10 @@ function RoleSelectorBubble({ onConfirm, onCancel, assistantBg }) {
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         marginBottom: 8, fontSize: 14, lineHeight: 1.5, color: "#1a1a1a",
       }}>
-        Got it — I will start <strong>adding 1 user</strong>. Any roles to assign him/her before we continue?
+        {multiIntent
+          ? <>Got it — I'll guide you through both. First, let's <strong>add a user</strong>. Any roles to assign before we continue?</>
+          : <>Got it — I will start <strong>adding 1 user</strong>. Any roles to assign him/her before we continue?</>
+        }
       </div>
 
       <div style={{
@@ -176,6 +179,41 @@ function NameConfirmBubble({ reason, onConfirm, accentColor, assistantBg }) {
   );
 }
 
+function DeleteUserNavBubble({ onNext, onBack, assistantBg }) {
+  const greyBtn = {
+    padding: "8px 22px", borderRadius: 20,
+    border: "1.5px solid #c0c4c8", background: "#fff", color: "#555",
+    fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+    transition: "background 0.12s",
+  };
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{
+        background: assistantBg || "#fff",
+        borderRadius: 12, padding: "14px 16px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        marginBottom: 10, fontSize: 14, lineHeight: 1.6, color: "#1a1a1a",
+      }}>
+        All set. Shall we head to review, or would you like to remove another user?
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button
+          onClick={onBack}
+          style={greyBtn}
+          onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+          onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+        >Back</button>
+        <button
+          onClick={onNext}
+          style={greyBtn}
+          onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+          onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+        >Next</button>
+      </div>
+    </div>
+  );
+}
+
 function DeleteUserConfirmBubble({ user, onYes, onNo, assistantBg }) {
   const roleLabels = [];
   if (user.as) roleLabels.push("Authorised Signatory");
@@ -223,7 +261,13 @@ function DeleteUserConfirmBubble({ user, onYes, onNo, assistantBg }) {
   );
 }
 
-function FormConfirmBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
+function FormConfirmBubble({ onConfirm, onCancel, accentColor, assistantBg, hasDelete }) {
+  const greyBtn = {
+    padding: "8px 22px", borderRadius: 20,
+    border: "1.5px solid #c0c4c8", background: "#fff", color: "#555",
+    fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+    transition: "background 0.12s",
+  };
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{
@@ -232,19 +276,24 @@ function FormConfirmBubble({ onConfirm, onCancel, accentColor, assistantBg }) {
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         marginBottom: 10, fontSize: 14, lineHeight: 1.5, color: "#1a1a1a",
       }}>
-        All details have been captured. You can confirm here or review on the form first.
+        {hasDelete
+          ? "All done! Now let's move on to removing a user."
+          : "All set — ready to head to the review page?"}
+
       </div>
       <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={onCancel} style={{
-          padding: "8px 16px", borderRadius: 20, border: "1.5px solid #ccc",
-          background: "#fff", color: "#333", fontSize: 13, cursor: "pointer",
-          fontFamily: "inherit",
-        }}>Review on form</button>
-        <button onClick={onConfirm} style={{
-          padding: "8px 18px", borderRadius: 20, border: "none",
-          background: accentColor, color: "#fff", fontSize: 13, fontWeight: 600,
-          cursor: "pointer", fontFamily: "inherit",
-        }}>Confirm</button>
+        <button
+          onClick={onCancel}
+          style={greyBtn}
+          onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+          onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+        >Back</button>
+        <button
+          onClick={onConfirm}
+          style={greyBtn}
+          onMouseEnter={e => e.currentTarget.style.background = "#f0f0f0"}
+          onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+        >Next</button>
       </div>
     </div>
   );
@@ -375,6 +424,7 @@ export default function ChatWidget({
   showOpenTasks = true,
   deleteUsers = [],
   onDeleteUserSelected,
+  onDeleteUserNext,
 }) {
   const s = buildStyles(color, offset, mobile, dark, transparentBg);
   const welcome = `Hello! I'm ${title}, your OCBC business banking helper. How can I assist you today?`;
@@ -397,6 +447,7 @@ export default function ChatWidget({
   const [messages, setMessages] = useState([{ role: "assistant", content: welcome }]);
   const [loading, setLoading] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
+  const [multiIntentRoleSelector, setMultiIntentRoleSelector] = useState(false);
   const [fieldIndex, setFieldIndex] = useState(-1);
   const [openTasks, setOpenTasks] = useState([]);
   const [showChatConfirm, setShowChatConfirm] = useState(false);
@@ -406,9 +457,12 @@ export default function ChatWidget({
   const [pendingNameConfirm, setPendingNameConfirm] = useState(null);
   // matched user object | null
   const [pendingDeleteConfirm, setPendingDeleteConfirm] = useState(null);
+  // user confirmed via Yes but awaiting Next/Back nav choice | null
+  const [pendingDeleteNav, setPendingDeleteNav] = useState(null);
   const bottomRef = useRef(null);
   const prevKeyRef = useRef(null);
   const prevAssistantKeyRef = useRef(null);
+  const reEditModeRef = useRef(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -604,12 +658,15 @@ export default function ChatWidget({
     // Find next unfilled field, skipping any already in formData (except the one just collected)
     const updatedData = { ...formData, [key]: value };
     let next = fieldIndex + 1;
-    while (next < activeKeys.length && (updatedData[activeKeys[next]] ?? "").toString().trim()) next++;
+    if (!reEditModeRef.current) {
+      while (next < activeKeys.length && (updatedData[activeKeys[next]] ?? "").toString().trim()) next++;
+    }
     if (next < questions.length) {
       setMessages(prev => [...prev, { role: "assistant", content: questions[next] }]);
       setFieldIndex(next);
       if (onActiveFieldChange) onActiveFieldChange(activeKeys[next]);
     } else {
+      reEditModeRef.current = false;
       setMessages(prev => [...prev, { role: "assistant", content: "Thank you! All details have been captured." }]);
       setFieldIndex(-1);
       if (onActiveFieldChange) onActiveFieldChange(null);
@@ -624,9 +681,15 @@ export default function ChatWidget({
 
   const handleChatConfirmCancel = () => {
     setShowChatConfirm(false);
+    reEditModeRef.current = true;
+    const activeKeys = getFieldKeys();
+    const admin = activeKeys.length === 4;
+    const questions = buildFieldQuestions(idCountry, phoneCountry, admin);
+    setFieldIndex(0);
+    if (onActiveFieldChange) onActiveFieldChange(activeKeys[0]);
     setMessages(prev => [...prev, {
       role: "assistant",
-      content: "Sure — review on the form and click **Confirm** when ready.",
+      content: `No problem! Let's go through the details again — feel free to re-enter any field to update it.\n\n${questions[0]}`,
     }]);
   };
 
@@ -850,7 +913,29 @@ export default function ChatWidget({
       if (isConfirmNudge && openTasks.includes("delete_user") && !openTasks.includes("add_user")) {
         reply = "Please type the name of the user you'd like to remove, and I'll look them up for you.";
       }
-      if (!isTaskClosedAck) {
+      // Single add_user intent → skip intent bubble, auto-open role selector
+      const autoRoleSelector = (
+        naturalIntentCopy &&
+        detectedIntents &&
+        detectedIntents.length === 1 &&
+        /add/i.test(detectedIntents[0])
+      );
+      // Single delete_user intent → skip intent bubble, show canned name-prompt directly
+      const autoDeletePrompt = (
+        naturalIntentCopy &&
+        detectedIntents &&
+        detectedIntents.length === 1 &&
+        /delete|remove/i.test(detectedIntents[0])
+      );
+      // Multi-intent (add + delete) → skip two-button bubble, go straight to role selector
+      const autoMultiIntent = (
+        naturalIntentCopy &&
+        detectedIntents &&
+        detectedIntents.length >= 2 &&
+        detectedIntents.some(i => /add/i.test(i)) &&
+        detectedIntents.some(i => /delete|remove/i.test(i))
+      );
+      if (!isTaskClosedAck && !autoRoleSelector && !autoDeletePrompt && !autoMultiIntent) {
         setMessages((prev) => [...prev, isNaturalIntro
           ? { role: "assistant", content: reply, meta: "intent_intro" }
           : { role: "assistant", content: reply }
@@ -876,6 +961,26 @@ export default function ChatWidget({
       }
       if (onIntentsDetected && detectedIntents && detectedIntents.length > 0) {
         onIntentsDetected(detectedIntents);
+      }
+      if (autoRoleSelector) {
+        if (onIntentStarted) onIntentStarted(detectedIntents[0]);
+        setMultiIntentRoleSelector(false);
+        setShowRoleSelector(true);
+      }
+      if (autoMultiIntent) {
+        const addIntent = detectedIntents.find(i => /add/i.test(i));
+        if (onIntentStarted) onIntentStarted(addIntent);
+        setMultiIntentRoleSelector(true);
+        setShowRoleSelector(true);
+      }
+      if (autoDeletePrompt) {
+        if (onIntentStarted) onIntentStarted(detectedIntents[0]);
+        const key = detectedIntents[0].toLowerCase().replace(/\s+/g, "_");
+        const canned = intentResponses[detectedIntents[0]] || intentResponses[key];
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: typeof canned === "string" ? canned : "Please type the name of the user you'd like to remove, and I'll look them up for you.",
+        }]);
       }
     } catch {
       setMessages((prev) => [
@@ -930,6 +1035,7 @@ export default function ChatWidget({
               onConfirm={handleRoleConfirm}
               onCancel={handleRoleCancel}
               assistantBg={assistantBg}
+              multiIntent={multiIntentRoleSelector}
             />
           )}
           {pendingClarification && (
@@ -957,6 +1063,7 @@ export default function ChatWidget({
               onCancel={handleChatConfirmCancel}
               accentColor={color}
               assistantBg={assistantBg}
+              hasDelete={openTasks.includes("delete_user")}
             />
           )}
           {pendingDeleteConfirm && (
@@ -967,11 +1074,25 @@ export default function ChatWidget({
                 const user = pendingDeleteConfirm;
                 setPendingDeleteConfirm(null);
                 setMessages(prev => [...prev, { role: "assistant", content: `Got it — I've added **${user.name}** to the removal list.` }]);
-                if (onDeleteUserSelected) onDeleteUserSelected(user);
+                setPendingDeleteNav(user);
               }}
               onNo={() => {
                 setPendingDeleteConfirm(null);
                 setMessages(prev => [...prev, { role: "assistant", content: "OK, which user would you like to remove?" }]);
+              }}
+            />
+          )}
+          {pendingDeleteNav && (
+            <DeleteUserNavBubble
+              assistantBg={assistantBg}
+              onNext={() => {
+                const user = pendingDeleteNav;
+                setPendingDeleteNav(null);
+                if (onDeleteUserNext) onDeleteUserNext(user);
+              }}
+              onBack={() => {
+                setPendingDeleteNav(null);
+                setMessages(prev => [...prev, { role: "assistant", content: "Sure, please type the name of another user you'd like to remove." }]);
               }}
             />
           )}
