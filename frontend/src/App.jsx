@@ -421,7 +421,7 @@ function AddUserForm({ selectedRoles = [], formData, onFormChange, onRolesChange
           <button onClick={onBack} style={{ padding: "12px 30px", borderRadius: 6, border: "1px solid #c8cdd2", background: "#fff", color: "#333", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>Back</button>
         ) : <div />}
         <button
-          onClick={() => { if (commitUser()) onNext && onNext(); }}
+          onClick={() => { if (validateAll()) onNext && onNext(); }}
           style={{
             padding: "13px 36px", borderRadius: 6, border: "none",
             background: SLATE, color: "#fff", fontSize: 14, fontWeight: 600,
@@ -481,6 +481,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
   // step: 0 = landing / entry, 1 = add user(s), 2 = remove user(s), 3 = review, 4 = submitted
   const [step, setStep] = useState(0);
   const [showExitModal, setShowExitModal] = useState(false);
+  const [pendingChatSubmit, setPendingChatSubmit] = useState(false);
   const [reviewBanner, setReviewBanner] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [consented, setConsented] = useState(false);
@@ -512,6 +513,8 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
   const [viewportWidth, setViewportWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1280);
   const [reviewAdds, setReviewAdds] = useState([]);
   const [reviewDeletes, setReviewDeletes] = useState([]);
+  // Full user objects before deletion — used to restore on Back from review
+  const [reviewDeletesFull, setReviewDeletesFull] = useState([]);
   const [stepHistory, setStepHistory] = useState(new Set());
 
   useEffect(() => {
@@ -585,7 +588,9 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
   };
 
   // Shared by the side-panel Confirm button and the in-chat Confirm bubble.
-  const submitAddUser = (userName) => {
+  // silent=true suppresses the "Next up" follow-on notification (used when the
+  // next step is already handled by the form, e.g. step 1 → step 2 in add+delete).
+  const submitAddUser = (userName, silent = false) => {
     setJourneyUsers(prev => [...prev, buildUserEntry(userName, addUserRoles || [])]);
     setReviewAdds(prev => [...prev, { name: userName, nric: addUserData.nric || "", mobile: addUserData.mobile || "", email: addUserData.email || "", userId: addUserData.userId || "", roles: addUserRoles || [] }]);
     setAddUserRoles(null);
@@ -597,27 +602,41 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
       key: Date.now(),
     });
     setCloseTaskSignal({ intent: "add_user", key: Date.now() });
-    const norm = (s) => s.toLowerCase().replace(/\s+/g, "_");
-    const toTitle = (s) => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-    const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(norm);
-    setCompletedIntents(nowCompleted);
-    const remaining = lastIntents.filter(i => !nowCompleted.includes(norm(i)));
-    setTimeout(() => {
-      if (remaining.length === 0 && lastIntents.length > 0) {
-        setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
-        if (isMobileView) setTimeout(() => setShowExitModal(true), 1400);
-      } else if (remaining.length > 0) {
-        setAssistantNotification({
-          text: `Next up: **${toTitle(remaining[0])}**.`,
-          key: Date.now(),
-          meta: "intent_intro",
-        });
-      }
-    }, 600);
+    if (!silent) {
+      const norm = (s) => s.toLowerCase().replace(/\s+/g, "_");
+      const toTitle = (s) => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(norm);
+      setCompletedIntents(nowCompleted);
+      const remaining = lastIntents.filter(i => !nowCompleted.includes(norm(i)));
+      setTimeout(() => {
+        if (remaining.length === 0 && lastIntents.length > 0) {
+          setAssistantNotification({ text: "All your requests have been fulfilled. ✓", key: Date.now() });
+          if (isMobileView) setTimeout(() => setShowExitModal(true), 1400);
+        } else if (remaining.length > 0) {
+          setAssistantNotification({
+            text: `Next up: **${toTitle(remaining[0])}**.`,
+            key: Date.now(),
+            meta: "intent_intro",
+          });
+        }
+      }, 600);
+    } else {
+      const norm = (s) => s.toLowerCase().replace(/\s+/g, "_");
+      const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(norm);
+      setCompletedIntents(nowCompleted);
+    }
   };
 
   const handleInChatConfirm = () => {
-    submitAddUser(addUserData.name || "Unknown");
+    const hasDelete = lastIntents.some(i => /delete|remove/i.test(i));
+    if (hasDelete) {
+      const name = (addUserData.name || "").trim();
+      if (name) submitAddUser(name, true);
+      setStep(2);
+    } else {
+      setPendingChatSubmit(true);
+      setShowExitModal(true);
+    }
   };
 
   const handleChatSend = () => {
@@ -664,6 +683,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
     const names = selectedDeleteUsers;
     if (names.length === 0) return;
     const deletedEntries = journeyUsers.filter(u => names.includes(u.name));
+    setReviewDeletesFull(deletedEntries);
     setReviewDeletes(prev => [...prev, ...deletedEntries.map(u => ({ name: u.name, userId: u.userId || "", nricMasked: u.nricMasked || "", roles: getUserPermissions(u) }))]);
     setJourneyUsers(prev => prev.filter(u => !names.includes(u.name)));
     setDeleteConfirmed(true);
@@ -677,14 +697,40 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
 
   const proceedToReview = () => {
     setShowExitModal(false);
+    if (pendingChatSubmit) {
+      submitAddUser(addUserData.name || "Unknown");
+      setPendingChatSubmit(false);
+    }
     confirmDeletes();
     setChatOpen(false);
     setStep(3);
   };
 
+  const backFromRemoveToAdd = () => {
+    if (reviewAdds.length > 0) {
+      const last = reviewAdds[reviewAdds.length - 1];
+      setAddUserData({ name: last.name || "", nric: last.nric || "", mobile: last.mobile || "", email: last.email || "", userId: last.userId || "" });
+      setAddUserRoles(last.roles || []);
+      setReviewAdds(prev => prev.slice(0, -1));
+      setJourneyUsers(prev => prev.filter(u => !(u.pending && u.name === last.name)));
+    }
+    setStep(1);
+  };
+
   const backFromReview = () => {
     const hasDelete = lastIntents.some(i => /delete|remove/i.test(i));
     if (hasDelete) {
+      // Restore previously deleted users so step 2 can re-show them
+      if (reviewDeletesFull.length > 0) {
+        setJourneyUsers(prev => [...prev, ...reviewDeletesFull]);
+        setSelectedDeleteUsers(reviewDeletesFull.map(u => u.name));
+        setReviewDeletes(prev => {
+          const names = new Set(reviewDeletesFull.map(u => u.name));
+          return prev.filter(u => !names.has(u.name));
+        });
+        setReviewDeletesFull([]);
+        setDeleteConfirmed(false);
+      }
       setStep(2);
       return;
     }
@@ -705,7 +751,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
   };
 
   const resetAll = () => {
-    setReviewAdds([]); setReviewDeletes([]);
+    setReviewAdds([]); setReviewDeletes([]); setReviewDeletesFull([]);
     setJourneyUsers(INITIAL_JOURNEY_USERS);
     setAddUserRoles(null); setAddUserData({}); setAddUserIdCountry("SG"); setAddUserPhoneCountry("SG"); setAddUserActiveField(null);
     setSelectedDeleteUsers([]); setDeleteDropdownOpen(false); setDeleteConfirmed(false); setDeleteConfirmIdx(null);
@@ -991,10 +1037,17 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
                 onNext={() => {
                   const hasDelete = lastIntents.some(i => /delete|remove/i.test(i));
                   if (hasDelete) {
+                    const name = (addUserData.name || "").trim();
+                    if (name) submitAddUser(name, true);
                     setStep(2);
                   } else {
-                    if (chatOpen) setShowExitModal(true);
-                    else setStep(3);
+                    if (chatOpen) {
+                      setPendingChatSubmit(true);
+                      setShowExitModal(true);
+                    } else {
+                      submitAddUser(addUserData.name || "Unknown");
+                      setStep(3);
+                    }
                   }
                 }}
                 onBack={!isMobileView ? () => setStep(0) : null}
@@ -1093,7 +1146,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
               <div style={{ height: 1, background: "#ececec", margin: "42px 0 24px" }} />
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 {lastIntents.some(i => /add/i.test(i)) ? (
-                  <button onClick={() => setStep(1)} style={outlineBtn}>Back</button>
+                  <button onClick={backFromRemoveToAdd} style={outlineBtn}>Back</button>
                 ) : <div />}
                 <button onClick={handleRemoveNext} style={slateBtn}>Next</button>
               </div>
@@ -1380,6 +1433,22 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
                 setSelectedDeleteUsers([user.name]);
                 setStep(2);
               }}
+              onDeleteUserNext={(user) => {
+                const names = [user.name];
+                const deletedEntries = journeyUsers.filter(u => names.includes(u.name));
+                setReviewDeletesFull(deletedEntries);
+                setReviewDeletes(prev => [...prev, ...deletedEntries.map(u => ({ name: u.name, userId: u.userId || "", nricMasked: u.nricMasked || "", roles: getUserPermissions(u) }))]);
+                setJourneyUsers(prev => prev.filter(u => !names.includes(u.name)));
+                setDeleteConfirmed(true);
+                setCloseTaskSignal({ intent: "delete_user", key: Date.now() });
+                const norm = (s) => s.toLowerCase().replace(/\s+/g, "_");
+                const nowCompleted = [...completedIntents, activeIntent].filter(Boolean).map(norm);
+                setCompletedIntents(nowCompleted);
+                setSelectedDeleteUsers([]);
+                setDeleteDropdownOpen(false);
+                setChatOpen(false);
+                setStep(3);
+              }}
             />
           )}
 
@@ -1443,7 +1512,7 @@ function JourneyPage({ headerOffset = VELOCITY_HEADER_HEIGHT, isMobileView = fal
               Please review your request before submitting it.
             </div>
             <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
-              <button onClick={() => setShowExitModal(false)} style={outlineBtn}>Go back</button>
+              <button onClick={() => { setShowExitModal(false); setPendingChatSubmit(false); }} style={outlineBtn}>Go back</button>
               <button onClick={proceedToReview} style={slateBtn}>Proceed</button>
             </div>
           </div>
